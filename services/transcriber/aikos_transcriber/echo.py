@@ -30,6 +30,14 @@ def resident_overlap_s(activity_file: str, door_span: tuple[float, float]) -> fl
     return max(0.0, min(last, door_span[1]) - max(began, door_span[0]))
 
 
+def speech_outside_s(voiced: list, start: float, began: float, last: float, before: float = 0.2,
+                     after: float = 0.5) -> float:
+    """Seconds of speech in a door recording (voiced: one flag per 20 ms frame from `start`, Unix time) outside the
+    window in which a resident talked (began … last, widened by `before`/`after` for the door speaker's delay)."""
+    lo, hi = began - before, last + after
+    return sum(0.02 for i, v in enumerate(voiced) if v and not lo <= start + i * 0.02 <= hi)
+
+
 def is_household(name: str, known_names) -> bool:
     """The speaker's name is one of the household's names ("Jonas", "Jonas Weber")."""
     known = {n.strip().lower() for n in known_names if n.strip()}

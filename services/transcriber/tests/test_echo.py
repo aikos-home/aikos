@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 import _path  # noqa: F401
-from aikos_transcriber.echo import is_household, resident_overlap_s, strip_echo
+from aikos_transcriber.echo import is_household, resident_overlap_s, speech_outside_s, strip_echo
 
 
 class Echo(unittest.TestCase):
@@ -23,6 +23,12 @@ class Echo(unittest.TestCase):
         self.assertEqual(resident_overlap_s(f, (now - 3, now)), 0.0)    # the door audio came after
         self.assertEqual(resident_overlap_s("", (now - 3, now)), 0.0)   # no activity file: unknown = 0
         self.assertEqual(resident_overlap_s(str(Path(tempfile.mkdtemp()) / "missing"), (now - 3, now)), 0.0)
+
+    def test_speech_outside(self):
+        voiced = [True] * 50 + [False] * 25 + [True] * 50     # 1 s speech, 0.5 s pause, 1 s speech (20 ms frames)
+        self.assertAlmostEqual(speech_outside_s(voiced, 100.0, 99.0, 101.0), 0.98, places=1)   # 2nd second after the window
+        self.assertEqual(speech_outside_s(voiced, 100.0, 99.0, 102.5), 0.0)                    # all inside (+0.5 s delay)
+        self.assertAlmostEqual(speech_outside_s(voiced, 100.0, 102.0, 105.0), 1.3, places=1)   # 1st second + 0.3 s before 101.8
 
     def test_household(self):
         self.assertTrue(is_household("Jonas", ["Jonas", "Anna"]))

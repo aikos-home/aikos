@@ -21,8 +21,8 @@ import time
 import wave
 from pathlib import Path
 
-from .audio import has_speech
-from .echo import drop_echo, is_household, resident_overlap_s
+from .audio import has_speech, voiced_frames
+from .echo import drop_echo, is_household, resident_overlap_s, resident_talk, speech_outside_s
 from .ha import ha, key_for_ip
 from .identity import WHISPER_PROMPT, identify, is_noise, prompt_echo, strip_captions
 from .translate import to_german
@@ -65,6 +65,18 @@ def main():
     if not has_speech(a.wav):                     # key pressed, nothing said: never let Whisper "hear" its hint
         print(f"· {a.side}: no speech in {a.wav.name} (level), not transcribed", flush=True)
         return
+    if a.side == "door" and activity_file:
+        # The door mic hears a resident (through the door speaker, or directly when the devices sit close): Whisper
+        # garbles such an echo, so the words don't match the resident's. Its timing does: all of its speech lies in the
+        # resident's talk. Then it is no visitor, whatever Whisper would make of it (live test 01.10. 18:58).
+        end = a.wav.stat().st_mtime
+        began, last = resident_talk(activity_file)
+        if began and resident_overlap_s(activity_file, (end - duration, end)) >= 0.5:
+            with wave.open(str(a.wav)) as w:
+                outside = speech_outside_s(voiced_frames(w.readframes(w.getnframes())), end - duration, began, last)
+            if outside < 0.3:
+                print(f"· door: all speech in {a.wav.name} lies in a resident's talk: an echo, not transcribed", flush=True)
+                return
     # Pass 1: German text for the screens (for foreign speech Whisper translates it into German on the way).
     # It is published at once; pass 2 (which language was spoken, and its words) follows ~1 s later under the same
     # timestamp. The Whisper server works one request at a time, so waiting for both would delay the text by ~1 s.
