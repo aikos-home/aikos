@@ -11,7 +11,7 @@ import urllib.request
 import uuid
 
 from .audio import RATE, has_speech_pcm, wav_bytes
-from .echo import resident_talk, strip_echo
+from .echo import is_household, resident_talk, strip_echo
 from .identity import WHISPER_PROMPT, by_rules, classify, clean, is_noise, prompt_echo, strip_captions
 
 
@@ -81,6 +81,8 @@ class Live:
             if not text or is_noise(text) or prompt_echo(text, self.prompt):
                 continue
             who = classify(by_rules(text, self.names, self.side), clean(text), self.side)
+            if self.overlap and who.kind == "name" and is_household(who.name, self.names):
+                continue                        # the resident's own words heard at the door (W1): no visitor partials
             with self.lock:
                 if self.rec is not rec:
                     continue                    # a new utterance began meanwhile: this text is stale
