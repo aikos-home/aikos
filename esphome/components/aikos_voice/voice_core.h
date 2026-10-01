@@ -117,9 +117,10 @@ class Link {
     for (int i = 0; i < count; i++)
       targets_[i] = next[i];
     n_targets_ = count;
-    for (int i = 0; i < n_targets_; i++)
-      if (targets_[i].latch_left == cfg_.latch_frames && cfg_.latch_frames > 0)
-        send_latch_(targets_[i]);  // the first latch frame at once
+    if (net_ != nullptr)  // the first latch frame at once; without a network yet (boot) loop() sends it later
+      for (int i = 0; i < n_targets_; i++)
+        if (targets_[i].latch_left == cfg_.latch_frames && cfg_.latch_frames > 0)
+          send_latch_(targets_[i]);
   }
   void set_target(const Addr &a, uint32_t now) { set_targets(&a, a.valid() ? 1 : 0, now); }
   void clear_targets() { n_targets_ = 0; }
@@ -214,10 +215,14 @@ class Link {
       tx_.store(false);
       closing_.store(false);
     }
-    // latch frames 2 and 3 (+0.1 s, +0.4 s)
+    // latch frames: the first if set_targets() came before the network (door 0.7.0 crashed there after a power
+    // cycle: the restored key list arrived at boot), then 2 and 3 (+0.1 s, +0.4 s)
     for (int i = 0; i < n_targets_; i++) {
       Target &t = targets_[i];
-      if (t.latch_left > 0) {
+      if (t.latch_left == cfg_.latch_frames && cfg_.latch_frames > 0) {
+        t.latch_t0 = now;
+        send_latch_(t);
+      } else if (t.latch_left > 0) {
         const int sent = cfg_.latch_frames - t.latch_left;
         const uint32_t due = sent == 1 ? 100u : 400u;
         if (now - t.latch_t0 >= due)

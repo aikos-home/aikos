@@ -327,6 +327,22 @@ static void test_edges() {
   CHECK(e.update(false) == -1 && e.update(false) == 0, "one end");
 }
 
+static void test_targets_before_network() {
+  puts("boot: targets set before the network exists send nothing (no crash); the first latch goes out once it does");
+  LinkConfig c;
+  Link link;
+  link.configure(c);
+  link.set_target(KEY, 0);  // what the door did at boot with its restored key list
+  CHECK(link.targets() == 1, "the target is kept");
+  FakeNet net;
+  link.set_transport(&net);
+  link.loop(5000);
+  CHECK(net.to(KEY).size() == 1 && net.to(KEY)[0].marker(), "first latch frame at the first loop with a network");
+  link.loop(5100);
+  link.loop(5400);
+  CHECK(net.to(KEY).size() == 3, "then +0.1 s and +0.4 s");
+}
+
 int main() {
   test_talk_packets_and_copy();
   test_release_drains_then_end_packet();
@@ -334,6 +350,7 @@ int main() {
   test_several_targets();
   test_gate();
   test_latch_frames();
+  test_targets_before_network();
   test_policy_play_hold_drop();
   test_prebuffer_overflow();
   test_noise_never_played();
