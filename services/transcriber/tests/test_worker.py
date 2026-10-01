@@ -20,6 +20,8 @@ HEARD = {
                 {"text": "Hello, this is Anna, I have a parcel for you.", "language_probabilities": {"en": 0.98}}),
     "quiet": ("Haustür-Sprechanlage.", {"text": "", "language_probabilities": {"de": 1.0}}),
     "resident": ("Hier ist Jonas, ich komme gleich runter.", {"text": "x", "language_probabilities": {"de": 0.98}}),
+    "echo": ("Das war nicht.", {"text": "x", "language_probabilities": {"de": 0.9}}),
+    "after": ("Alles klar, ich warte hier unten.", {"text": "x", "language_probabilities": {"de": 0.97}}),
 }
 
 
@@ -34,9 +36,9 @@ class Worker(unittest.TestCase):
     def tearDownClass(cls):
         cls.fake.close()
 
-    def run_worker(self, name, side, source, quiet=False, llm=None, activity=None):
+    def run_worker(self, name, side, source, quiet=False, llm=None, activity=None, parts=None):
         self.fake.calls.clear()
-        wav = write_wav(self.tmp / f"{name}.wav", silence(0.5), silence(1.2) if quiet else tone(1.2), silence(0.5))
+        wav = write_wav(self.tmp / f"{name}.wav", *(parts or (silence(0.5), silence(1.2) if quiet else tone(1.2), silence(0.5))))
         cmd = [sys.executable, "-m", "aikos_transcriber.worker", str(wav), "--side", side, "--source-ip", source,
                "--ha-url", self.fake.url, "--token-file", str(self.tmp / "token"), "--whisper-url", self.fake.url + "/whisper",
                "--llm-url", llm or self.fake.url, "--known-names", "Jonas", "--test-sources", "127.0.0.1", "--delete-wav"]
@@ -84,6 +86,25 @@ class Worker(unittest.TestCase):
         act = self.tmp / "room_active"
         act.write_text(f"{time.time() - 10:.3f}\n")         # a resident has been talking for 10 s and still talks
         self.assertEqual(self.states(self.run_worker("resident", "door", "192.0.2.62", activity=act)), [])
+
+    def resident(self, began_ago: float, last_ago: float):
+        act = self.tmp / "room_active"
+        now = time.time()
+        act.write_text(f"{now - began_ago:.3f}\n")
+        os.utime(act, (now - last_ago, now - last_ago))
+        return act
+
+    def test_echo_inside_the_residents_talk_is_dropped_whatever_whisper_heard(self):
+        # live test 01.10. 18:58: the door mic heard "Ich kann gerade nicht" and Whisper made "Das war nicht." of it
+        act = self.resident(began_ago=10, last_ago=0)                     # the resident talks all through the door audio
+        self.assertEqual(self.states(self.run_worker("echo", "door", "192.0.2.62", activity=act)), [])
+
+    def test_visitor_speaking_after_the_resident_stops_is_kept(self):
+        # door audio 3.9 s: words at 0.5–1.7 s (during the resident's talk) and 2.2–3.4 s (after it ended)
+        act = self.resident(began_ago=10, last_ago=2.9)
+        parts = (silence(0.5), tone(1.2), silence(0.5), tone(1.2), silence(0.5))
+        a = self.states(self.run_worker("after", "door", "192.0.2.62", activity=act, parts=parts))[-1][1]
+        self.assertEqual(a["text"], "Alles klar, ich warte hier unten.")
 
     def test_household_name_at_the_door_without_a_resident_talking_is_shown(self):
         a = self.states(self.run_worker("resident", "door", "192.0.2.62"))[-1][1]    # forgot the keys: fine

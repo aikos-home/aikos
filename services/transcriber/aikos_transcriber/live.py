@@ -10,8 +10,8 @@ import time
 import urllib.request
 import uuid
 
-from .audio import RATE, has_speech_pcm, wav_bytes
-from .echo import is_household, resident_talk, strip_echo
+from .audio import RATE, has_speech_pcm, voiced_frames, wav_bytes
+from .echo import is_household, resident_talk, speech_outside_s, strip_echo
 from .identity import WHISPER_PROMPT, by_rules, classify, clean, is_noise, prompt_echo, strip_captions
 
 
@@ -65,6 +65,9 @@ class Live:
                 continue
             said = None
             if self.overlap:                    # this utterance overlapped the resident: wait for the resident's text
+                start = time.time() - len(pcm) / (2 * RATE)      # the recording runs in real time
+                if began and speech_outside_s(voiced_frames(pcm), start, began, active) < 0.3:
+                    continue                    # all of it lies in the resident's talk: an echo, no partials
                 said = self._resident_text(ref, began, active)
                 if said is None:
                     continue

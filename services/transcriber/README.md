@@ -33,6 +33,12 @@ crash there never stops the receiver.
 Content = when the resident started talking (Unix time), modification time = the last audio. The door side reads it:
 no live text while a resident talks, and its echo filter only looks at door audio that overlaps.
 
+**Echo by timing:** a door recording whose speech lies entirely within a resident's talk (from 0.2 s before to 0.5 s
+after it, for the door speaker's delay) is an echo and is not transcribed, whatever Whisper would make of it. A garbled
+echo ("Ich kann gerade nicht" heard as "Das war nicht.") doesn't match the resident's words, so the word filter alone
+missed it (live test 01.10.). The same rule holds back live partials. Trade-off: a visitor who speaks only while the
+resident talks (double talk) is dropped too; whatever the visitor says after that is kept.
+
 **Resident's words at the door are never a visitor:** if a door utterance names one of the household (`AIKOS_KNOWN_NAMES`) as
 the speaker while a resident talked for at least 0.5 s during it, it is not published (final and live text). This covers
 the door mic hearing the resident when no room transcript can filter it, e.g. a key whose mic sends silence (system test
