@@ -14,19 +14,24 @@ from .model import Identity
 from .patterns import L
 from .roles import ROLES, SELF_DECLARED
 from .rules import by_rules
-from .text import WHISPER_PROMPT, clean, is_noise, prompt_echo, strip_captions
+from .text import WHISPER_PROMPT, clean, is_caption, is_noise, prompt_echo, strip_captions
 
 __all__ = ["Identity", "ROLES", "SELF_DECLARED", "WHISPER_PROMPT", "by_llm", "by_rules", "classify", "clean", "identify",
-           "is_noise", "prompt_echo", "strip_captions"]
+           "is_caption", "is_noise", "prompt_echo", "strip_captions"]
 
 
 def identify(text: str, known_names=(), llm_url: str = "", llm_model: str = "qwen3:8b", side: str = "door") -> Identity:
     text = clean(text)
     ident = by_rules(text, known_names, side)
+    if ident.speaker and is_caption(ident.speaker):
+        ident = Identity(message=text)                                # R24: a subtitle credit is nobody
     if ident.speaker or not llm_url or len(re.findall(L + r"{2,}", text)) < 3:
         return classify(ident, text, side)
     try:
-        return classify(by_llm(text, llm_url, llm_model, side=side) or ident, text, side)
+        got = by_llm(text, llm_url, llm_model, side=side)
+        if got and is_caption(got.speaker):
+            got = None                                                # R24: the LLM took "ARD Text" for the speaker
+        return classify(got or ident, text, side)
     except Exception as exc:  # LLM down or slow: the rules' answer stands
         print(f"identity: LLM skipped ({exc})", file=sys.stderr)
         return classify(ident, text, side)
