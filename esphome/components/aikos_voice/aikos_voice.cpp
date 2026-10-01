@@ -150,11 +150,11 @@ void AikosVoice::allow_source(const std::string &host, uint32_t ms) {
 void AikosVoice::publish_() {
   const bool talking = this->link_.talking(), conv = this->link_.in_conversation(),
              remote = this->link_.remote_holding();
-  if (conv != this->was_conversation_) {
-    this->was_conversation_ = conv;
-    if (conv)
-      this->conversation_start_trigger_.trigger();
-  }
+  const int edge = this->conversation_edge_.update(conv);  // idle timeout and aikos_voice.end both end up here
+  if (edge > 0)
+    this->conversation_start_trigger_.trigger();
+  else if (edge < 0)
+    this->conversation_end_trigger_.trigger();
 #ifdef USE_BINARY_SENSOR
   if (this->talking_bs_ != nullptr && (talking != this->was_talking_ || !this->talking_bs_->has_state()))
     this->talking_bs_->publish_state(talking);

@@ -58,6 +58,10 @@ def counters():
     time.sleep(5.6)  # the device publishes its counters every 5 s
     return {k: num("sensor.%s_rtp_packets_%s" % (E, k)) for k in ("sent", "received", "held_back")}
 
+def triggers():
+    """The door config counts aikos_voice's on_conversation_start/_end in two template sensors (since boot)."""
+    return {k: num("sensor.%s_conversations_%s" % (E, k)) for k in ("started", "ended")}
+
 results = []
 def check(cond, what):
     results.append((bool(cond), what))
@@ -118,6 +122,7 @@ def main():
         ha("/api/services/text/set_value", {"entity_id": "text.%s_transcriber_address" % E,
                                             "value": "%s:%d" % (ME_IP, TAP_PORT)})
         c0 = counters()
+        t0 = triggers()
         key.take(), tap.take()
 
         print("1) lock: a key that does not hold is never played")
@@ -131,6 +136,7 @@ def main():
         time.sleep(1.0)
         l16, cn, ka = kinds(key.take())
         check(state("binary_sensor.%s_in_call" % E) == "on", "conversation on")
+        check(triggers()["started"] == t0["started"] + 1, "on_conversation_start fired once")
         silent = [d for d in l16 if len(d) == 652 and not any(d[12:])]
         check(len(silent) >= 1, "silent latch frame(s) at the key (%d)" % len(silent))
         send_frames(key.s, 50)
@@ -168,6 +174,9 @@ def main():
         service("call_end", {})
         time.sleep(1.0)
         check(state("binary_sensor.%s_in_call" % E) == "off", "conversation off")
+        t5 = triggers()
+        check(t5["ended"] == t0["ended"] + 1 and t5["started"] == t0["started"] + 1,
+              "on_conversation_end fired once (%d -> %d)" % (t0["ended"], t5["ended"]))
     finally:
         ha("/api/services/text/set_value", {"entity_id": "text.%s_transcriber_address" % E, "value": old_tap})
         key.run = tap.run = False

@@ -91,7 +91,8 @@ class AikosVoice : public Component {
   float gain_{4.0f};
   ::aikos::voice::Biquad hp_;
   ::aikos::voice::Limiter limiter_;
-  bool was_talking_{false}, was_conversation_{false}, was_remote_{false};
+  bool was_talking_{false}, was_remote_{false};
+  ::aikos::voice::Edge conversation_edge_;
   uint32_t last_publish_{0};
 
   Trigger<> talk_start_trigger_, talk_stop_trigger_, conversation_start_trigger_, conversation_end_trigger_;

@@ -99,6 +99,18 @@ struct Limiter {
   }
 };
 
+// The edges of a state such as "in conversation", for the start/end triggers of the ESPHome glue (one call per loop).
+// Kept here so the unit tests cover it: 0.6.0 only fired the start edge (found by the RoomKey review, 2026-10-01).
+struct Edge {
+  bool state = false;
+  int update(bool now) {  // +1 = it began, -1 = it ended, 0 = unchanged
+    if (now == state)
+      return 0;
+    state = now;
+    return now ? 1 : -1;
+  }
+};
+
 class Link {
  public:
   using Sink = std::function<void(const int16_t *pcm, size_t n)>;

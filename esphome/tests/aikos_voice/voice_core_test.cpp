@@ -290,6 +290,35 @@ static void test_overrun_gap() {
   CHECK(k.size() >= 2 && (uint16_t) (k[0].seq() - (uint16_t) 0) != 0, "packets still flow");
 }
 
+static void test_conversation_edges() {
+  puts("triggers: every conversation gives one start and one end edge (after the idle timeout and after end())");
+  Rig r(Role::DOOR, 0);
+  Edge e;
+  int starts = 0, ends = 0;
+  auto step = [&](uint32_t now) {  // what the ESPHome glue does once per loop
+    r.link.loop(now);
+    const int x = e.update(r.link.in_conversation());
+    starts += x > 0;
+    ends += x < 0;
+  };
+  step(0);
+  CHECK(starts == 0 && ends == 0, "nothing at rest");
+  r.link.remote_hold(true, KEY, 1000);
+  step(1000);
+  step(1020);
+  CHECK(starts == 1 && ends == 0, "a key holds: one start edge");
+  r.link.remote_hold(false, Addr{}, 2000);
+  step(2000);
+  CHECK(starts == 1 && ends == 0, "released: still in the conversation");
+  step(2000 + 120001);  // the release counts as the last activity
+  CHECK(starts == 1 && ends == 1, "2 min without audio: one end edge");
+  r.link.remote_hold(true, KEY, 200000);
+  step(200000);
+  r.link.clear_peer();  // what aikos_voice.end does
+  step(200100);
+  CHECK(starts == 2 && ends == 2, "aikos_voice.end: one end edge too");
+}
+
 int main() {
   test_talk_packets_and_copy();
   test_release_drains_then_end_packet();
@@ -298,6 +327,7 @@ int main() {
   test_door_lock_prebuffer();
   test_door_half_duplex_and_noise();
   test_idle_end_and_hold_max();
+  test_conversation_edges();
   test_room_policy();
   test_keepalive();
   test_trusted_source();
