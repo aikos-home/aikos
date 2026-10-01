@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+Thumbs.db
+# device secrets never go into a repo
+secrets.yaml
+.esphome/
+# recordings never go into a repo
+*.wav

@@ -1,0 +1,13 @@
+name: privacy scan
+on: [push, pull_request]
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # Built-in checks only (private IPv4, MAC and e-mail addresses, Home Assistant entity ids).
+      # The denylist of private terms is never uploaded; it runs locally before every push.
+      - run: python tools/privacy_scan.py
