@@ -96,6 +96,33 @@ Conditions: `aikos_voice.is_talking`, `aikos_voice.in_conversation`, `aikos_voic
 | The main loop can't keep up with the mic | Samples are dropped; the RTP sequence shows a gap rather than spliced audio |
 | Keepalives, comfort-noise packets, other payload types | Nothing to play; ignored |
 
+## voice v2 (branch `voice-v2`, in progress)
+
+Rule R17 of the project owner: a **call** ("Telefonat") instead of push-to-talk at the door. The rules live in one place,
+`call.h`, as a pure state machine (events in, "who hears what" out). Case 1 (it rang) and case 2 (nobody rang) differ only
+in what starts the call.
+
+| | |
+|---|---|
+| Start | Case 1: after a ring the visitor presses "Sprechen" once, or a key holds. Case 2: a key holds without a ring |
+| Door mic | Open for the whole call, closed outside it. Towards the keys it is muted while the door speaker plays and 0.3 s after (echo); the transcriber copy is never muted |
+| Key mic | Open only while its button is held |
+| Door speaker | Plays the key that has the floor, only while it holds. The first key to hold has the floor; a second one is busy ("besetzt") and gets the floor if it still holds when the first lets go. Every key that answered is in the call |
+| Key speaker | Plays the door only while that key does not hold, and only if it answered, or its owner wants to hear visitors before answering (per-key setting with times) |
+| End | 10 s without speech on either side (a held button counts as speech), 5 min at most, from outside (front door, API), or every key that answered has left. Each key also leaves on its own silence or max length, or when the front door opens and its owner switched that on |
+| Holds | Keys resend "holds" every second; none for 3 s = released. A button still held when a call ends starts no new call until pressed again |
+
+**`DoorCall`** (the door is the arbiter): events `ring`, `visitor_speak`, `hold(key, held)`, `key_in_call(key, in)`,
+`speech(side)`, `door_played`, `end(why)`, `loop`; state `active`, `id`, `started_by`, `ended_by`, `members`, `floor`,
+`busy(key)`; routes `mic_open`, `mic_to_keys(now)`, `plays(from)`.
+
+**`KeyCall`** (one room key): events `hold(held)`, `door_call(on, id)`, `floor_taken(by_other)`, `speech(side)`,
+`front_door`, `loop`; state `in_call` (sent to the door), `door_on`, `left_by`; routes `mic_open`, `busy`,
+`plays_door(hear_visitor_before_answer)`.
+
+The device glue (door, keys) and the link wiring follow in the next steps. Until v2 is tagged, devices stay on
+`voice-v1.0.0`.
+
 ## Built for what comes next
 
 Sources and sinks, not hard wiring. The link takes samples from the mic (`push`), plays them to a sink (the speaker),
@@ -107,13 +134,17 @@ core runs on a PC for tests.
 
 | File | |
 |---|---|
-| `voice_core.h` | The rules: pure C++17, no ESPHome, no sockets |
+| `types.h` | `Addr`, `Role` |
+| `dsp.h` | High-pass filter and limiter for the mic |
+| `voice_core.h` | The v1 link (wire, push-to-talk, door lock): pure C++17, no ESPHome, no sockets |
+| `call.h` | v2: the call model (`DoorCall`, `KeyCall`): pure C++17 |
 | `voice_udp.h` | The UDP transport (lwIP; BSD sockets in a host build) |
 | `aikos_voice.h/.cpp`, `*.py` | The ESPHome component: mic, speaker, actions, sensors |
 
 ## Never without the tests
 
-1. `esphome/tests/aikos_voice/voice_core_test.cpp`: 52 unit checks on a PC. CI runs them on every push and pull request:
+1. `esphome/tests/aikos_voice/voice_core_test.cpp`: 52 unit checks on a PC, and `call_test.cpp`: 86 scenario checks
+   for the v2 call model (every rule above has one; checked by breaking each rule on purpose). CI runs them on every push and pull request:
    `g++ -std=c++17 -Wall -I esphome/components/aikos_voice esphome/tests/aikos_voice/voice_core_test.cpp -o t && ./t`
 2. `esphome/tests/aikos_voice/voice_live_test.py`: 16 live checks against a door talk computer via Home Assistant. The PC
    plays a room key; configure it through the environment (see the file). The door config must count the two triggers in
