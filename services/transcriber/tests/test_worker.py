@@ -32,12 +32,12 @@ class Worker(unittest.TestCase):
     def tearDownClass(cls):
         cls.fake.close()
 
-    def run_worker(self, name, side, source, quiet=False):
+    def run_worker(self, name, side, source, quiet=False, llm=None):
         self.fake.calls.clear()
         wav = write_wav(self.tmp / f"{name}.wav", silence(0.5), silence(1.2) if quiet else tone(1.2), silence(0.5))
         cmd = [sys.executable, "-m", "aikos_transcriber.worker", str(wav), "--side", side, "--source-ip", source,
                "--ha-url", self.fake.url, "--token-file", str(self.tmp / "token"), "--whisper-url", self.fake.url + "/whisper",
-               "--llm-url", self.fake.url, "--known-names", "Jonas", "--test-sources", "127.0.0.1", "--delete-wav"]
+               "--llm-url", llm or self.fake.url, "--known-names", "Jonas", "--test-sources", "127.0.0.1", "--delete-wav"]
         subprocess.run(cmd, cwd=PKG_ROOT, capture_output=True, timeout=60, env=dict(os.environ, PYTHONIOENCODING="utf-8"))
         self.assertFalse(wav.exists(), "the recording is deleted when done")
         return list(self.fake.calls)
@@ -74,6 +74,12 @@ class Worker(unittest.TestCase):
         self.assertEqual((a["language"], a["language_name"]), ("en", "Englisch"))
         self.assertEqual(a["text"], "Hallo, hier ist Anna, ich habe ein Paket für Sie.")
         self.assertEqual(a["text_original"], "Hello, this is Anna, I have a parcel for you.")
+
+    def test_published_even_when_the_llm_is_down(self):
+        a = self.states(self.run_worker("english", "door", "192.0.2.62", llm="http://127.0.0.1:9"))[-1][1]
+        self.assertEqual(a["text"], "Hello, this is Anna, I have a parcel for you.")      # untranslated, but there
+        d = self.states(self.run_worker("door", "door", "192.0.2.62", llm="http://127.0.0.1:9"))[-1][1]
+        self.assertEqual(d["speaker_role"], "parcel")                                     # the rules still know
 
 
 if __name__ == "__main__":
