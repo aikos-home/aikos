@@ -1,8 +1,10 @@
-"""Live regression test of a door talk computer running aikos_voice (role door), run before every aikos_voice tag.
+"""Live regression test of a door talk computer running aikos_voice v2 (role door), run before every aikos_voice tag.
 
-This PC plays a room key: it talks RTP to the door, asks Home Assistant to forward "key holds/released" (the door's
-actions `peer_talk` and `call_end`), and checks every rule tested live on 2026-10-01. Needs: Home Assistant with the
-door's ESPHome device, the door on the network, nothing else talking to it during the ~1 min run.
+This PC plays a room key: it sends RTP to the door and reports its key state through Home Assistant (the door's test
+action `key_state`, standing in for the key's own packet_transport message), and checks the rules of voice v2 that a
+door shows on the network. Needs: Home Assistant with the door's ESPHome device, the door on the network, nothing else
+talking to it during the ~2 min run. The test sets the door's "Key addresses" and "Transcriber address" to this PC and
+puts both back at the end.
 
 Configuration from the environment (nothing house-specific in this file):
   AIKOS_HA_URL          Home Assistant base URL, e.g. http://homeassistant.local:8123
@@ -12,8 +14,9 @@ Configuration from the environment (nothing house-specific in this file):
   AIKOS_DOOR_NODE       the door's ESPHome node name with "_" (default aikos_intercom_talk)
 
   python voice_live_test.py
-The door config must count aikos_voice's two triggers in template sensors "Conversations started" and
-"Conversations ended" (see the component README). Exit code 0 = all checks passed. Windows drops unsolicited UDP, so the test sends first on every port it listens on.
+The door config must count the call triggers in template sensors "Calls started" / "Calls ended" (on_call_start /
+on_call_end) and offer the API actions ring, visitor_speak, key_state(host, state) and call_end (see the README).
+Exit code 0 = all checks passed. Windows drops unsolicited UDP, so the test sends first on every port it listens on.
 """
 import json
 import os
@@ -38,6 +41,8 @@ DOOR = (need("AIKOS_DOOR_HOST"), 5004)
 ME_IP = need("AIKOS_TEST_IP")
 KEY_PORT, TAP_PORT = 5104, 5105     # not 5004: a real key may run on the test PC
 E = os.environ.get("AIKOS_DOOR_NODE", "aikos_intercom_talk")
+ME = "%s:%d" % (ME_IP, KEY_PORT)
+
 
 def ha(path, body=None, method="POST"):
     r = urllib.request.Request(HA + path, method=method, data=None if body is None else json.dumps(body).encode(),
@@ -45,31 +50,48 @@ def ha(path, body=None, method="POST"):
     with urllib.request.urlopen(r, timeout=15) as x:
         return json.loads(x.read() or b"null")
 
+
 def state(eid):
     return ha("/api/states/" + eid, method="GET")["state"]
+
 
 def num(eid):
     v = state(eid)
     return float(v) if v not in ("unknown", "unavailable") else 0.0
 
-def service(name, data):
-    ha("/api/services/esphome/%s_%s" % (E, name), data)
+
+def on(eid):
+    return state(eid) == "on"
+
+
+def service(name, data=None):
+    ha("/api/services/esphome/%s_%s" % (E, name), data or {})
+
+
+def set_text(name, value):
+    ha("/api/services/text/set_value", {"entity_id": "text.%s_%s" % (E, name), "value": value})
+
 
 def counters():
-    time.sleep(5.6)  # the device publishes its counters every 5 s
+    time.sleep(5.6)  # the device publishes its packet counters every 5 s
     return {k: num("sensor.%s_rtp_packets_%s" % (E, k)) for k in ("sent", "received", "held_back")}
 
-def triggers():
-    """The door config counts aikos_voice's on_conversation_start/_end in two template sensors (since boot)."""
-    return {k: num("sensor.%s_conversations_%s" % (E, k)) for k in ("started", "ended")}
+
+def calls():
+    return {k: num("sensor.%s_calls_%s" % (E, k)) for k in ("started", "ended")}
+
 
 results = []
+
+
 def check(cond, what):
     results.append((bool(cond), what))
     print(("  ok   " if cond else "  FAIL ") + what, flush=True)
 
+
 class Ear:
     """Collects what the door sends to one local port."""
+
     def __init__(self, port):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.s.bind(("0.0.0.0", port))
@@ -77,6 +99,7 @@ class Ear:
         self.got = []
         self.run = True
         threading.Thread(target=self._rx, daemon=True).start()
+
     def _rx(self):
         while self.run:
             try:
@@ -85,11 +108,37 @@ class Ear:
                 continue
             if src[0] == DOOR[0]:
                 self.got.append((time.time(), d))
+
     def take(self):
         g, self.got = self.got, []
         return g
+
     def open_firewall(self, to):  # Windows drops unsolicited UDP until this socket has sent to the sender
         self.s.sendto(bytes([0x80, 0x60]) + bytes(10), to)
+
+
+class Key:
+    """This PC's key state, refreshed every second like a real key's packets (0 idle, 1 in the call, 2 holding)."""
+
+    def __init__(self):
+        self.value = None  # None = the key is gone: no messages at all
+        self.run = True
+        threading.Thread(target=self._loop, daemon=True).start()
+
+    def _loop(self):
+        while self.run:
+            if self.value is not None:
+                try:
+                    service("key_state", {"host": ME, "state": self.value})
+                except Exception as e:  # one lost message is what the refresh is for
+                    print("  (key_state failed: %s)" % e)
+            time.sleep(1.0)
+
+    def set(self, v):
+        self.value = v
+        if v is not None:
+            service("key_state", {"host": ME, "state": v})
+
 
 def frames(n, value=3000, seq0=1000):
     out = []
@@ -98,92 +147,131 @@ def frames(n, value=3000, seq0=1000):
         out.append(p + struct.pack(">320h", *([value] * 320)))
     return out
 
+
 def send_frames(sock, n, value=3000):
     for p in frames(n, value):
         sock.sendto(p, DOOR)
         time.sleep(0.02)
 
-def kinds(packets):
-    l16 = [d for _, d in packets if len(d) > 12 and (d[1] & 0x7F) == 96]
-    cn = [d for _, d in packets if (d[1] & 0x7F) == 13]
-    ka = [d for _, d in packets if len(d) == 12]
-    return l16, cn, ka
+
+def voice(packets):  # L16 frames (latch frames included; there are at most three per new target)
+    return [d for _, d in packets if len(d) > 12 and (d[1] & 0x7F) == 96]
+
+
+def cn(packets):
+    return [d for _, d in packets if (d[1] & 0x7F) == 13]
+
 
 def main():
-    key = Ear(KEY_PORT)
+    ear = Ear(KEY_PORT)
     tap = Ear(TAP_PORT)
-    key.open_firewall(DOOR)
+    ear.open_firewall(DOOR)
     tap.open_firewall(DOOR)
-    me = "%s:%d" % (ME_IP, KEY_PORT)
+    key = Key()
+    old_keys = state("text.%s_key_addresses" % E)
     old_tap = state("text.%s_transcriber_address" % E)
     try:
-        print("0) clean start")
-        service("call_end", {})
-        ha("/api/services/switch/turn_off", {"entity_id": "switch.%s_talk_test" % E})
-        ha("/api/services/text/set_value", {"entity_id": "text.%s_transcriber_address" % E,
-                                            "value": "%s:%d" % (ME_IP, TAP_PORT)})
-        c0 = counters()
-        t0 = triggers()
-        key.take(), tap.take()
+        print("0) clean start: no call, this PC is the only key and the transcriber")
+        service("call_end")
+        set_text("key_addresses", "pc-test=%s" % ME)
+        set_text("transcriber_address", "%s:%d" % (ME_IP, TAP_PORT))
+        time.sleep(2.0)
+        c0, k0 = counters(), calls()
+        ear.take(), tap.take()
 
-        print("1) lock: a key that does not hold is never played")
-        send_frames(key.s, 40)  # more than the 25-frame pre-buffer: the oldest fall out and are counted
-        c1 = counters()
-        check(c1["received"] == c0["received"], "nothing played without a hold")
-        check(c1["held_back"] >= c0["held_back"] + 1, "held back counted (%d -> %d)" % (c0["held_back"], c1["held_back"]))
-
-        print("2) the key holds: conversation on, latch frames, its audio played")
-        service("peer_talk", {"held": True, "peer_host": me})
+        print("1) no call: the door mic is closed, a key that doesn't hold is never played")
+        send_frames(ear.s, 30)
         time.sleep(1.0)
-        l16, cn, ka = kinds(key.take())
-        check(state("binary_sensor.%s_in_call" % E) == "on", "conversation on")
-        check(triggers()["started"] == t0["started"] + 1, "on_conversation_start fired once")
-        silent = [d for d in l16 if len(d) == 652 and not any(d[12:])]
-        check(len(silent) >= 1, "silent latch frame(s) at the key (%d)" % len(silent))
-        send_frames(key.s, 50)
+        c1 = counters()
+        check(not on("binary_sensor.%s_in_call" % E), "no call")
+        check(len(voice(ear.take())) <= 3 and not voice(tap.take()), "door mic closed: no audio to key or transcriber")
+        check(c1["received"] == c0["received"] and c1["held_back"] > c0["held_back"], "not played, held back")
+
+        print("2) case 2: the key holds without a ring -> a call; the door plays it; the door mic opens")
+        key.set(2)
+        time.sleep(1.0)
+        check(on("binary_sensor.%s_in_call" % E), "the call is on")
+        check(calls()["started"] == k0["started"] + 1, "on_call_start fired once")
+        check(on("binary_sensor.%s_room_key_holds" % E), "the key has the floor")
+        ear.take(), tap.take()
+        send_frames(ear.s, 50)
         c2 = counters()
         check(c2["received"] >= c1["received"] + 45, "its audio played (%d frames)" % (c2["received"] - c1["received"]))
+        tl = voice(tap.take())
+        check(len(tl) > 100, "the door mic is open: the transcriber gets the door's audio (%d frames)" % len(tl))
 
-        print("3) the key releases: silent again")
-        service("peer_talk", {"held": False, "peer_host": ""})
-        time.sleep(0.5)
-        send_frames(key.s, 40)
+        print("3) the key releases but stays in the call: not played; the door's audio reaches it")
+        key.set(1)
+        time.sleep(1.0)
+        check(not on("binary_sensor.%s_room_key_holds" % E), "nobody has the floor")
+        ear.take()
+        send_frames(ear.s, 40)
+        time.sleep(1.0)
         c3 = counters()
-        check(c3["received"] == c2["received"], "not played after the release")
-        check(c3["held_back"] > c2["held_back"], "held back again")
-
-        print("4) the visitor talks: frames to the key and the transcriber, end packet on release")
-        key.take(), tap.take()
-        ha("/api/services/switch/turn_on", {"entity_id": "switch.%s_talk_test" % E})
-        time.sleep(0.3)
-        send_frames(key.s, 25)  # half-duplex: the key's audio must not play now
-        time.sleep(1.5)
-        ha("/api/services/switch/turn_off", {"entity_id": "switch.%s_talk_test" % E})
-        time.sleep(1.0)
-        kl16, kcn, _ = kinds(key.take())
-        tl16, tcn, _ = kinds(tap.take())
-        check(len(kl16) >= 80, "visitor frames at the key (%d in ~2.5 s)" % len(kl16))
-        check(kl16 and (kl16[0][1] & 0x80), "marker bit on the first frame of the spurt")
-        check(len(kcn) == 1 and len(kcn[0]) == 13, "one end packet (PT 13) at the key")
-        check(len(tl16) >= 80 and len(tcn) == 1, "the same to the transcriber (%d + %d)" % (len(tl16), len(tcn)))
-        seqs = [struct.unpack(">H", d[2:4])[0] for d in kl16]
+        check(c3["received"] == c2["received"], "a key that doesn't hold is not played (the lock)")
+        kl = voice(ear.take())
+        check(len(kl) > 60, "the door mic reaches the key (%d frames in ~2 s)" % len(kl))
+        seqs = [struct.unpack(">H", d[2:4])[0] for d in kl]
         check(all(((b - a) & 0xFFFF) == 1 for a, b in zip(seqs, seqs[1:])), "sequence numbers without gaps")
-        c4 = counters()
-        check(c4["received"] == c3["received"], "half-duplex: nothing played while the visitor talked")
 
-        print("5) the end")
-        service("call_end", {})
+        print("4) mute: while the door speaker plays the key, the door mic does not reach the key (echo)")
+        key.set(2)
         time.sleep(1.0)
-        check(state("binary_sensor.%s_in_call" % E) == "off", "conversation off")
-        t5 = triggers()
-        check(t5["ended"] == t0["ended"] + 1 and t5["started"] == t0["started"] + 1,
-              "on_conversation_end fired once (%d -> %d)" % (t0["ended"], t5["ended"]))
+        stop = threading.Event()
+
+        def talk():
+            while not stop.is_set():
+                send_frames(ear.s, 10)
+
+        t = threading.Thread(target=talk, daemon=True)
+        t.start()
+        time.sleep(0.5)
+        ear.take()
+        time.sleep(1.5)
+        during = voice(ear.take())
+        stop.set()
+        t.join()
+        check(len(during) <= 5, "muted towards the key while it is played (%d frames in 1.5 s)" % len(during))
+        time.sleep(0.6)
+        ear.take()
+        time.sleep(1.0)
+        after = voice(ear.take())
+        check(len(after) > 30, "open again once the speaker is quiet (%d frames in 1 s)" % len(after))
+
+        print("5) the key's messages stop: its hold ends after 3 s")
+        key.set(None)
+        time.sleep(4.5)
+        check(not on("binary_sensor.%s_room_key_holds" % E), "hold released without a release message")
+
+        print("6) silence: 10 s without speech ends the call; the end packet reaches the key")
+        ear.take()
+        time.sleep(12.0)
+        check(not on("binary_sensor.%s_in_call" % E), "the call is over")
+        check(calls()["ended"] == k0["ended"] + 1, "on_call_end fired once")
+        check(len(cn(ear.take())) >= 1, "an end packet (PT 13) at the key")
+
+        print("7) case 1: ring, the visitor presses Sprechen -> a call nobody answered; a key joins -> answered")
+        service("ring")
+        service("visitor_speak")
+        time.sleep(1.0)
+        check(on("binary_sensor.%s_in_call" % E) and not on("binary_sensor.%s_answered" % E), "call on, not answered")
+        key.set(1)
+        time.sleep(1.5)
+        check(on("binary_sensor.%s_answered" % E), "a key joined (short press): answered")
+        check(calls()["started"] == k0["started"] + 2, "the second call")
+        key.set(0)
+        service("call_end")
+        time.sleep(1.0)
+        check(not on("binary_sensor.%s_in_call" % E), "ended from outside")
     finally:
-        ha("/api/services/text/set_value", {"entity_id": "text.%s_transcriber_address" % E, "value": old_tap})
-        key.run = tap.run = False
+        key.run = False
+        set_text("key_addresses", old_keys if old_keys not in ("unknown", "unavailable") else "")
+        set_text("transcriber_address", old_tap if old_tap not in ("unknown", "unavailable") else "")
+        ear.run = tap.run = False
     failed = [w for ok, w in results if not ok]
     print("\n%d checks, %d failed" % (len(results), len(failed)))
     return 0 if not failed else 1
+
 
 if __name__ == "__main__":
     sys.exit(main())
