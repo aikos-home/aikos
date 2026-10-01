@@ -3,6 +3,7 @@
 // From the RoomKey (roomkey_dsp.h VoiceGate, used on the device since 2026-10-01 for its mic and the door audio).
 #pragma once
 
+#include <atomic>
 #include <cmath>
 #include <cstdint>
 
@@ -13,7 +14,9 @@ namespace voice {
 // Speech = VOICE_DB above the noise floor, the quietest block of the last WINDOW_MS: speech has gaps between words,
 // steady noise (street, fan, rain) does not. A single loud block is no speech (the level is smoothed). Muted blocks
 // (< −100 dBFS, e.g. a mic that is just starting) don't count, so they can't pull the floor down.
-// Thread use: note() from one task (mic or network), the getters from another; the two fields they share are volatile.
+// A steady tone without gaps for longer than WINDOW_MS (a whistle, a beeping truck) raises the floor to its own level
+// and stops counting as speech after 1.5 s; that is wanted for words, which always have gaps.
+// Thread use: note() from one task (mic or network), the getters from another; the two fields they share are atomic.
 class VoiceGate {
  public:
   static constexpr int N = 96;                // ≥ 1.5 s of 16 ms mic blocks or 20 ms RTP packets
@@ -34,17 +37,19 @@ class VoiceGate {
     floor_ = floor;
     smooth_ = smooth_ < -100.0f ? db : smooth_ * 0.7f + db * 0.3f;
     if (smooth_ > floor + VOICE_DB && db > MIN_DB) {
-      last_ = now;
-      voice_ = true;
+      last_.store(now, std::memory_order_relaxed);
+      voice_.store(true, std::memory_order_release);
     }
   }
   // speech since t0 (wrap-safe for millis())
-  bool voiced_since(uint32_t t0) const { return voice_ && (int32_t) (last_ - t0) >= 0; }
-  uint32_t quiet_ms(uint32_t now) const { return now - last_; }  // only meaningful once voiced_since() was true
-  uint32_t last_voice_ms() const { return last_; }
+  bool voiced_since(uint32_t t0) const {
+    return voice_.load(std::memory_order_acquire) && (int32_t) (last_.load(std::memory_order_relaxed) - t0) >= 0;
+  }
+  uint32_t quiet_ms(uint32_t now) const { return now - last_voice_ms(); }  // meaningful once voiced_since() was true
+  uint32_t last_voice_ms() const { return last_.load(std::memory_order_relaxed); }
   float floor_db() const { return floor_; }
   void reset() {
-    voice_ = false;
+    voice_.store(false, std::memory_order_release);
     smooth_ = -120.0f;
   }
 
@@ -53,8 +58,8 @@ class VoiceGate {
   uint32_t ms_[N] = {0};
   int i_ = 0;
   float floor_ = 0.0f, smooth_ = -120.0f;
-  volatile bool voice_ = false;
-  volatile uint32_t last_ = 0;
+  std::atomic<bool> voice_{false};
+  std::atomic<uint32_t> last_{0};
 };
 
 // The level of a block of 16-bit samples in dBFS (−120 for digital silence).
