@@ -17,6 +17,7 @@ STATES = {
     "remote_holding": ("set_remote_holding_binary_sensor", "mdi:gesture-tap-hold"),
     "answered": ("set_answered_binary_sensor", "mdi:phone-check"),
     "busy": ("set_busy_binary_sensor", "mdi:phone-cancel"),
+    "speech": ("set_speech_binary_sensor", "mdi:account-voice"),  # the speech detector hears speech at this mic now
 }
 
 CONFIG_SCHEMA = cv.Schema(

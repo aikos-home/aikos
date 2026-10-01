@@ -4,6 +4,7 @@
 // configs, so it can change as often as it likes without touching this.
 #pragma once
 
+#include <atomic>
 #include <string>
 #include "esphome/core/automation.h"
 #include "esphome/core/component.h"
@@ -98,6 +99,8 @@ class AikosVoice : public Component {
   void set_call_id_sensor(sensor::Sensor *s) { this->id_sensor_ = s; }
   void set_floor_key_sensor(sensor::Sensor *s) { this->floor_sensor_ = s; }
   void set_members_sensor(sensor::Sensor *s) { this->members_sensor_ = s; }
+  void set_speech_floor_sensor(sensor::Sensor *s) { this->speech_floor_sensor_ = s; }  // diagnostics: what the
+  void set_speech_level_sensor(sensor::Sensor *s) { this->speech_level_sensor_ = s; }  // speech detector sees
 #endif
 #ifdef USE_BINARY_SENSOR
   void set_talking_binary_sensor(binary_sensor::BinarySensor *b) { this->talking_bs_ = b; }
@@ -105,6 +108,7 @@ class AikosVoice : public Component {
   void set_remote_holding_binary_sensor(binary_sensor::BinarySensor *b) { this->remote_bs_ = b; }
   void set_answered_binary_sensor(binary_sensor::BinarySensor *b) { this->answered_bs_ = b; }
   void set_busy_binary_sensor(binary_sensor::BinarySensor *b) { this->busy_bs_ = b; }
+  void set_speech_binary_sensor(binary_sensor::BinarySensor *b) { this->speech_bs_ = b; }
 #endif
 
  protected:
@@ -139,17 +143,19 @@ class AikosVoice : public Component {
   ::aikos::voice::Biquad hp_;
   ::aikos::voice::Limiter limiter_;
   ::aikos::voice::Edge call_edge_, talk_edge_;
-  uint32_t floor_ip_{0}, mic_voice_seen_{0}, rx_voice_seen_{0}, last_publish_{0};
+  uint32_t floor_ip_{0}, mic_voice_seen_{0}, rx_voice_seen_{0}, last_publish_{0}, last_diag_{0};
+  std::atomic<float> mic_block_max_{-120.0f};  // loudest mic block since the last diagnostics publish (mic task)
   int floor_key_{0};
 
   Trigger<> talk_start_trigger_, talk_stop_trigger_, call_start_trigger_, call_end_trigger_;
 #ifdef USE_SENSOR
   sensor::Sensor *tx_sensor_{nullptr}, *rx_sensor_{nullptr}, *held_sensor_{nullptr}, *err_sensor_{nullptr};
   sensor::Sensor *id_sensor_{nullptr}, *floor_sensor_{nullptr}, *members_sensor_{nullptr};
+  sensor::Sensor *speech_floor_sensor_{nullptr}, *speech_level_sensor_{nullptr};
 #endif
 #ifdef USE_BINARY_SENSOR
   binary_sensor::BinarySensor *talking_bs_{nullptr}, *call_bs_{nullptr}, *remote_bs_{nullptr};
-  binary_sensor::BinarySensor *answered_bs_{nullptr}, *busy_bs_{nullptr};
+  binary_sensor::BinarySensor *answered_bs_{nullptr}, *busy_bs_{nullptr}, *speech_bs_{nullptr};
 #endif
 };
 

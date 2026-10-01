@@ -290,7 +290,10 @@ void AikosVoice::on_mic_(const std::vector<uint8_t> &data) {
   int16_t out[256];
   size_t k = 0;
   auto flush = [&]() {
-    this->mic_gate_.note(::aikos::voice::level_db(out, (int) k), millis());
+    const float db = ::aikos::voice::level_db(out, (int) k);
+    this->mic_gate_.note(db, millis());
+    if (db > this->mic_block_max_.load(std::memory_order_relaxed))
+      this->mic_block_max_.store(db, std::memory_order_relaxed);
     this->link_.push(out, k);
     k = 0;
   };
@@ -334,6 +337,7 @@ void AikosVoice::publish_(uint32_t now) {
   put(this->remote_bs_, this->remote_holding());
   put(this->answered_bs_, this->door_role_() && this->door_.answered());
   put(this->busy_bs_, !this->door_role_() && this->key_.busy());
+  put(this->speech_bs_, this->mic_on_ && this->mic_gate_.voiced_since(now - 500));
 #endif
 #ifdef USE_SENSOR
   auto put_num = [](sensor::Sensor *s, float v) {
@@ -346,6 +350,13 @@ void AikosVoice::publish_(uint32_t now) {
   put_num(this->id_sensor_, (float) id);  // 24 bits: exact as a float
   put_num(this->floor_sensor_, (float) this->floor_last_octet());
   put_num(this->members_sensor_, (float) this->door_.members());
+  if (now - this->last_diag_ >= 1000) {  // diagnostics of the speech detector on our own mic, once a second
+    this->last_diag_ = now;
+    if (this->speech_floor_sensor_ != nullptr)
+      this->speech_floor_sensor_->publish_state(this->mic_gate_.floor_db());
+    if (this->speech_level_sensor_ != nullptr)
+      this->speech_level_sensor_->publish_state(this->mic_block_max_.exchange(-120.0f));
+  }
   if (now - this->last_publish_ >= 5000) {
     this->last_publish_ = now;
     const auto &s = this->link_.stats;
