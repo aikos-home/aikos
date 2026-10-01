@@ -5,7 +5,7 @@ at the door (door side). It also tells who is speaking ("Paketdienst · DHL", "A
 foreign languages into German. Everything runs locally: audio goes to a Whisper server on your own network, never to a
 cloud. Python 3.9+ standard library only.
 
-Version **1.0.1** (component tag `transcriber-v1.0.1`).
+Version **1.1.0** (component tag `transcriber-v1.1.0`).
 
 ## Interface
 
@@ -129,6 +129,11 @@ Changes go through a pull request. Once tagged, this block is listed in [`FROZEN
 
 ## History
 
+- 1.1.0: a resident's own words heard by the door mic are never published as a visitor (W1 from the system test of
+  01.10.: with the key's mic sending silence, the door showed the resident's own name as the visitor); see "Resident's words at
+  the door" for the rule and its known trade-off. Plus: an echo of the resident at the door is dropped by its timing (all
+  its speech lies in the resident's talk), since Whisper garbles such echoes past any word match (live test 01.10. 18:57).
+  Logic by the roomkey maintainers (PRs #17, #19).
 - 1.0.1: deployment only, the service is unchanged. `deploy.sh` no longer stops silently when `lsof` warns (it
   stopped after the restart, before the receiver check and the spoken test); the settings takeover accepts
   `AIKOS_SPLIT` on the door agent only.
