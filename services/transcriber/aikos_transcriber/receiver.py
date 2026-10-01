@@ -20,7 +20,10 @@ RATE, PT_L16, PT_CN = 16000, 96, 13   # PT 13 = comfort noise (RFC 3389): the se
 class Recording:
     def __init__(self, out: Path, src):
         out.mkdir(parents=True, exist_ok=True)
-        self.path = out / f"roomkey_{time.strftime('%Y%m%d_%H%M%S')}_{src[0].replace('.', '-')}.wav"
+        stem = f"roomkey_{time.strftime('%Y%m%d_%H%M%S')}_{src[0].replace('.', '-')}"
+        self.path, n = out / f"{stem}.wav", 2
+        while self.path.exists():   # a second utterance in the same second (e.g. after --max-s) must not overwrite the first
+            self.path, n = out / f"{stem}_{n}.wav", n + 1
         self.wav = wave.open(str(self.path), "wb")
         self.wav.setnchannels(1); self.wav.setsampwidth(2); self.wav.setframerate(RATE)
         self.src, self.t0, self.last = src, time.time(), time.time()
