@@ -146,6 +146,8 @@ class AikosVoice : public Component {
   ::aikos::voice::Edge call_edge_, talk_edge_;
   uint32_t floor_ip_{0}, mic_voice_seen_{0}, rx_voice_seen_{0}, last_publish_{0}, last_diag_{0};
   std::atomic<float> mic_block_max_{-120.0f};  // loudest mic block since the last diagnostics publish (mic task)
+  double gate_acc_{0.0};  // the speech detector gets whole 20 ms blocks across mic callbacks (mic task only)
+  uint32_t gate_n_{0};
   int floor_key_{0};
 
   Trigger<> talk_start_trigger_, talk_stop_trigger_, call_start_trigger_, call_end_trigger_;

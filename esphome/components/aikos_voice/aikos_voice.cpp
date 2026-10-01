@@ -1,5 +1,6 @@
 #include "aikos_voice.h"
 
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <esp_random.h>
@@ -299,12 +300,22 @@ void AikosVoice::on_mic_(const std::vector<uint8_t> &data) {
   int16_t out[256];
   size_t k = 0;
   auto flush = [&]() {
-    const float db = ::aikos::voice::level_db(out, (int) k);
+    this->link_.push(out, k);
+    k = 0;
+  };
+  // the speech detector sees whole 20 ms blocks: a 2-sample rest of a callback would read as "silence" and pull its
+  // noise floor down to -100 dBFS (door 0.7.1 diagnostics)
+  auto gate = [&](int16_t s) {
+    this->gate_acc_ += (double) s * s;
+    if (++this->gate_n_ < (uint32_t) ::aikos::voice::FRAME)
+      return;
+    const double ms = this->gate_acc_ / this->gate_n_ / (32768.0 * 32768.0);
+    const float db = ms < 1e-12 ? -120.0f : (float) (10.0 * log10(ms));
+    this->gate_acc_ = 0.0;
+    this->gate_n_ = 0;
     this->mic_gate_.note(db, millis());
     if (db > this->mic_block_max_.load(std::memory_order_relaxed))
       this->mic_block_max_.store(db, std::memory_order_relaxed);
-    this->link_.push(out, k);
-    k = 0;
   };
   for (size_t i = 0; i < n; i++) {
     float v = (float) (int16_t) (data[2 * i] | (data[2 * i + 1] << 8));
@@ -315,7 +326,8 @@ void AikosVoice::on_mic_(const std::vector<uint8_t> &data) {
     if (this->highpass_)
       v = this->hp_.process(v);
     v = this->limiter_.process(v * this->gain_);
-    out[k++] = (int16_t) (v > 32767.0f ? 32767 : v < -32768.0f ? -32768 : v);
+    out[k] = (int16_t) (v > 32767.0f ? 32767 : v < -32768.0f ? -32768 : v);
+    gate(out[k++]);
     if (k == 256)
       flush();
   }
