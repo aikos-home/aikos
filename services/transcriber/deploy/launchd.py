@@ -20,6 +20,7 @@ LABEL = "home.aikos.transcriber.{side}"
 SIDES = ("room", "door")
 PATH = "/usr/bin:/bin:/usr/sbin:/sbin"
 PER_SIDE = ("AIKOS_SIDE", "AIKOS_PORT")   # would apply to both agents: each side keeps its own default
+DOOR_ONLY = ("AIKOS_SPLIT",)              # read by the door side only, so the room agent may lack it
 
 
 def read_env(path: Path) -> dict:
@@ -39,17 +40,21 @@ def read_env(path: Path) -> dict:
 
 
 def imported(*plists: Path) -> dict:
-    """The shared AIKOS_ settings of existing agents (without the per-side ones). Agents that disagree: ValueError."""
+    """The shared AIKOS_ settings of existing agents (without the per-side ones). Door-only settings come from the door
+    agent; any other setting that differs between the agents: ValueError."""
     first: dict | None = None
+    door_only: dict = {}
     for plist in plists:
         with open(plist, "rb") as f:
             env = plistlib.load(f).get("EnvironmentVariables", {})
-        env = {k: v for k, v in env.items() if k.startswith("AIKOS_") and k not in PER_SIDE}
+        if env.get("AIKOS_SIDE") == "door":
+            door_only = {k: env[k] for k in DOOR_ONLY if k in env}
+        env = {k: v for k, v in env.items() if k.startswith("AIKOS_") and k not in PER_SIDE + DOOR_ONLY}
         if first is not None and env != first:
             key = sorted(set(env.items()) ^ set(first.items()))[0][0]
             raise ValueError(f"{plist}: {key} differs between the agents; write the env file by hand")
         first = env
-    return first or {}
+    return {**(first or {}), **door_only}
 
 
 def write_env(path: Path, env: dict) -> None:

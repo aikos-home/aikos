@@ -33,7 +33,8 @@ stamp=$(date +%Y%m%d%H%M%S)
 mkdir -p "$logs" "$backup"
 note() { echo "$(date '+%F %T') deploy: $*" | tee -a "$logs/deploy.log"; }
 plist() { echo "$agents/home.aikos.transcriber.$1.plist"; }
-listening() { lsof -nP -iUDP:5006 -iUDP:5008 2>/dev/null | awk 'NR>1' | wc -l | tr -d ' '; }
+# lsof exits non-zero on mere warnings (e.g. an unreachable network mount): under pipefail that must not end the script
+listening() { { lsof -nP -iUDP:5006 -iUDP:5008 2>/dev/null || true; } | awk 'NR>1' | wc -l | tr -d ' '; }
 
 restart() {   # $1 = room | door
   launchctl bootout "gui/$uid/home.aikos.transcriber.$1" 2>/dev/null || true

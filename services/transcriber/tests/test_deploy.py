@@ -1,6 +1,9 @@
 """deploy/launchd.py: settings file, takeover from existing agents, and the LaunchAgents it writes."""
 import os
 import plistlib
+import re
+import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -51,9 +54,16 @@ class Settings(unittest.TestCase):
 
     def test_takeover_refuses_disagreeing_agents(self):
         room = self.plist("room", dict(SHARED, AIKOS_SIDE="room"))
-        door = self.plist("door", dict(SHARED, AIKOS_SIDE="door", AIKOS_SPLIT="1"))
+        door = self.plist("door", dict(SHARED, AIKOS_SIDE="door", AIKOS_KNOWN_NAMES="Anna"))
         with self.assertRaises(ValueError):
             launchd.imported(room, door)
+
+    def test_takeover_door_only_split(self):
+        """Regression 1.0.1: the door agent has AIKOS_SPLIT=1, the room agent not; that is no disagreement."""
+        room = self.plist("room", dict(SHARED, AIKOS_SIDE="room"))
+        door = self.plist("door", dict(SHARED, AIKOS_SIDE="door", AIKOS_SPLIT="1"))
+        self.assertEqual(launchd.imported(room, door), dict(SHARED, AIKOS_SPLIT="1"))
+        self.assertEqual(launchd.imported(door, room), dict(SHARED, AIKOS_SPLIT="1"))
 
 
 class Agents(unittest.TestCase):
@@ -70,6 +80,28 @@ class Agents(unittest.TestCase):
             self.assertTrue(a["KeepAlive"] and a["RunAtLoad"])
         with self.assertRaises(ValueError):
             launchd.agent("hall", SHARED, Path("/srv/aikos"), Path("/logs"))
+
+
+@unittest.skipUnless(os.name == "posix" and shutil.which("bash"), "needs bash (macOS, Linux)")
+class DeployScript(unittest.TestCase):
+    """Regression 1.0.1: deploy.sh runs with set -eu -o pipefail; lsof exits 1 on mere warnings (a Time Machine SMB mount)."""
+
+    def test_receiver_count_survives_lsof_warnings(self):
+        script = (Path(__file__).resolve().parent.parent / "deploy" / "deploy.sh").read_text(encoding="utf-8")
+        fn = re.search(r"^listening\(\) \{.*\}$", script, re.M).group(0)
+        bin_dir = Path(tempfile.mkdtemp())
+        fake = bin_dir / "lsof"
+        fake.write_text("#!/bin/sh\n"
+                        "echo 'COMMAND PID NAME'\n"
+                        "echo 'Python 1 *:5006'\n"
+                        "echo 'Python 2 *:5008'\n"
+                        "echo 'lsof: WARNING: can not stat() smbfs file system' >&2\n"
+                        "exit 1\n")
+        fake.chmod(0o755)
+        shell = "\n".join(["set -eu -o pipefail", fn, "n=$(listening)", 'echo "count=$n"'])
+        r = subprocess.run(["bash", "-c", shell], capture_output=True, text=True,
+                           env=dict(os.environ, PATH=f"{bin_dir}:{os.environ['PATH']}"))
+        self.assertEqual((r.returncode, r.stdout.strip()), (0, "count=2"))
 
 
 if __name__ == "__main__":
