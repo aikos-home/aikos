@@ -26,7 +26,9 @@
 //             answered has left. A key leaves on its own silence or max length, or when the front door opens and
 //             its owner switched that on (R17.8)
 //   holds     keys resend "holds" every second; none for `hold_refresh_ms` = released (lost packets, crashed key).
-//             A button still held when a call ends starts no new call until it is pressed again
+//             A button still held when a call ends starts no new call until it is pressed again. A hold longer than
+//             `hold_max_ms` is a stuck button: it loses the floor and counts no longer, until the button is let go
+//             (v1's hold_max, kept for v2; the door and the key apply it each on their side)
 //   gaps      a key that misses the door's "call on" (Wi-Fi gap) stays in the call; only after `hold_refresh_ms` +
 //             `silence_end_ms` without it does the call count as ended there. A key that started a call (case 2) and
 //             hears nothing from the door within `hold_refresh_ms` gives up: "door unreachable"
@@ -47,6 +49,7 @@ struct CallConfig {
   uint32_t silence_end_ms = 10000;   // R17.8, a number entity on every device (`call_silence_end`)
   uint32_t max_length_ms = 300000;   // safety (`call_max_length`)
   uint32_t hold_refresh_ms = 3000;   // "holds" and the door's "call on" are resent every second
+  uint32_t hold_max_ms = 90000;      // a stuck button: nobody talks 90 s in one go (v1's hold_max)
   uint32_t mute_tail_ms = 300;       // R17.16: the room's last words still ring in the door's front plate
   uint32_t ring_window_ms = 120000;  // a key that holds this soon after a ring answers that ring (case 1)
 };
@@ -137,6 +140,7 @@ class DoorCall {
     s->held = true;  // a fresh press
     s->stale = false;
     s->since = ++order_;
+    s->pressed_ms = now;
     if (!active_)
       start_(ringing(now) ? CallStart::KEY_AFTER_RING : CallStart::KEY_WITHOUT_RING, now);
     s->in_call = true;  // holding = answering: the key is in the call (R17.14)
@@ -183,9 +187,15 @@ class DoorCall {
       end_(why);
   }
   void loop(uint32_t now) {
-    for (Slot &s : slots_)
-      if (s.used && s.held && now - s.hold_ms > cfg_.hold_refresh_ms)
+    for (Slot &s : slots_) {
+      if (s.used && s.held && now - s.hold_ms > cfg_.hold_refresh_ms) {
         release_(s, now);  // its "holds" stopped coming
+      } else if (s.used && s.held && !s.stale && now - s.pressed_ms > cfg_.hold_max_ms) {
+        s.stale = true;  // a stuck button: it keeps "holding", but counts no longer until it is let go
+        if (floor_ >= 0 && &slots_[floor_] == &s)
+          floor_ = next_floor_();
+      }
+    }
     if (!active_)
       return;
     if (now - start_ms_ >= cfg_.max_length_ms)
@@ -246,6 +256,7 @@ class DoorCall {
     bool used = false, held = false, stale = false, in_call = false;
     uint32_t hold_ms = 0;  // last "holds"
     uint32_t since = 0;    // order of the press, for the floor
+    uint32_t pressed_ms = 0;  // when the press began (stuck-button rule)
   };
 
   void start_(CallStart how, uint32_t now) {
@@ -349,6 +360,7 @@ class KeyCall {
       return;
     held_ = true;
     stale_ = false;
+    pressed_ms_ = now;
     join(now);
   }
   // one short press: join to listen, without the mic (R19)
@@ -396,6 +408,10 @@ class KeyCall {
     leave_(CallEnd::FRONT_DOOR);
   }
   void loop(uint32_t now) {
+    if (held_ && !stale_ && now - pressed_ms_ > cfg_.hold_max_ms) {
+      stale_ = true;  // a stuck button: the mic closes until it is let go
+      last_speech_ms_ = now;
+    }
     if (pending_ && now - pending_ms_ > cfg_.hold_refresh_ms) {  // case 2, but the door never answered
       leave_(CallEnd::DOOR_UNREACHABLE);
       return;
@@ -451,7 +467,7 @@ class KeyCall {
   CallConfig cfg_;
   bool held_ = false, stale_ = false, pending_ = false, door_on_ = false, answered_ = false, floor_taken_ = false;
   uint32_t door_id_ = 0, member_id_ = 0, left_id_ = 0;
-  uint32_t joined_ms_ = 0, pending_ms_ = 0, last_speech_ms_ = 0, door_ms_ = 0;
+  uint32_t joined_ms_ = 0, pending_ms_ = 0, last_speech_ms_ = 0, door_ms_ = 0, pressed_ms_ = 0;
   CallEnd left_by_ = CallEnd::NONE;
 };
 

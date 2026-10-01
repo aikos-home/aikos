@@ -25,7 +25,7 @@ case 2 (nobody rang) differ only in what starts the call.
 | Key speaker | Plays the door only while that key does not hold, and only if it is in the call, or its owner wants to hear visitors before answering (per-key setting with times) and no key has answered yet (R19) |
 | Busy | A key that holds while another has the floor sends nothing, not even to the transcriber |
 | End | 10 s without speech on either side (a held button counts as speech), 5 min at most, from outside (front door, API), or every key that answered has left. Each key also leaves on its own silence or max length, or when the front door opens and its owner switched that on |
-| Holds | Keys report their state with every packet (about every second); none for 3 s = released. A button still held when a call ends starts no new call until pressed again |
+| Holds | Keys report their state with every packet (about every second); none for 3 s = released. A button still held when a call ends starts no new call until pressed again. A hold longer than 90 s is a stuck button: it loses the floor and counts no longer until let go |
 | Gaps | A key that misses the door's "call on" (Wi-Fi gap) stays in the call for 3 s + the silence time. A key that started a call and hears nothing from the door for 3 s shows "door unreachable" |
 | Ids | Call ids continue from a random 24-bit start after every boot |
 | Wire | RTP v2, L16 big-endian, PT 96, 16 kHz mono, 20 ms (320 samples), UDP 5004, unicast; the end of speech is one comfort-noise packet (PT 13, 1 byte); as in v1 |
@@ -155,10 +155,43 @@ core runs on a PC for tests. Pairing in the HA GUI (`features/kopplung.md`) will
 
 CI runs all three on every pull request, also with `-Wall -Wextra`:
 
-1. `esphome/tests/aikos_voice/voice_core_test.cpp`: 48 checks of the link (wire rules from v1, targets, gate, policy).
-2. `esphome/tests/aikos_voice/call_test.cpp`: 101 scenario checks of the call model, one per rule (each rule was broken
+1. `esphome/tests/aikos_voice/voice_core_test.cpp`: 51 checks of the link (wire rules from v1, targets, gate, policy).
+2. `esphome/tests/aikos_voice/call_test.cpp`: 113 scenario checks of the call model, one per rule (each rule was broken
    on purpose once and caught).
 3. `esphome/tests/aikos_voice/level_test.cpp`: the speech detector.
+
+### From v1 to v2: the 25 v1 checks that changed
+
+27 of v1's 52 checks are still in `voice_core_test.cpp` word for word (wire, release, copy, latch, keepalive, overrun). The other 25,
+and what covers them now (`L` = `voice_core_test.cpp`, `C` = `call_test.cpp`, `live` = `voice_live_test.py`):
+
+| v1 check | v2 | |
+|---|---|---|
+| latch: the same peer again: no new latch | L latch: "a target that stays gets no new latch" | same rule, several targets |
+| lock: nothing played before the hold | C lock: "no call / nobody holds: nothing is played"; L policy: "HOLD: nothing played yet" | moved into the call model |
+| lock: the hold starts the conversation | C case 2: "the hold starts call 1" | |
+| lock: only the recent frame played | L policy: "flush plays only the recent frame of that sender" | prebuffer = HOLD + flush |
+| lock: the old frame held back | L policy: "the old one held back, the recent one counted" | |
+| lock: the holding key is played live | L policy: "PLAY: played live"; C case 2: "the door plays the holding key, nobody else" | |
+| lock: rx counts played packets | L policy: "… the recent one counted" (`rx_packets`) | |
+| lock: the stranger's frame held back on release | L policy: "DROP: not played, held back"; C lock: "a stranger isn't" | |
+| lock: released: not played any more | C case 2: "released: not played any more (lock), call still on" | |
+| half-duplex: dropped while talking | retired by **R17.2**: the door mic is open for the whole call and the door plays the floor holder meanwhile (L: "played while this end talks"); half-duplex lives at the key (**R17.4**, C: "never plays the door while holding") | |
+| end: still held at 89 s | C stuck button: "90 s: still talking" | v1's hold_max, kept |
+| end: hold_max closes it | C stuck button: "after 90 s: A is stuck, not played, not holding" (+ the key side) | |
+| end: conversation still on at 119 s idle | retired by **R17.8** (10 s instead of 2 min): C case 2: "9.999 s after the last words: still on" | |
+| end: ended after 120 s idle | **R17.8**: C case 2: "10 s without speech ends it"; live step 6 | |
+| room: dropped unheard, no latch | C key: "setting off: silent, text only"; L policy: "DROP" | |
+| room: latched the door | retired: the key's door is configured (`set_door`); no first-sender latch (RoomKey review: any sender on the LAN could become the peer) | |
+| room: door played | C key: "released: plays the door (it answered)" | |
+| room: stranger held back | L policy: "DROP: not played, held back" (the key's policy plays the door's address only) | |
+| room: a latched peer is forgotten when the conversation closes | C key: "the door ended the call" | |
+| keepalive: at once to both | L keepalive: "at once to all three" | several targets |
+| trusted source: played without any hold | L trusted: "played although the policy says DROP" | |
+| edges: a key holds: one start edge | L edges: "one start"; C case 2: "the hold starts call 1"; live: "on_call_start fired once" | |
+| edges: released: still in the conversation | C case 2: "released: … call still on" | |
+| edges: 2 min without audio: one end edge | **R17.8**: L edges: "one end"; C: "10 s without speech ends it"; live: "on_call_end fired once" | |
+| edges: aikos_voice.end: one end edge too | C: "end from outside: over"; live: "ended from outside" | |
 
 The live test against a real door (`voice_live_test.py`) is rewritten for v2 before the tag. Both must pass before a tag.
 Devices pin a tag. Changes go through a pull request reviewed by the intercom and roomkey maintainers (see

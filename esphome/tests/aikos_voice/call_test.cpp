@@ -405,6 +405,47 @@ static void test_key_busy_and_stale() {
   CHECK(k.mic_open() && k.in_call(), "a new press: talks again");
 }
 
+static void test_stuck_button() {
+  puts("hold_max: a button held longer than 90 s is stuck: it loses the floor and counts no longer until let go");
+  DoorCall c;
+  c.hold(A, true, 0);
+  for (uint32_t t = 1000; t <= 90000; t += 1000) {
+    c.hold(A, true, t);
+    c.loop(t);
+  }
+  CHECK(c.plays(A) && c.holds(A), "90 s: still talking");
+  c.hold(B, true, 90500);
+  c.hold(A, true, 91000);
+  c.loop(91000);
+  CHECK(!c.plays(A) && !c.holds(A), "after 90 s: A is stuck, not played, not holding");
+  CHECK(c.floor() != nullptr && c.floor()->ip == B.ip && c.plays(B), "B, holding meanwhile, gets the floor");
+  c.hold(B, false, 92000);
+  for (uint32_t t = 92000; t <= 101000; t += 1000) {
+    c.hold(A, true, t);  // the stuck button keeps reporting "holds"
+    c.loop(t);
+  }
+  c.loop(102001);
+  CHECK(!c.active() && c.ended_by() == CallEnd::SILENCE, "the stuck button doesn't keep the call open");
+  c.hold(A, false, 103000);
+  c.hold(A, true, 104000);
+  CHECK(c.active() && c.plays(A), "let go and pressed again: talks again");
+
+  KeyCall k;
+  k.door_call(true, 1, true, 0);
+  k.hold(true, 0);
+  for (uint32_t t = 1000; t <= 90000; t += 1000) {  // the door announces its call every second
+    k.door_call(true, 1, true, t);
+    k.loop(t);
+  }
+  CHECK(k.mic_open() && k.state() == 2, "the key: 90 s still talking");
+  k.door_call(true, 1, true, 90001);
+  k.loop(90001);
+  CHECK(!k.mic_open() && k.state() != 2, "the key: after 90 s its mic closes and it no longer reports holding");
+  k.hold(false, 95000);
+  k.hold(true, 96000);
+  CHECK(k.mic_open(), "the key: let go and pressed again: talks again");
+}
+
 int main() {
   test_case2_key_without_ring();
   test_case1_visitor_first();
@@ -413,6 +454,7 @@ int main() {
   test_floor_and_busy();
   test_lock();
   test_hold_refresh();
+  test_stuck_button();
   test_holding_keeps_call_on();
   test_max_length();
   test_mute_tail();
