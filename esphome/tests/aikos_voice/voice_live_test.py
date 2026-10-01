@@ -245,8 +245,12 @@ def main():
 
         print("6) silence: 10 s without speech ends the call; the end packet reaches the key")
         ear.take()
-        time.sleep(12.0)
-        check(not on("binary_sensor.%s_in_call" % E), "the call is over")
+        t6 = time.time()  # room noise that sounds like speech restarts the 10 s, so wait up to a minute
+        while on("binary_sensor.%s_in_call" % E) and time.time() - t6 < 60:
+            time.sleep(1.0)
+        waited = time.time() - t6
+        check(not on("binary_sensor.%s_in_call" % E), "the call is over (%.0f s after the key went quiet)" % (waited + 4.5))
+        check(waited + 4.5 >= 9.5, "not before 10 s of silence")
         check(calls()["ended"] == k0["ended"] + 1, "on_call_end fired once")
         check(len(cn(ear.take())) >= 1, "an end packet (PT 13) at the key")
 
