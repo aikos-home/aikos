@@ -1,0 +1,225 @@
+# aikos: Home Assistant package (stand-in until the aikos integration exists).
+# Source of truth: github.com/aikos-home/aikos, homeassistant/packages/aikos.yaml. Deploy from there, don't edit in place.
+# House-specific values (people, how the AI host is reached) live in packages/aikos_local.yaml (see aikos_local.example.yaml).
+# Owner: aikos core. What it does: homeassistant/README.md.
+
+script:
+  aikos_restart_all:
+    alias: "aikos: alles neu starten"
+    description: >-
+      Startet alle aikos-Komponenten neu: zuerst die KI-Dienste (Spracherkennung, Sprachmodell, Transkription; shell_command.aikos_restart_services
+      aus aikos_local.yaml), dann alle
+      aikos-Geräte außer der Klingel, zuletzt die Klingel. Geräte werden an ihrem Projekt erkannt (Hersteller
+      aikos-home), gedrückt werden nur echte Neustart-Knöpfe, nie ein Werksreset.
+    icon: mdi:restart
+    mode: single
+    fields:
+      probelauf:
+        name: Probelauf
+        description: Nur anzeigen, was neu gestartet würde. Nichts wird neu gestartet.
+        default: false
+        selector:
+          boolean:
+    variables:
+      probe: "{{ probelauf | default(false) | bool }}"
+      knoepfe: >-
+        {{ integration_entities('esphome') | select('match','button[.]')
+           | select('is_device_attr','manufacturer','aikos-home')
+           | select('is_state_attr','device_class','restart')
+           | reject('search','factory_reset') | list }}
+      klingel: "{{ knoepfe | select('is_device_attr','model','intercom-bell') | list }}"
+      andere: "{{ knoepfe | reject('in', klingel) | list }}"
+      ohne_knopf: >-
+        {{ integration_entities('esphome') | map('device_id') | reject('none') | unique
+           | select('is_device_attr','manufacturer','aikos-home')
+           | reject('in', knoepfe | map('device_id') | unique | list)
+           | map('device_attr','name') | list }}
+    sequence:
+      - action: shell_command.aikos_restart_services
+        data:
+          ziel: "{{ 'dryrun' if probe else 'all' }}"
+        response_variable: mac
+        continue_on_error: true
+      - variables:
+          mac_text: "{{ (mac.stdout if mac is defined and mac.stdout is defined else 'keine Antwort vom KI-Server') | trim }}"
+      - if: "{{ probe }}"
+        then:
+          - action: persistent_notification.create
+            data:
+              notification_id: aikos_restart_all
+              title: "aikos: Probelauf (nichts neu gestartet)"
+              message: |
+                **KI-Dienste:** {{ mac_text }}
+                **Geräte zuerst:** {{ andere | join(', ') if andere else 'keine' }}
+                **Klingel zuletzt:** {{ klingel | join(', ') if klingel else 'keine' }}
+                **Ohne Neustart-Knopf (werden nicht neu gestartet):** {{ ohne_knopf | join(', ') if ohne_knopf else 'keine' }}
+          - stop: Probelauf
+      - if: "{{ andere | count > 0 }}"
+        then:
+          - action: button.press
+            target:
+              entity_id: "{{ andere }}"
+          - delay: 5
+          - wait_template: "{{ andere | select('is_state', 'unavailable') | list | count == 0 }}"
+            timeout: 90
+      - variables:
+          andere_fehlen: "{{ andere | select('is_state', 'unavailable') | list }}"
+      - if: "{{ klingel | count > 0 }}"
+        then:
+          - action: button.press
+            target:
+              entity_id: "{{ klingel }}"
+          - delay: 5
+          - wait_template: "{{ klingel | select('is_state', 'unavailable') | list | count == 0 }}"
+            timeout: 60
+      - variables:
+          klingel_fehlt: "{{ klingel | select('is_state', 'unavailable') | list }}"
+      - action: persistent_notification.create
+        data:
+          notification_id: aikos_restart_all
+          title: >-
+            {{ 'aikos: alles neu gestartet' if not andere_fehlen and not klingel_fehlt and 'NOT' not in mac_text
+               else 'aikos: Neustart mit Problemen' }}
+          message: |
+            **KI-Dienste:** {{ mac_text }}
+            **Geräte:** {{ andere | count }} neu gestartet{{ ', noch nicht zurück: ' ~ andere_fehlen | join(', ') if andere_fehlen else ', alle zurück' }}
+            **Klingel:** {{ 'neu gestartet, ' ~ ('noch nicht zurück!' if klingel_fehlt else 'zurück') if klingel else 'keine gefunden' }}
+            **Ohne Neustart-Knopf:** {{ ohne_knopf | join(', ') if ohne_knopf else 'keine' }}
+
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────
+# voice v2, part A: what aikos tells the devices (front door, quiet hours, call log). Stand-ins until the integration exists.
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+input_text:
+  aikos_front_door_source:
+    name: "aikos: Quelle Haustürsensor"
+    icon: mdi:door
+    max: 255
+
+input_boolean:
+  aikos_test_front_door:
+    name: "TEST aikos Haustür (Prüfstand)"
+    icon: mdi:door
+  aikos_quiet_hours_enabled:
+    name: "aikos Ruhezeit an"
+    icon: mdi:sleep
+
+input_datetime:
+  aikos_quiet_hours_start:
+    name: "aikos Ruhezeit Beginn"
+    has_date: false
+    has_time: true
+  aikos_quiet_hours_end:
+    name: "aikos Ruhezeit Ende"
+    has_date: false
+    has_time: true
+
+input_button:
+  aikos_test_new_call:
+    name: "TEST aikos neues Gespräch (Test-Protokoll)"
+    icon: mdi:phone-plus
+
+template:
+  - binary_sensor:
+      # Front door, 2 s debounced. Devices only react to an off→on edge. Open > 10 min → stuck (ends nothing).
+      - name: "aikos front door"
+        unique_id: aikos_front_door
+        device_class: door
+        delay_on: "00:00:02"
+        delay_off: "00:00:02"
+        availability: "{{ states(states('input_text.aikos_front_door_source')) in ['on', 'off'] }}"
+        state: "{{ is_state(states('input_text.aikos_front_door_source'), 'on') }}"
+        attributes:
+          source: "{{ states('input_text.aikos_front_door_source') }}"
+          stuck: >-
+            {% set src = states('input_text.aikos_front_door_source') %}
+            {% set s = (expand(src) | first) if src else none %}
+            {{ s is not none and s.state == 'on' and (now() - s.last_changed).total_seconds() > 600 }}
+      # Quiet hours (during quiet hours rooms get text only; emergencies pass). The window may wrap midnight.
+      - name: "aikos quiet hours"
+        unique_id: aikos_quiet_hours
+        icon: mdi:sleep
+        state: >-
+          {% set s = states('input_datetime.aikos_quiet_hours_start') %}
+          {% set e = states('input_datetime.aikos_quiet_hours_end') %}
+          {% set n = now().strftime('%H:%M:%S') %}
+          {{ is_state('input_boolean.aikos_quiet_hours_enabled', 'on') and ((n >= s or n < e) if s > e else (s <= n < e)) }}
+        attributes:
+          start: "{{ states('input_datetime.aikos_quiet_hours_start')[:5] }}"
+          end: "{{ states('input_datetime.aikos_quiet_hours_end')[:5] }}"
+  # Call log = the only source of the chat on both screens. The same logic twice: live (real transcripts, door call)
+  # and test (only *_test transcripts + a test button), so tests never touch the live log (tests never write into live entities).
+  - triggers:
+      - trigger: state
+        entity_id: [sensor.talk_transcript, sensor.talk_transcript_door]
+        id: msg
+        variables: {call_entity: binary_sensor.aikos_intercom_talk_in_call}
+      - trigger: state
+        entity_id: binary_sensor.aikos_intercom_talk_in_call
+        id: call
+        variables: {call_entity: binary_sensor.aikos_intercom_talk_in_call}
+    # The logic lives in one macro (custom_templates/aikos_call_log.jinja), used by the live and the test log alike.
+    sensor:
+      - name: "aikos call log"
+        unique_id: aikos_call_log
+        icon: mdi:message-text-clock
+        state: &aikos_call_log_state >-
+          {% from 'aikos_call_log.jinja' import aikos_call_log %}{{ (aikos_call_log(this, trigger, call_entity | default('')) | from_json).state }}
+        attributes: &aikos_call_log_attributes
+          call_id: >-
+            {% from 'aikos_call_log.jinja' import aikos_call_log %}{{ (aikos_call_log(this, trigger, call_entity | default('')) | from_json).call_id }}
+          active: >-
+            {% from 'aikos_call_log.jinja' import aikos_call_log %}{{ (aikos_call_log(this, trigger, call_entity | default('')) | from_json).active }}
+          last_id: >-
+            {% from 'aikos_call_log.jinja' import aikos_call_log %}{{ (aikos_call_log(this, trigger, call_entity | default('')) | from_json).last_id }}
+          messages: >-
+            {% from 'aikos_call_log.jinja' import aikos_call_log %}{{ (aikos_call_log(this, trigger, call_entity | default('')) | from_json).messages }}
+          # JSON text for ESPHome (attributes arrive there as text). Empty = [] (HA stores that as a list; it is valid JSON text either way).
+          messages_json: >-
+            {% from 'aikos_call_log.jinja' import aikos_call_log %}{{ (aikos_call_log(this, trigger, call_entity | default('')) | from_json).messages | to_json }}
+  - triggers:
+      - trigger: state
+        entity_id: [sensor.talk_transcript_test, sensor.talk_transcript_door_test]
+        id: msg
+        variables: {call_entity: ""}
+      - trigger: state
+        entity_id: input_button.aikos_test_new_call
+        id: testcall
+        variables: {call_entity: ""}
+    sensor:
+      - name: "aikos call log test"
+        unique_id: aikos_call_log_test
+        icon: mdi:message-text-clock
+        state: *aikos_call_log_state
+        attributes: *aikos_call_log_attributes
+
+automation:
+  - id: aikos_call_message_logbook
+    alias: "aikos: Gesprächsnachricht ins Logbuch und als Event"
+    description: "Jede neue Nachricht im Gesprächsprotokoll → Event aikos_call_message + Logbuch (see homeassistant/README.md)."
+    mode: queued
+    triggers:
+      - trigger: state
+        entity_id: sensor.aikos_call_log
+        attribute: last_id
+    conditions:
+      - condition: template
+        value_template: "{{ trigger.to_state.attributes.last_id not in ['', none] }}"
+    actions:
+      - variables:
+          m: "{{ trigger.to_state.attributes.messages | last }}"
+      - event: aikos_call_message
+        event_data:
+          call_id: "{{ trigger.to_state.attributes.call_id }}"
+          id: "{{ m.id }}"
+          side: "{{ m.side }}"
+          who: "{{ m.who }}"
+          role: "{{ m.role }}"
+          text: "{{ m.text }}"
+          urgent: "{{ m.urgent }}"
+          lang: "{{ m.lang }}"
+      - action: logbook.log
+        data:
+          name: "aikos Gespräch"
+          message: "{{ m.who }}{{ (' (' ~ m.lang ~ ')') if m.lang else '' }}: {{ m.text }}"
+          entity_id: sensor.aikos_call_log
