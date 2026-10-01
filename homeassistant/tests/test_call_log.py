@@ -1,7 +1,8 @@
 """Acceptance test of the aikos call log against a running Home Assistant.
 
 Uses only test entities (sensor.talk_transcript_test, sensor.talk_transcript_door_test, input_button.aikos_test_new_call,
-sensor.aikos_call_log_test) and checks that the live log does not move.
+sensor.aikos_call_log_test) and checks that the live log does not move. Also checks the fields the devices read
+(messages_json: id, side, who, text; sensor.aikos_people keys_json: host, name); reading sensor.aikos_people writes nothing.
 
     AIKOS_HA_URL=http://<ha-host>:8123 AIKOS_HA_TOKEN_FILE=<token file> python homeassistant/tests/test_call_log.py
 
@@ -49,7 +50,19 @@ def new_test_call():
     time.sleep(WAIT)
 
 
+def people_contract():
+    """Contract for the door (talk computer, door screen): keys_json maps each key to at least host and name."""
+    try:
+        keys = json.loads(call("/states/sensor.aikos_people")["attributes"].get("keys_json") or "{}")
+    except Exception as exc:  # no sensor.aikos_people (aikos_local.yaml missing) or not JSON
+        check(False, f"sensor.aikos_people readable with keys_json ({exc})")
+        return
+    check(bool(keys) and all({"host", "name"} <= set(v) for v in keys.values()),
+          "people contract: keys_json maps every key to host and name")
+
+
 def main():
+    people_contract()
     live_before = call("/states/sensor.aikos_call_log")
     new_test_call()
     log = test_log()
@@ -71,8 +84,12 @@ def main():
     check(msgs and msgs[0]["who"] == "Paketdienst · DHL" and msgs[0]["role"] == "parcel", "door message: who and role id")
     check(log.get("call_id") == call_id, "call_id stays during the call")
     check(log.get("last_id") == "room-" + t_room, "last_id points to the newest message")
-    check(isinstance(log.get("messages_json"), str) and len(json.loads(log["messages_json"])) == 2,
-          "messages_json is JSON text")
+    shown = json.loads(log["messages_json"]) if isinstance(log.get("messages_json"), str) else []
+    check(len(shown) == 2 and [m.get("id") for m in shown] == [m.get("id") for m in msgs],
+          "messages_json is JSON text with the same messages")
+    # Contract for the screens (door screen 0.7.0 reads exactly these): change only via the change path (qualitaet.md §3)
+    check(all({"id", "side", "who", "text"} <= set(m) and m["side"] in ("door", "room") for m in shown),
+          "screen contract: every message in messages_json has id, side (door/room), who, text")
 
     transcript("sensor.talk_transcript_door_test", t_door, **dict(door, language="en", language_name="Englisch"))
     msgs = test_log().get("messages") or []
