@@ -151,6 +151,7 @@ core runs on a PC for tests.
 | `call.h` | v2: the call model (`DoorCall`, `KeyCall`): pure C++17 |
 | `voice_udp.h` | The UDP transport (lwIP; BSD sockets in a host build) |
 | `aikos_voice.h/.cpp`, `*.py` | The ESPHome component: mic, speaker, actions, sensors |
+| `level.h` | voice v2: `VoiceGate`, "is somebody talking?" from levels (speech-based call end, R17.8), and `level_db` |
 
 ## Never without the tests
 

@@ -17,3 +17,6 @@ jobs:
       # voice v2: the call model (call.h), one scenario check per rule of R17
       - run: g++ -std=c++17 -Wall -Wextra -I esphome/components/aikos_voice esphome/tests/aikos_voice/call_test.cpp -o call_test
       - run: ./call_test
+      # voice v2: the speech detector (level.h) behind the speech-based call end
+      - run: g++ -std=c++17 -Wall -Wextra -I esphome/components/aikos_voice esphome/tests/aikos_voice/level_test.cpp -o level_test
+      - run: ./level_test
