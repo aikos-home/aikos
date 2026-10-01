@@ -3,9 +3,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
-#include <esp_random.h>
 #include "esphome/core/application.h"
 #include "esphome/core/hal.h"
+#include "esphome/core/helpers.h"
 #include "esphome/core/log.h"
 #include "esphome/components/network/util.h"
 
@@ -19,15 +19,17 @@ using ::aikos::voice::Verdict;
 
 void AikosVoice::setup() {
   this->link_.configure(this->link_cfg_);
-  this->link_.set_ssrc(esp_random(), (uint16_t) esp_random(), esp_random());
+  this->link_.set_ssrc(random_uint32(), (uint16_t) random_uint32(), random_uint32());  // hardware random on the chip
   this->link_.set_sink([this](const int16_t *pcm, size_t n) { this->on_play_(pcm, n); });
   this->link_.set_policy([this](const Addr &from, uint32_t now) { return this->policy_(from, now); });
   this->door_.configure(this->call_cfg_);
-  this->door_.seed_id(esp_random());  // call ids never repeat across reboots (RoomKey review)
+  this->door_.seed_id(random_uint32());  // call ids never repeat across reboots (RoomKey review)
   this->key_.configure(this->call_cfg_);
   this->hp_ = ::aikos::voice::Biquad::highpass(120.0f, (float) ::aikos::voice::RATE);  // knocks, handling noise, DC out
+#ifdef USE_MICROPHONE
   if (this->mic_ != nullptr)
     this->mic_->add_data_callback([this](const std::vector<uint8_t> &data) { this->on_mic_(data); });
+#endif
 }
 
 void AikosVoice::loop() {
@@ -68,8 +70,10 @@ void AikosVoice::loop_door_(uint32_t now) {
   } else if (edge < 0) {
     ESP_LOGI(TAG, "call %u ends: %s", (unsigned) this->door_.id(), ::aikos::voice::to_string(this->door_.ended_by()));
     this->set_mic_(false);
+#ifdef USE_SPEAKER
     if (this->speaker_ != nullptr)
       this->speaker_->stop();
+#endif
     this->call_end_trigger_.trigger(::aikos::voice::to_string(this->door_.ended_by()));
   }
   this->talk_(this->door_.mic_open(), now);
@@ -153,8 +157,10 @@ void AikosVoice::loop_key_(uint32_t now) {
     this->call_start_trigger_.trigger();
   } else if (edge < 0) {
     ESP_LOGI(TAG, "left the call: %s", ::aikos::voice::to_string(this->key_.left_by()));
+#ifdef USE_SPEAKER
     if (this->speaker_ != nullptr)
       this->speaker_->stop();
+#endif
     this->call_end_trigger_.trigger(::aikos::voice::to_string(this->key_.left_by()));
   }
   this->set_mic_(this->key_.mic_open() || this->record_);
@@ -170,19 +176,8 @@ void AikosVoice::hold(bool held) {
 void AikosVoice::join() { this->key_.join(millis()); }
 void AikosVoice::door_call(bool on, uint32_t id, bool answered) { this->key_.door_call(on, id, answered, millis()); }
 void AikosVoice::floor_key(int last_octet) {
-  if (this->own_octet_ < 0) {
-    char buf[network::IP_ADDRESS_BUFFER_SIZE];
-    for (auto &ip : network::get_ip_addresses()) {
-      if (!ip.is_set() || !ip.is_ip4())
-        continue;
-      const char *s = ip.str_to(buf);
-      const char *dot = strrchr(s, '.');
-      if (dot != nullptr) {
-        this->own_octet_ = atoi(dot + 1);
-        break;
-      }
-    }
-  }
+  if (this->own_octet_ < 0)
+    this->own_octet_ = this->find_own_octet_();
   this->floor_key_ = last_octet;
   this->key_.floor_taken(last_octet != 0 && last_octet != this->own_octet_);
 }
@@ -276,20 +271,39 @@ void AikosVoice::allow_source(const std::string &host, uint32_t ms) {
     this->link_.allow_source(a, millis() + ms);
 }
 
+int AikosVoice::find_own_octet_() const {
+  char buf[network::IP_ADDRESS_BUFFER_SIZE];
+  for (auto &ip : network::get_ip_addresses()) {
+    if (!ip.is_set() || !ip.is_ip4())
+      continue;
+    const char *s = ip.str_to(buf);
+    const char *dot = strrchr(s, '.');
+    if (dot != nullptr)
+      return atoi(dot + 1);
+  }
+  // a host build has no network interface component: the address this device sends to the door from
+  const uint32_t ip = ::aikos::voice::local_ip_toward(this->door_addr_);
+  return ip != 0 ? (int) ((ip >> 24) & 0xFF) : -1;  // network byte order on a little-endian machine
+}
+
 bool AikosVoice::resolve_(const std::string &host, Addr &out) const {
   return ::aikos::voice::resolve(host, this->port_, out);
 }
 
 void AikosVoice::set_mic_(bool on) {
-  if (on == this->mic_on_ || this->mic_ == nullptr)
+  if (on == this->mic_on_.load())
     return;
-  this->mic_on_ = on;
-  if (on) {
+  if (on)
     this->mute_left_ = this->mic_start_mute_samples_;
-    this->mic_->start();
-  } else {
-    this->mic_->stop();
+  this->mic_on_.store(on);  // push_samples() follows this; a real mic is started and stopped
+#ifdef USE_MICROPHONE
+  if (this->mic_ != nullptr) {
+    if (on)
+      this->mic_->start();
+    else
+      this->mic_->stop();
   }
+#endif
 }
 
 void AikosVoice::talk_(bool on, uint32_t now) {
@@ -301,9 +315,9 @@ void AikosVoice::talk_(bool on, uint32_t now) {
   (on ? this->talk_start_trigger_ : this->talk_stop_trigger_).trigger();
 }
 
-// microphone task: 16-bit little-endian mono -> high-pass, gain, limiter -> link; its level -> the speech detector
-void AikosVoice::on_mic_(const std::vector<uint8_t> &data) {
-  const size_t n = data.size() / 2;
+// the mic path, from the microphone task or push_samples(): sample(i) -> high-pass, gain, limiter -> link; its level ->
+// the speech detector. Blocks of any length: the link takes any count, the gate collects whole 20 ms blocks.
+template<typename Sample> void AikosVoice::process_(size_t n, Sample sample) {
   int16_t out[256];
   size_t k = 0;
   auto flush = [&]() {
@@ -325,7 +339,7 @@ void AikosVoice::on_mic_(const std::vector<uint8_t> &data) {
       this->mic_block_max_.store(db, std::memory_order_relaxed);
   };
   for (size_t i = 0; i < n; i++) {
-    float v = (float) (int16_t) (data[2 * i] | (data[2 * i + 1] << 8));
+    float v = (float) sample(i);
     if (this->mute_left_ > 0) {  // some boards pop when the mic starts (RoomKey must-have)
       this->mute_left_--;
       v = 0.0f;
@@ -342,16 +356,40 @@ void AikosVoice::on_mic_(const std::vector<uint8_t> &data) {
     flush();
 }
 
+#ifdef USE_MICROPHONE
+// microphone task: 16-bit little-endian mono
+void AikosVoice::on_mic_(const std::vector<uint8_t> &data) {
+  const uint8_t *d = data.data();
+  this->process_(data.size() / 2, [d](size_t i) { return (int16_t) (d[2 * i] | (d[2 * i + 1] << 8)); });
+}
+#endif
+
+void AikosVoice::push_samples(const int16_t *pcm, size_t n) {
+#ifdef USE_MICROPHONE
+  if (this->mic_ != nullptr) {  // two producers would race in the link's ring buffer
+    if (!this->push_warned_)
+      ESP_LOGW(TAG, "push_samples: ignored, this device has a microphone");
+    this->push_warned_ = true;
+    return;
+  }
+#endif
+  if (pcm == nullptr || n == 0 || !this->mic_on_.load())
+    return;  // like a real mic, which is stopped while the call has it closed
+  this->process_(n, [pcm](size_t i) { return pcm[i]; });
+}
+
 void AikosVoice::on_play_(const int16_t *pcm, size_t n) {
   const uint32_t now = millis();
   if (this->door_role_())
     this->door_.door_played(now);  // R17.16: the door mic stays muted towards the keys a little longer
   this->rx_gate_.note(::aikos::voice::level_db(pcm, (int) n), now);
+#ifdef USE_SPEAKER
   if (this->speaker_ == nullptr)
     return;
   if (!this->speaker_->is_running())
     this->speaker_->start();
   this->speaker_->play((const uint8_t *) pcm, n * 2, 0);
+#endif
 }
 
 void AikosVoice::publish_(uint32_t now) {
@@ -365,7 +403,7 @@ void AikosVoice::publish_(uint32_t now) {
   put(this->remote_bs_, this->remote_holding());
   put(this->answered_bs_, this->door_role_() && this->door_.answered());
   put(this->busy_bs_, !this->door_role_() && this->key_.busy());
-  put(this->speech_bs_, this->mic_on_ && this->mic_gate_.voiced_since(now - 500));
+  put(this->speech_bs_, this->mic_on_.load() && this->mic_gate_.voiced_since(now - 500));
 #endif
 #ifdef USE_SENSOR
   auto put_num = [](sensor::Sensor *s, float v) {

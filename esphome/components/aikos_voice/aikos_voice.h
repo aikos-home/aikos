@@ -8,8 +8,12 @@
 #include <string>
 #include "esphome/core/automation.h"
 #include "esphome/core/component.h"
+#ifdef USE_MICROPHONE  // optional since v2.1: a host build (simulator) has no microphone and no speaker
 #include "esphome/components/microphone/microphone_source.h"
+#endif
+#ifdef USE_SPEAKER
 #include "esphome/components/speaker/speaker.h"
+#endif
 #include "call.h"
 #include "level.h"
 #include "voice_core.h"
@@ -29,8 +33,12 @@ using VoiceRole = ::aikos::voice::Role;
 class AikosVoice : public Component {
  public:
   // ── configuration ──
+#ifdef USE_MICROPHONE
   void set_microphone_source(microphone::MicrophoneSource *m) { this->mic_ = m; }
+#endif
+#ifdef USE_SPEAKER
   void set_speaker(speaker::Speaker *s) { this->speaker_ = s; }
+#endif
   void set_role(VoiceRole r) { this->role_ = r; }
   void set_port(uint16_t p) { this->port_ = p; }
   void set_prebuffer(uint32_t ms) { this->link_cfg_.prebuffer_ms = ms; }
@@ -59,6 +67,9 @@ class AikosVoice : public Component {
   void set_call_silence_end(uint32_t ms);  // the number entities on the device (R17.8)
   void set_call_max_length(uint32_t ms);
   void end_call();  // from outside (door: API, front door later; key: its front-door switch)
+  // v2.1: the mic's samples from another source (a simulator, a test signal): 16 kHz mono, blocks of any length. Same
+  // processing as the mic, taken only while the call has the mic open. One producer: ignored when a microphone is set.
+  void push_samples(const int16_t *pcm, size_t n);
 
   // ── door ──
   void ring();
@@ -118,6 +129,8 @@ class AikosVoice : public Component {
  protected:
   bool door_role_() const { return this->role_ == VoiceRole::DOOR; }
   void on_mic_(const std::vector<uint8_t> &data);
+  template<typename Sample> void process_(size_t n, Sample sample);  // the mic path: filter, gain, limiter, gate, link
+  int find_own_octet_() const;  // the last octet of this device's IPv4 address, -1 = not known yet
   void on_play_(const int16_t *pcm, size_t n);
   ::aikos::voice::Verdict policy_(const ::aikos::voice::Addr &from, uint32_t now);
   void loop_door_(uint32_t now);
@@ -135,12 +148,17 @@ class AikosVoice : public Component {
   ::aikos::voice::DoorCall door_;
   ::aikos::voice::KeyCall key_;
   ::aikos::voice::VoiceGate mic_gate_, rx_gate_;  // speech in our own mic, speech arriving from the other end
+#ifdef USE_MICROPHONE
   microphone::MicrophoneSource *mic_{nullptr};
+#endif
+#ifdef USE_SPEAKER
   speaker::Speaker *speaker_{nullptr};
+#endif
   uint16_t port_{5004};
   std::string transcriber_, door_host_;
   ::aikos::voice::Addr door_addr_;
-  bool highpass_{true}, hear_visitor_{false}, record_{false}, mic_on_{false};
+  bool highpass_{true}, hear_visitor_{false}, record_{false}, push_warned_{false};
+  std::atomic<bool> mic_on_{false};  // the call has the mic open (read by the producer: mic task or push_samples)
   int own_octet_{-1};  // the last octet of this device's IPv4 address, for floor_key
   float gain_{4.0f};
   uint32_t mic_start_mute_samples_{0}, mute_left_{0};

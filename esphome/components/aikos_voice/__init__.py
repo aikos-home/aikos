@@ -3,7 +3,7 @@
   aikos_voice:
     id: voice
     role: door            # door: the arbiter of the call | room: one room key
-    microphone: mic       # a microphone source (16 bit mono, 16 kHz)
+    microphone: mic       # optional (v2.1): a microphone source (16 bit mono, 16 kHz); without one, push_samples() feeds it
     speaker: spk          # optional: where incoming audio is played
     transcriber: ""       # host:port for the copy of what this end says (also settable at runtime)
     door: ""              # room role: the door's host[:port] (also settable at runtime)
@@ -14,11 +14,17 @@ from esphome import automation
 from esphome.components import microphone, speaker
 import esphome.config_validation as cv
 from esphome.const import CONF_ID, CONF_MICROPHONE, CONF_PORT, CONF_SPEAKER
+from esphome.core import CORE
 
 CODEOWNERS = ["@aikos-home"]
-DEPENDENCIES = ["network", "microphone"]
-AUTO_LOAD = ["speaker"]  # aikos_voice.h uses the speaker interface; a key without a speaker (yet) must build too
+DEPENDENCIES = ["network"]
 MULTI_CONF = False
+
+
+def AUTO_LOAD():
+    # the speaker interface, so a key without a speaker (yet) builds; a host build (simulator) has no audio components
+    return ["speaker"] if CORE.is_esp32 else []
+
 
 CONF_ROLE = "role"
 CONF_TRANSCRIBER = "transcriber"
@@ -83,7 +89,7 @@ CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(): cv.declare_id(AikosVoice),
         cv.Required(CONF_ROLE): cv.enum(ROLES, lower=True),
-        cv.Required(CONF_MICROPHONE): microphone.microphone_source_schema(
+        cv.Optional(CONF_MICROPHONE): microphone.microphone_source_schema(
             min_bits_per_sample=16, max_bits_per_sample=16, min_channels=1, max_channels=1
         ),
         cv.Optional(CONF_SPEAKER): cv.use_id(speaker.Speaker),
@@ -110,7 +116,7 @@ CONFIG_SCHEMA = cv.Schema(
 
 FINAL_VALIDATE_SCHEMA = cv.Schema(
     {
-        cv.Required(CONF_MICROPHONE): microphone.final_validate_microphone_source_schema(
+        cv.Optional(CONF_MICROPHONE): microphone.final_validate_microphone_source_schema(
             "aikos_voice", sample_rate=16000
         ),
     },
@@ -121,8 +127,9 @@ FINAL_VALIDATE_SCHEMA = cv.Schema(
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
-    mic_source = await microphone.microphone_source_to_code(config[CONF_MICROPHONE])
-    cg.add(var.set_microphone_source(mic_source))
+    if CONF_MICROPHONE in config:
+        mic_source = await microphone.microphone_source_to_code(config[CONF_MICROPHONE])
+        cg.add(var.set_microphone_source(mic_source))
     if CONF_SPEAKER in config:
         spk = await cg.get_variable(config[CONF_SPEAKER])
         cg.add(var.set_speaker(spk))
