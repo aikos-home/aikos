@@ -9,10 +9,16 @@ import re
 from .patterns import FILLERS, L, UP, WORD
 
 # Whisper "hears" these in silence or noise (training-data subtitles). They are removed, never shown.
+# Broadcasters whose subtitle credits Whisper learned ("Untertitel im Auftrag des ZDF für funk", "ARD Text im Auftrag").
+BROADCASTERS = r"(?:ard|zdf|funk|ndr|wdr|swr|mdr|br|hr|rbb|sr|orf|srf|3sat|arte|kika|phoenix)"
 HALLUCINATIONS = [r"untertitel", r"amara\.org", r"(?:dank|danke)\w* (?:fürs|für's|für das) zu(?:schauen|sehen|hören)",
-                  r"copyright", r"swr \d{4}", r"wdr \d{4}", r"thanks for watching", r"subtitles? by", r"in die kommentare",
+                  r"copyright", rf"\b{BROADCASTERS} \d{{4}}\b", r"thanks for watching", r"subtitles? by", r"in die kommentare",
                   r"abonnier", r"bis zum nächsten (?:mal|video)", r"(?:like|daumen) (?:da|hoch)", r"^tschüss\.?$",
-                  r"^(?:musik|applaus|lachen|stille|gelächter|klingeln|piepen|rauschen|music|applause|silence)[.!]?$"]
+                  r"^(?:musik|applaus|lachen|stille|gelächter|klingeln|piepen|rauschen|music|applause|silence)[.!]?$",
+                  # R24 (01.10. 23:06): a noise at the door came out as "ARD Text im Auftrag", 3 times. "Im Auftrag" alone
+                  # is no caption: "ich komme im Auftrag der Stadtwerke" is a visitor. Only with a broadcaster, or bare.
+                  r"\b(?:ard|zdf)[ -]?text\b", r"\bvideotext\b", rf"\bim auftrag (?:des|der|von) {BROADCASTERS}\b",
+                  rf"\b(?:ard|zdf) für {BROADCASTERS}\b", r"^(?:\w+\s+){0,2}im auftrag(?:\s+(?:des|der|von))?[.!,]?$"]
 # Vocabulary hint for Whisper (initial prompt): the words people say at a German front door.
 # A word list, not sentences: then a real "Hier ist die Polizei" never looks like an echo of the hint.
 WHISPER_PROMPT = ("Haustür-Sprechanlage. Paketdienst, DHL, Hermes, DPD, UPS, GLS, FedEx, Amazon, Deutsche Post, "
@@ -49,6 +55,11 @@ def strip_captions(text: str) -> str:
 def is_noise(text: str) -> bool:
     """True if the transcript has no spoken words: only captions, symbols or Whisper hallucinations."""
     return not re.search(L + r"{2,}", strip_captions(text))
+
+
+def is_caption(phrase: str) -> bool:
+    """True if a would-be speaker is a subtitle credit or a broadcaster ("ARD Text", "ZDF"): never somebody at the door (R24)."""
+    return is_noise(phrase) or re.fullmatch(rf"\s*(?:(?:die|der|das|vom|von)\s+)?{BROADCASTERS}\W*", phrase, re.I) is not None
 
 
 def clean(text: str) -> str:

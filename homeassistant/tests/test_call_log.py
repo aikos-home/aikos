@@ -1,6 +1,6 @@
 """Acceptance test of the aikos call log against a running Home Assistant.
 
-Uses only test entities (sensor.talk_transcript_test, sensor.talk_transcript_door_test, input_button.aikos_test_new_call,
+Uses only test entities (sensor.talk_transcript_test, sensor.talk_transcript_door_test, input_boolean.aikos_test_in_call,
 sensor.aikos_call_log_test) and checks that the live log does not move. Also checks the fields the devices read
 (messages_json: id, side, who, text; sensor.aikos_people keys_json: host, name); reading sensor.aikos_people writes nothing.
 
@@ -45,9 +45,14 @@ def transcript(entity, when, **attributes):
     time.sleep(WAIT)
 
 
-def new_test_call():
-    call("/services/input_button/press", {"entity_id": "input_button.aikos_test_new_call"}, "POST")
+def test_call(on):
+    call("/services/input_boolean/turn_" + ("on" if on else "off"), {"entity_id": "input_boolean.aikos_test_in_call"}, "POST")
     time.sleep(WAIT)
+
+
+def new_test_call():
+    test_call(False)
+    test_call(True)
 
 
 def people_contract():
@@ -99,12 +104,37 @@ def main():
                **dict(door, text="Hilfe, ein Unfall!", message="Hilfe, ein Unfall!", speaker="",
                       speaker_role="emergency", urgent=True))
     msgs = test_log().get("messages") or []
-    check(len(msgs) == 3 and msgs[-1]["urgent"] is True and msgs[-1]["who"] == "Besucher",
-          "urgent door message without a speaker shows as 'Besucher'")
-
+    check(len(msgs) == 3 and msgs[-1]["urgent"] is True and msgs[-1]["who"] == "Paketdienst · DHL" and msgs[-1].get("sticky") is True
+          and msgs[-1]["role"] == "emergency",
+          "R25: a later door message without a speaker keeps the visitor's identity (sticky), own role and urgency")
+    t_room2, t_other = stamp(24), stamp(26)
+    transcript("sensor.talk_transcript_test", t_room2, text="Ich komme.", message="Ich komme.", speaker="", speaker_role="",
+               urgent=False, language="de", device="aikos RoomKey Test")
+    transcript("sensor.talk_transcript_test", t_other, text="Wer ist da?", message="Wer ist da?", speaker="", speaker_role="",
+               urgent=False, language="de", device="aikos RoomKey Test 2")
+    msgs = test_log().get("messages") or []
+    check(len(msgs) == 5 and msgs[3]["who"] == "Alex" and msgs[3].get("sticky") is True,
+          "R26: the same room key keeps its resident's name")
+    check(len(msgs) == 5 and msgs[4]["who"] == "aikos RoomKey Test 2" and not msgs[4].get("sticky"),
+          "R26: a second room key does not inherit another key's resident")
     new_test_call()
+    transcript("sensor.talk_transcript_door_test", stamp(28), **dict(door, text="Hallo?", message="Hallo?", speaker="", speaker_role=""))
+    msgs = test_log().get("messages") or []
+    check(len(msgs) == 1 and msgs[0]["who"] == "Besucher" and not msgs[0].get("sticky"),
+          "a new call inherits nothing: a door message without a speaker is 'Besucher'")
+    call_id = test_log().get("call_id")
+
+    # R22: the chat of a call must never show up in the next one, not even for a moment
+    test_call(False)
     log = test_log()
-    check(not log.get("messages") and log.get("call_id") != call_id, "the next test call starts empty, new call_id")
+    check(not log.get("messages") and log.get("active") is False, "R22: the log is empty as soon as the call ends")
+    transcript("sensor.talk_transcript_door_test", stamp(30), **dict(door, text="Spät.", message="Spät."))
+    check(not test_log().get("messages"), "R22: a transcript after the end is not added")
+    test_call(True)
+    log = test_log()
+    check(not log.get("messages") and log.get("call_id") != call_id and log.get("active") is True,
+          "the next test call starts empty, new call_id")
+    test_call(False)
 
     live_after = call("/states/sensor.aikos_call_log")
     check(live_after["last_updated"] == live_before["last_updated"], "the live call log did not move")

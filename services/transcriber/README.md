@@ -5,7 +5,7 @@ at the door (door side). It also tells who is speaking ("Paketdienst · DHL", "A
 foreign languages into German. Everything runs locally: audio goes to a Whisper server on your own network, never to a
 cloud. Python 3.9+ standard library only.
 
-Version **1.1.0** (component tag `transcriber-v1.1.0`).
+Version **1.1.1** (component tag `transcriber-v1.1.1`).
 
 ## Interface
 
@@ -78,7 +78,7 @@ Run one side: `cd services/transcriber && AIKOS_SIDE=door ... python3 -m aikos_t
 | the port is taken | the receiver exits; launchd starts it again after 10 s |
 | Whisper or Home Assistant does not answer | this utterance is not published; the worker logs the error, the recording is deleted, the receiver keeps running |
 | Ollama does not answer | published anyway: "who is speaking" from the rules only, foreign speech untranslated |
-| silence, a click, music, Whisper's typical hallucinations | nothing is published |
+| silence, a click, music, Whisper's typical hallucinations (subtitle credits like "ARD Text im Auftrag") | nothing is published; such a credit is never taken as the speaker either |
 | a second utterance in the same second | its recording gets `_2`, `_3`, ...; nothing is overwritten |
 
 ## Deploying on a Mac
@@ -129,6 +129,11 @@ Changes go through a pull request. Once tagged, this block is listed in [`FROZEN
 
 ## History
 
+- 1.1.1: noise is never shown as text (R24, live 01.10. 23:06–23:10): a noise at the door came out of Whisper as the
+  subtitle credit "ARD Text im Auftrag", was published 3 times (live text too), and the LLM even took it for the speaker.
+  Subtitle credits with a broadcaster ("… im Auftrag des ZDF", "ZDF für funk", "ARD Text", "Videotext") or a bare "im
+  Auftrag" now count as hallucinations; "ich komme im Auftrag der Stadtwerke" stays a visitor's sentence. A caption or a
+  broadcaster is never accepted as the speaker, from the rules or the LLM. Logic by the roomkey maintainers.
 - 1.1.0: a resident's own words heard by the door mic are never published as a visitor (W1 from the system test of
   01.10.: with the key's mic sending silence, the door showed the resident's own name as the visitor); see "Resident's words at
   the door" for the rule and its known trade-off. Plus: an echo of the resident at the door is dropped by its timing (all
