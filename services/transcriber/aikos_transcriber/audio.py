@@ -44,6 +44,19 @@ def padded(wav: Path) -> bytes:
     return b.getvalue()
 
 
+def voiced_frames(pcm: bytes) -> list:
+    """One flag per 20 ms frame: clearly above the recording's own noise floor (10th percentile + 12 dB) and louder
+    than quiet hiss (> -50 dBFS); the same rule as has_speech."""
+    x = array.array("h", pcm)
+    step = RATE // 50
+    db = [20 * math.log10(math.sqrt(sum(v * v for v in x[i:i + step]) / step) / 32768 + 1e-9)
+          for i in range(0, len(x) - step + 1, step)]
+    if not db:
+        return []
+    floor = sorted(db)[len(db) // 10]
+    return [d > max(floor + 12.0, -50.0) for d in db]
+
+
 def has_speech_pcm(pcm: bytes, min_s: float = 0.3) -> bool:
     """At least min_s of 20 ms frames clearly above the recording's own noise floor (see transcribe_publish)."""
     x = array.array("h", pcm)
