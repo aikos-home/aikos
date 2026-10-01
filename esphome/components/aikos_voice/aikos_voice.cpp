@@ -70,7 +70,7 @@ void AikosVoice::loop_door_(uint32_t now) {
     this->set_mic_(false);
     if (this->speaker_ != nullptr)
       this->speaker_->stop();
-    this->call_end_trigger_.trigger();
+    this->call_end_trigger_.trigger(::aikos::voice::to_string(this->door_.ended_by()));
   }
   this->talk_(this->door_.mic_open(), now);
   this->link_.send_to_targets(this->door_.mic_to_keys(now));  // R17.16: muted towards the keys while the speaker plays
@@ -155,7 +155,7 @@ void AikosVoice::loop_key_(uint32_t now) {
     ESP_LOGI(TAG, "left the call: %s", ::aikos::voice::to_string(this->key_.left_by()));
     if (this->speaker_ != nullptr)
       this->speaker_->stop();
-    this->call_end_trigger_.trigger();
+    this->call_end_trigger_.trigger(::aikos::voice::to_string(this->key_.left_by()));
   }
   this->set_mic_(this->key_.mic_open() || this->record_);
   this->talk_(this->key_.sends() || this->record_, now);  // a busy key sends nothing (RoomKey review)
@@ -214,6 +214,13 @@ Verdict AikosVoice::policy_(const Addr &from, uint32_t now) {
     return this->door_.plays(from) ? Verdict::PLAY : Verdict::HOLD;  // held briefly: its "holds" may still be coming
   }
   return from.ip == this->door_addr_.ip && this->key_.plays_door(this->hear_visitor_) ? Verdict::PLAY : Verdict::DROP;
+}
+
+void AikosVoice::speech(Role side) {
+  if (this->door_role_())
+    this->door_.speech(side, millis());
+  else
+    this->key_.speech(side, millis());
 }
 
 void AikosVoice::end_call() {
@@ -371,6 +378,7 @@ void AikosVoice::publish_(uint32_t now) {
   put_num(this->id_sensor_, (float) id);  // 24 bits: exact as a float
   put_num(this->floor_sensor_, (float) this->floor_last_octet());
   put_num(this->members_sensor_, (float) this->door_.members());
+  put_num(this->key_state_sensor_, (float) this->key_state());
   if (now - this->last_diag_ >= 1000) {  // diagnostics of the speech detector on our own mic, once a second
     this->last_diag_ = now;
     if (this->speech_floor_sensor_ != nullptr)

@@ -284,10 +284,12 @@ static void test_key_case2_and_hearing() {
   k.hold(false, 2000);
   CHECK(!k.mic_open() && !k.sends(), "released: mic closed at once (R17.3)");
   CHECK(k.plays_door(false), "released: plays the door (it answered)");
+  CHECK(k.state() == 1, "key_state 1: in the call, not holding");
   k.door_call(true, 7, true, 2300);
   CHECK(k.in_call(), "the door's refresh changes nothing");
   k.door_call(false, 7, false, 5000);
   CHECK(!k.in_call() && !k.plays_door(true) && k.left_by() == CallEnd::DOOR_ENDED, "the door ended the call");
+  CHECK(k.state() == 0, "key_state 0: idle");
 }
 
 static void test_key_short_press_before_announcement() {
@@ -393,6 +395,7 @@ static void test_key_busy_and_stale() {
   k.hold(true, 100);
   k.floor_taken(true);
   CHECK(k.busy() && !k.sends(), "another key has the floor: besetzt, sends nothing (not even the transcriber)");
+  CHECK(k.state() == 2, "key_state still says holding while busy: the door must know, to hand it the floor");
   k.floor_taken(false);
   CHECK(!k.busy() && k.sends(), "free again: sends");
   k.door_call(false, 1, false, 1000);

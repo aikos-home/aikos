@@ -62,6 +62,8 @@ RingAction = aikos_voice_ns.class_("RingAction", automation.Action)
 VisitorSpeakAction = aikos_voice_ns.class_("VisitorSpeakAction", automation.Action)
 JoinAction = aikos_voice_ns.class_("JoinAction", automation.Action)
 EndAction = aikos_voice_ns.class_("EndAction", automation.Action)
+SpeechDoorAction = aikos_voice_ns.class_("SpeechDoorAction", automation.Action)
+SpeechRoomAction = aikos_voice_ns.class_("SpeechRoomAction", automation.Action)
 KeyHoldAction = aikos_voice_ns.class_("KeyHoldAction", automation.Action)
 KeyInCallAction = aikos_voice_ns.class_("KeyInCallAction", automation.Action)
 HoldAction = aikos_voice_ns.class_("HoldAction", automation.Action)
@@ -142,10 +144,13 @@ async def to_code(config):
         (CONF_ON_TALK_START, var.get_talk_start_trigger()),
         (CONF_ON_TALK_STOP, var.get_talk_stop_trigger()),
         (CONF_ON_CALL_START, var.get_call_start_trigger()),
-        (CONF_ON_CALL_END, var.get_call_end_trigger()),
     ):
         if conf_key in config:
             await automation.build_automation(getter, [], config[conf_key])
+    if CONF_ON_CALL_END in config:  # with the reason: "silence", "max length", "door unreachable", ...
+        await automation.build_automation(
+            var.get_call_end_trigger(), [(cg.std_string, "reason")], config[CONF_ON_CALL_END]
+        )
 
 
 VOICE_ACTION_SCHEMA = automation.maybe_simple_id({cv.GenerateID(): cv.use_id(AikosVoice)})
@@ -161,6 +166,8 @@ async def _parented(config, action_id, template_arg):
 @automation.register_action("aikos_voice.visitor_speak", VisitorSpeakAction, VOICE_ACTION_SCHEMA, synchronous=True)
 @automation.register_action("aikos_voice.join", JoinAction, VOICE_ACTION_SCHEMA, synchronous=True)
 @automation.register_action("aikos_voice.end", EndAction, VOICE_ACTION_SCHEMA, synchronous=True)
+@automation.register_action("aikos_voice.speech_door", SpeechDoorAction, VOICE_ACTION_SCHEMA, synchronous=True)
+@automation.register_action("aikos_voice.speech_room", SpeechRoomAction, VOICE_ACTION_SCHEMA, synchronous=True)
 async def voice_simple_action(config, action_id, template_arg, args):
     return await _parented(config, action_id, template_arg)
 

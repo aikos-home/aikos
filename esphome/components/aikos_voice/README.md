@@ -58,7 +58,7 @@ aikos_voice:
   # prebuffer: 300ms          door: a key's first words before its hold arrived are still played
   # port: 5004, latch_frames: 3, keepalive: 60s (0 = off), mic_gain: 4.0, highpass: true
   # mic_start_mute: 0ms       zeroes the first samples of every mic start (boards that pop)
-  # on_talk_start / on_talk_stop / on_call_start / on_call_end: automations
+  # on_talk_start / on_talk_stop / on_call_start / on_call_end (variable `reason`: "silence", "door unreachable", ...)
 
 binary_sensor:
   - platform: aikos_voice
@@ -72,6 +72,7 @@ sensor:
     call_id: {id: door_call_id}            # door: the id while a call is on, 0 = none (sent to the keys)
     floor_key: {id: floor_key}             # door: last octet of the key that has the floor, 0 = nobody (sent)
     members: {name: Call members}
+    key_state: {id: key_state}             # room: 0 idle, 1 in the call, 2 holds (send it to the door)
     tx_packets: {name: RTP packets sent}   # counters, every 5 s
     rx_packets: {name: RTP packets received}
     held_back: {name: RTP packets held back}
@@ -95,6 +96,7 @@ sensor:
 | `aikos_voice.set_door` | `"host[:port]"` | room | The door's address |
 | `aikos_voice.record` | bool | room | A test recording: mic to the transcriber only, never to the door |
 | `aikos_voice.end` | — | both | Door: end the call (from outside). Room: leave it (the front-door switch) |
+| `aikos_voice.speech_door`, `speech_room` | — | both | Report speech at that end, e.g. new visitor text when noise fools the level detector |
 | `aikos_voice.set_transcriber` | `"host:port"` | both | Where the copy goes; empty = off |
 | `aikos_voice.set_silence_end`, `set_max_length` | duration | both | The two number entities |
 | `aikos_voice.allow_source` | `host`, `duration` | both | Plays a trusted sender for a while (e.g. TTS later) |
@@ -109,7 +111,7 @@ packet, a binary sensor only on change, so the states that must refresh are numb
 
 | From | To | `remote_id` | Glue |
 |---|---|---|---|
-| key | door | `key_state` (sensor: 0 idle, 1 in the call, 2 holding) | `key_in_call(host, state ≥ 1)` and `key_hold(host, state = 2)` with every packet |
+| key | door | `key_state` (sensor: 0 idle, 1 in the call, 2 holding; take the component's `key_state` sensor: a busy key still reports 2) | `key_in_call(host, state ≥ 1)` and `key_hold(host, state = 2)` with every packet |
 | door | keys | `door_call_id` (sensor: the id, 0 = no call), `door_answered` (binary), `floor_key` (sensor) | `door_call(id ≠ 0, id, answered)` with every packet; `floor_key(key)` |
 
 Which key has which address the door learns from aikos (`sensor.aikos_people`, attribute `keys_json`) and keeps in flash.

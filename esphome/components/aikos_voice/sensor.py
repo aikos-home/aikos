@@ -22,6 +22,7 @@ CALL = {
     "call_id": ("set_call_id_sensor", "mdi:phone-log"),  # 24 bits, exact as a float
     "floor_key": ("set_floor_key_sensor", "mdi:account-voice"),  # last octet of the key that has the floor, 0 = none
     "members": ("set_members_sensor", "mdi:account-multiple"),
+    "key_state": ("set_key_state_sensor", "mdi:gesture-tap-hold"),  # room: 0 idle, 1 in the call, 2 holds (to the door)
 }
 DIAG = {  # what the speech detector sees on this end's mic, once a second (dBFS after gain and high-pass)
     "speech_floor": ("set_speech_floor_sensor", "mdi:waveform"),  # the noise floor it compares with

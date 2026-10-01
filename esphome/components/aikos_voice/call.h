@@ -414,6 +414,9 @@ class KeyCall {
 
   // ── state ──
   bool in_call() const { return pending_ || (member_id_ != 0 && door_on_ && member_id_ == door_id_); }  // → the door
+  // what the key tells the door with every packet: 0 idle, 1 in the call, 2 holding (also when busy: the door must know
+  // it holds, to hand it the floor when the other key lets go; RoomKey review of #11)
+  int state() const { return mic_open() ? 2 : in_call() ? 1 : 0; }
   bool door_on() const { return door_on_; }
   bool door_lost(uint32_t now) const { return door_on_ && now - door_ms_ > cfg_.hold_refresh_ms; }  // a gap, so far
   uint32_t door_id() const { return door_id_; }

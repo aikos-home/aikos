@@ -82,6 +82,8 @@ class AikosVoice : public Component {
   bool answered() const { return this->door_.answered(); }
   bool remote_holding() const { return this->door_.floor() != nullptr; }
   bool busy() const { return this->key_.busy(); }
+  int key_state() const { return this->door_role_() ? 0 : this->key_.state(); }  // room: 0 idle, 1 in the call, 2 holds
+  void speech(::aikos::voice::Role side);  // the glue reports speech (e.g. new visitor text, when noise fools the gate)
   uint32_t call_id() const { return this->role_ == VoiceRole::DOOR ? this->door_.id() : this->key_.door_id(); }
   int floor_last_octet() const;
   std::string member_octets() const;  // door: "144,110": the last octets of the keys in the call, for the screen
@@ -90,7 +92,7 @@ class AikosVoice : public Component {
   Trigger<> *get_talk_start_trigger() { return &this->talk_start_trigger_; }
   Trigger<> *get_talk_stop_trigger() { return &this->talk_stop_trigger_; }
   Trigger<> *get_call_start_trigger() { return &this->call_start_trigger_; }
-  Trigger<> *get_call_end_trigger() { return &this->call_end_trigger_; }
+  Trigger<std::string> *get_call_end_trigger() { return &this->call_end_trigger_; }  // with the reason ("silence", ...)
 
 #ifdef USE_SENSOR
   void set_tx_packets_sensor(sensor::Sensor *s) { this->tx_sensor_ = s; }
@@ -100,6 +102,7 @@ class AikosVoice : public Component {
   void set_call_id_sensor(sensor::Sensor *s) { this->id_sensor_ = s; }
   void set_floor_key_sensor(sensor::Sensor *s) { this->floor_sensor_ = s; }
   void set_members_sensor(sensor::Sensor *s) { this->members_sensor_ = s; }
+  void set_key_state_sensor(sensor::Sensor *s) { this->key_state_sensor_ = s; }
   void set_speech_floor_sensor(sensor::Sensor *s) { this->speech_floor_sensor_ = s; }  // diagnostics: what the
   void set_speech_level_sensor(sensor::Sensor *s) { this->speech_level_sensor_ = s; }  // speech detector sees
 #endif
@@ -150,11 +153,12 @@ class AikosVoice : public Component {
   uint32_t gate_n_{0};
   int floor_key_{0};
 
-  Trigger<> talk_start_trigger_, talk_stop_trigger_, call_start_trigger_, call_end_trigger_;
+  Trigger<> talk_start_trigger_, talk_stop_trigger_, call_start_trigger_;
+  Trigger<std::string> call_end_trigger_;
 #ifdef USE_SENSOR
   sensor::Sensor *tx_sensor_{nullptr}, *rx_sensor_{nullptr}, *held_sensor_{nullptr}, *err_sensor_{nullptr};
   sensor::Sensor *id_sensor_{nullptr}, *floor_sensor_{nullptr}, *members_sensor_{nullptr};
-  sensor::Sensor *speech_floor_sensor_{nullptr}, *speech_level_sensor_{nullptr};
+  sensor::Sensor *speech_floor_sensor_{nullptr}, *speech_level_sensor_{nullptr}, *key_state_sensor_{nullptr};
 #endif
 #ifdef USE_BINARY_SENSOR
   binary_sensor::BinarySensor *talking_bs_{nullptr}, *call_bs_{nullptr}, *remote_bs_{nullptr};
@@ -172,6 +176,8 @@ AIKOS_VOICE_SIMPLE_ACTION(RingAction, ring())
 AIKOS_VOICE_SIMPLE_ACTION(VisitorSpeakAction, visitor_speak())
 AIKOS_VOICE_SIMPLE_ACTION(JoinAction, join())
 AIKOS_VOICE_SIMPLE_ACTION(EndAction, end_call())
+AIKOS_VOICE_SIMPLE_ACTION(SpeechDoorAction, speech(::aikos::voice::Role::DOOR))
+AIKOS_VOICE_SIMPLE_ACTION(SpeechRoomAction, speech(::aikos::voice::Role::ROOM))
 #undef AIKOS_VOICE_SIMPLE_ACTION
 
 template<typename... Ts> class KeyHoldAction : public Action<Ts...>, public Parented<AikosVoice> {
