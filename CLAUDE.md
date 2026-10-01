@@ -9,7 +9,7 @@ Claude Code reads this file automatically. Every agent and every person working 
 | `custom_components/aikos/` | aikos core |
 | `esphome/components/` | intercom and roomkey maintainers, jointly |
 | `services/` (when it exists) | aikos core; the owner of each service's logic is named in its README |
-| `docs/`, `tools/`, `.github/`, `CLAUDE.md`, `FROZEN.md` | aikos core |
+| `docs/`, `tools/`, `.github/`, `homeassistant/`, `CLAUDE.md`, `FROZEN.md` | aikos core |
 
 Don't change another owner's part. Propose the change to them instead.
 
