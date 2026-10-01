@@ -1,24 +1,23 @@
-// aikos::voice (component aikos_voice): the voice link between the door and the RoomKeys (aikos vertraege.md §4), shared by both devices.
+// aikos::voice (component aikos_voice): the audio link between the door and the room keys, shared by both devices.
 //
 // Pure C++17, no ESPHome and no sockets in here: the network comes in through `Transport`, time as `now` arguments.
-// That keeps the behaviour unit-testable on a PC (tests/voice_core_test.cpp) and leaves room for other sources
-// and sinks later (a TTS stream, a recorder) without touching the rules.
+// That keeps the behaviour unit-testable on a PC (tests/voice_core_test.cpp).
 //
-// VOICE v1, frozen 2026-10-01 (tested live: door <-> RoomKey Desk, "hat ultra geklappt"):
-//   wire       RTP v2, L16 big-endian, PT 96, 16 kHz mono, 20 ms (320 samples), UDP 5004, unicast
-//   talk       push-to-talk on both ends, no answer, no hang-up; local "talk on" starts a fresh spurt (marker bit),
-//              "talk off" drains what is buffered, then sends one comfort-noise packet (PT 13, 1 byte) = end of speech
-//   copy       while talking, every packet also goes to the tap (the transcriber), unless the tap is the peer
-//   duplex     half: nothing is played while this end talks
-//   incoming   role DOOR: a peer is played ONLY while it holds its button (remote_hold, forwarded by HA); what it sent
-//                         up to `prebuffer_ms` before that is played too (the HA hop), everything else is held back
-//              role ROOM: the peer is played while a conversation is accepted (set_accept); the first sender in an
-//                         accepted conversation becomes the peer if none is set (symmetric RTP)
-//              any role:  a trusted source (allow_source, e.g. a TTS stream later) is played until its time runs out
-//   end        the conversation ends after `idle_ms` without audio either way (peer forgotten, on_conversation_end)
-//   keepalive  a 12-byte RTP header to peer and tap every `keepalive_ms` while idle, so lwIP keeps their MAC
-//              (it forgets after 300 s and then loses the first ~0.25 s of speech, measured by the RoomKey thread)
-//   latch      a new peer gets `latch_frames` silent 20 ms frames (0, +0.1 s, +0.4 s): ARP may eat the first one
+// VOICE v2: the link only MOVES audio. Who hears what is decided by the call model (call.h); the device glue tells the
+// link where to send (targets, gate) and the link asks a policy before it plays a sender.
+//   wire       RTP v2, L16 big-endian, PT 96, 16 kHz mono, 20 ms (320 samples), UDP 5004, unicast (as in v1)
+//   talk       "talk on" starts a fresh spurt (marker bit); "talk off" drains what is buffered, then sends one
+//              comfort-noise packet (PT 13, 1 byte) = end of speech
+//   targets    up to MAX_TARGETS (door: every key during a call; key: the door). A new target gets `latch_frames`
+//              silent frames (0, +0.1 s, +0.4 s): ARP may eat the first one
+//   gate       `send_to_targets(false)` keeps frames from the targets but not from the tap (door: muted towards the keys
+//              while its speaker plays; key: a test recording that must never reach the door)
+//   tap        the transcriber copy of everything this end says, not twice if the tap is also a target
+//   incoming   a policy decides per sender: PLAY, HOLD (kept up to `prebuffer_ms`, played by flush(from) when the
+//              sender may be heard, e.g. its "holds" arrived a little after its first words) or DROP (counted as held
+//              back); a trusted source (allow_source, e.g. a TTS stream later) is played while its time lasts
+//   keepalive  a 12-byte RTP header to every target and the tap every `keepalive_ms` while not talking, so lwIP keeps
+//              their MAC (it forgets after 300 s and then loses the first ~0.25 s of speech, measured by the RoomKey)
 #pragma once
 
 #include <algorithm>
@@ -28,8 +27,8 @@
 #include <cstring>
 #include <functional>
 
-#include "dsp.h"    // Biquad, Limiter (v2: own header)
-#include "types.h"  // Addr, Role (v2: own header)
+#include "dsp.h"    // Biquad, Limiter
+#include "types.h"  // Addr, Role
 
 namespace aikos {
 namespace voice {
@@ -48,21 +47,20 @@ class Transport {
   virtual int recv(uint8_t *buf, size_t cap, Addr &from) = 0;
 };
 
-struct Config {
-  Role role = Role::DOOR;
-  uint32_t idle_ms = 120000;       // conversation ends after this long without audio
-  uint32_t prebuffer_ms = 300;     // DOOR: audio from a peer this long before its hold reaches us is played
-  uint32_t hold_max_ms = 90000;    // DOOR: a lost "released" can't keep the door open longer
-  int latch_frames = 3;            // silent frames to a new peer
-  uint32_t keepalive_ms = 60000;   // 0 = off
+struct LinkConfig {
+  uint32_t prebuffer_ms = 300;    // HOLD: audio from a sender this long before it may be heard is still played
+  int latch_frames = 3;           // silent frames to a new target
+  uint32_t keepalive_ms = 60000;  // 0 = off
 };
 
 struct Stats {
   uint32_t tx_packets = 0, rx_packets = 0, held_back = 0, tx_errors = 0, overruns = 0;
 };
 
-// The edges of a state such as "in conversation", for the start/end triggers of the ESPHome glue (one call per loop).
-// Kept here so the unit tests cover it: 0.6.0 only fired the start edge (found by the RoomKey review, 2026-10-01).
+enum class Verdict : uint8_t { PLAY, HOLD, DROP };
+
+// The edges of a state such as "in a call", for the start/end triggers of the ESPHome glue (one call per loop).
+// Kept here so the unit tests cover it: v1 0.6.0 only fired the start edge (found by the RoomKey review, 2026-10-01).
 struct Edge {
   bool state = false;
   int update(bool now) {  // +1 = it began, -1 = it ended, 0 = unchanged
@@ -75,114 +73,114 @@ struct Edge {
 
 class Link {
  public:
+  static constexpr int MAX_TARGETS = 8;
   using Sink = std::function<void(const int16_t *pcm, size_t n)>;
+  using Policy = std::function<Verdict(const Addr &from, uint32_t now)>;
 
-  void configure(const Config &c) { cfg_ = c; }
-  const Config &config() const { return cfg_; }
+  void configure(const LinkConfig &c) { cfg_ = c; }
+  const LinkConfig &config() const { return cfg_; }
   void set_transport(Transport *t) { net_ = t; }
   void set_sink(Sink s) { sink_ = std::move(s); }
+  void set_policy(Policy p) { policy_ = std::move(p); }
   void set_ssrc(uint32_t ssrc, uint16_t seq, uint32_t ts) {
     ssrc_ = ssrc;
     seq_ = seq;
     ts_ = ts;
   }
-  std::function<void()> on_conversation_end;
 
-  // ── peer and tap ─────────────────────────────────────────────────────────────────────────────────────────────
-  void set_peer(const Addr &a, uint32_t now) {
-    if (!a.valid())
-      return;
-    const bool fresh = !has_peer_ || a != peer_;
-    peer_ = a;
-    has_peer_ = true;
-    latched_ = false;
-    last_audio_ms_ = now;
-    if (fresh && cfg_.latch_frames > 0) {
-      latch_left_ = cfg_.latch_frames;
-      latch_t0_ = now;
-      send_latch_();
-    } else if (fresh) {
-      keepalive_due_ = true;  // resolve the new peer's MAC now, not with the first words
+  // ── where this end's audio goes ──────────────────────────────────────────────────────────────────────────────
+  // The full list each time; targets that are new get latch frames, the others keep their state.
+  void set_targets(const Addr *list, int n, uint32_t now) {
+    Target next[MAX_TARGETS];
+    int count = 0;
+    for (int i = 0; i < n && count < MAX_TARGETS; i++) {
+      if (!list[i].valid())
+        continue;
+      bool dup = false;
+      for (int j = 0; j < count; j++)
+        dup |= next[j].addr == list[i];
+      if (dup)
+        continue;
+      Target t;
+      t.addr = list[i];
+      const Target *old = find_(list[i]);
+      if (old != nullptr) {
+        t = *old;
+      } else if (cfg_.latch_frames > 0) {
+        t.latch_left = cfg_.latch_frames;
+        t.latch_t0 = now;
+      } else {
+        keepalive_due_ = true;  // resolve the new target's MAC now, not with the first words
+      }
+      next[count++] = t;
     }
+    for (int i = 0; i < count; i++)
+      targets_[i] = next[i];
+    n_targets_ = count;
+    for (int i = 0; i < n_targets_; i++)
+      if (targets_[i].latch_left == cfg_.latch_frames && cfg_.latch_frames > 0)
+        send_latch_(targets_[i]);  // the first latch frame at once
   }
-  void clear_peer() {
-    if (closing_) {  // still draining the last words: forget the peer after them
-      clear_after_drain_ = true;
-      return;
-    }
-    has_peer_ = latched_ = false;
-    latch_left_ = 0;
-  }
-  bool has_peer() const { return has_peer_; }
-  Addr peer() const { return peer_; }
+  void set_target(const Addr &a, uint32_t now) { set_targets(&a, a.valid() ? 1 : 0, now); }
+  void clear_targets() { n_targets_ = 0; }
+  int targets() const { return n_targets_; }
+  bool has_target(const Addr &a) const { return find_(a) != nullptr; }
   void set_tap(const Addr &a) {  // invalid = off
     if (a.valid() && a != tap_)
       keepalive_due_ = true;  // resolve its MAC now
     tap_ = a;
   }
+  void send_to_targets(bool on) { gate_ = on; }
+  bool sending_to_targets() const { return gate_; }
 
-  // ── local push-to-talk ───────────────────────────────────────────────────────────────────────────────────────
+  // ── this end talks ───────────────────────────────────────────────────────────────────────────────────────────
   void talk(bool on, uint32_t now) {
+    (void) now;
     if (on) {
       tail_.store(head_.load(std::memory_order_acquire));  // stale samples out: a fresh start
-      closing_ = false;
+      closing_.store(false);
       first_ = true;
-      tx_ = true;
-      last_audio_ms_ = now;
-    } else if (tx_) {
-      closing_ = true;  // loop() sends what is buffered, then the end packet
+      tx_.store(true);
+    } else if (tx_.load()) {
+      closing_.store(true);  // loop() sends what is buffered, then the end packet
     }
   }
-  bool talking() const { return tx_ && !closing_; }
+  bool talking() const { return tx_.load() && !closing_.load(); }
 
   // producer, called from the microphone task: 16-bit samples (filtered and limited by the caller)
   void push(const int16_t *s, size_t n) {
-    if (!tx_ || closing_)
+    if (!tx_.load() || closing_.load())
       return;
     for (size_t i = 0; i < n; i++)
       put_(s[i]);
   }
 
-  // ── incoming policy ──────────────────────────────────────────────────────────────────────────────────────────
-  // DOOR: HA forwards a key's talk_start / talk_stop with its address. The first hold makes it the peer.
-  void remote_hold(bool held, const Addr &key, uint32_t now) {
-    if (held) {
-      if (key.valid() && (!has_peer_ || key.ip != peer_.ip))  // a key is its address; a port set before stays
-        set_peer(key, now);
-      if (!has_peer_)
-        return;
-      remote_held_ = true;
-      hold_ms_ = now;
-      last_audio_ms_ = now;
-      for (int k = 0; k < pre_count_; k++) {  // what it sent just before its hold reached us, nothing older
-        const int i = (pre_head_ - pre_count_ + k + PRE) % PRE;
-        if (pre_[i].from.ip == peer_.ip && now - pre_[i].ms <= cfg_.prebuffer_ms)
-          play_(pre_[i].pcm, pre_[i].n);
-        else
+  // ── incoming ─────────────────────────────────────────────────────────────────────────────────────────────────
+  // play what `from` sent up to `prebuffer_ms` ago and the policy held back; everything older is dropped
+  void flush(const Addr &from, uint32_t now) {
+    int kept = 0;
+    for (int k = 0; k < pre_count_; k++) {
+      Pre &p = pre_[(pre_head_ - pre_count_ + k + PRE) % PRE];
+      if (p.from.ip == from.ip) {
+        if (now - p.ms <= cfg_.prebuffer_ms) {
+          play_(p.pcm, p.n);
+          stats.rx_packets++;
+        } else {
           stats.held_back++;
+        }
+        continue;
       }
-    } else {
-      remote_held_ = false;
-      for (int k = 0; k < pre_count_; k++)
-        stats.held_back++;
-      last_audio_ms_ = now;
+      pre_[(pre_head_ - pre_count_ + kept + PRE) % PRE] = p;  // keep the other senders' frames, in order
+      kept++;
     }
-    pre_count_ = 0;
-  }
-  bool remote_holding() const { return remote_held_; }
-  // ROOM: audio in only during a conversation the RoomKey accepted
-  void set_accept(bool on) {
-    if (accept_ && !on && latched_)
-      clear_peer();
-    accept_ = on;
+    pre_head_ = (pre_head_ - pre_count_ + kept + PRE) % PRE;
+    pre_count_ = kept;
   }
   // any role: a trusted source (e.g. a TTS stream) is played until `until_ms`
   void allow_source(const Addr &a, uint32_t until_ms) {
     trusted_ = a;
     trusted_until_ = until_ms;
   }
-
-  bool in_conversation() const { return has_peer_; }
 
   // ── main loop ────────────────────────────────────────────────────────────────────────────────────────────────
   void loop(uint32_t now) {
@@ -195,40 +193,39 @@ class Link {
       ts_ += (dropped / FRAME) * FRAME;
       stats.overruns++;
     }
+    const bool anywhere = n_targets_ > 0 || tap_.valid();
     // transmit
-    while (tx_ && (has_peer_ || tap_.valid()) && avail_() >= (uint32_t) FRAME) {
+    while (tx_.load() && anywhere && avail_() >= (uint32_t) FRAME) {
       int16_t pcm[FRAME];
       for (int i = 0; i < FRAME; i++)
         pcm[i] = get_();
       send_l16_(pcm, FRAME, first_);
       first_ = false;
-      last_audio_ms_ = now;
     }
-    if (closing_ && (avail_() < (uint32_t) FRAME || !(has_peer_ || tap_.valid()))) {
+    if (closing_.load() && (avail_() < (uint32_t) FRAME || !anywhere)) {
       const uint32_t rest = avail_();  // the last few samples of the last word
-      if (rest > 0 && (has_peer_ || tap_.valid())) {
+      if (rest > 0 && anywhere) {
         int16_t pcm[FRAME];
         for (uint32_t i = 0; i < rest; i++)
           pcm[i] = get_();
         send_l16_(pcm, (int) rest, first_);
       }
       send_cn_();
-      tx_ = closing_ = false;
-      if (clear_after_drain_) {
-        has_peer_ = latched_ = clear_after_drain_ = false;
-        latch_left_ = 0;
-      }
-      last_audio_ms_ = now;
+      tx_.store(false);
+      closing_.store(false);
     }
     // latch frames 2 and 3 (+0.1 s, +0.4 s)
-    if (latch_left_ > 0 && has_peer_) {
-      const int sent = cfg_.latch_frames - latch_left_;
-      const uint32_t due = sent == 1 ? 100u : 400u;
-      if (now - latch_t0_ >= due)
-        send_latch_();
+    for (int i = 0; i < n_targets_; i++) {
+      Target &t = targets_[i];
+      if (t.latch_left > 0) {
+        const int sent = cfg_.latch_frames - t.latch_left;
+        const uint32_t due = sent == 1 ? 100u : 400u;
+        if (now - t.latch_t0 >= due)
+          send_latch_(t);
+      }
     }
-    // keepalive while idle
-    if (!tx_ && (has_peer_ || tap_.valid()) &&
+    // keepalive while not talking
+    if (!tx_.load() && anywhere &&
         (keepalive_due_ || (cfg_.keepalive_ms > 0 && now - keepalive_ms_ >= cfg_.keepalive_ms)))
       send_keepalive_(now);
     // receive
@@ -240,21 +237,16 @@ class Link {
         break;
       receive_(buf, n, from, now);
     }
-    // safety: a lost "released" can't keep the door open
-    if (remote_held_ && now - hold_ms_ > cfg_.hold_max_ms)
-      remote_hold(false, Addr{}, now);
-    // the conversation ends after idle_ms without audio either way
-    if (has_peer_ && !tx_ && !remote_held_ && now - last_audio_ms_ > cfg_.idle_ms) {
-      has_peer_ = latched_ = false;
-      latch_left_ = 0;
-      if (on_conversation_end)
-        on_conversation_end();
-    }
   }
 
   Stats stats;
 
  protected:
+  struct Target {
+    Addr addr;
+    int latch_left = 0;
+    uint32_t latch_t0 = 0;
+  };
   struct Pre {
     int16_t pcm[FRAME];
     int n = 0;
@@ -264,6 +256,13 @@ class Link {
   static constexpr int PRE = 25;          // room for 0.5 s
   static constexpr uint32_t RING = 8192;  // 512 ms between the mic task and the main loop
 
+  const Target *find_(const Addr &a) const {
+    for (int i = 0; i < n_targets_; i++)
+      if (targets_[i].addr == a)
+        return &targets_[i];
+    return nullptr;
+  }
+
   void receive_(const uint8_t *buf, int n, const Addr &from, uint32_t now) {
     if (n <= 12 || (buf[0] >> 6) != 2)
       return;  // keepalive or not RTP v2
@@ -272,47 +271,29 @@ class Link {
     const int hdr = 12 + 4 * (buf[0] & 0x0F);
     if (n <= hdr)
       return;
-    const int count = std::min((n - hdr) / 2, FRAME * 2);
-    int16_t pcm[FRAME * 2];
+    const int count = std::min((n - hdr) / 2, FRAME);
+    int16_t pcm[FRAME];
     for (int i = 0; i < count; i++)
       pcm[i] = (int16_t) ((buf[hdr + 2 * i] << 8) | buf[hdr + 2 * i + 1]);
 
     if (trusted_.valid() && from.ip == trusted_.ip && (int32_t) (trusted_until_ - now) > 0) {
-      if (!talking())
-        play_(pcm, count);
-      stats.rx_packets++;
-      return;
-    }
-    if (tx_)
-      return;  // half-duplex: this end talks
-    if (cfg_.role == Role::ROOM) {
-      if (!accept_) {
-        stats.held_back++;  // no conversation: dropped unheard
-        return;
-      }
-      if (!has_peer_) {  // symmetric RTP: answer whoever talks to us
-        peer_ = from;
-        has_peer_ = latched_ = true;
-      }
-      if (from.ip != peer_.ip) {
-        stats.held_back++;
-        return;
-      }
       play_(pcm, count);
       stats.rx_packets++;
-      last_audio_ms_ = now;
       return;
     }
-    // DOOR
-    if (has_peer_ && remote_held_ && from.ip == peer_.ip) {
-      play_(pcm, std::min(count, FRAME));
+    const Verdict v = policy_ ? policy_(from, now) : Verdict::DROP;
+    if (v == Verdict::PLAY) {
+      play_(pcm, count);
       stats.rx_packets++;
-      last_audio_ms_ = now;
       return;
     }
-    Pre &p = pre_[pre_head_];  // nobody holds for this sender: keep it briefly, unheard
-    p.n = std::min(count, FRAME);
-    memcpy(p.pcm, pcm, (size_t) p.n * 2);
+    if (v == Verdict::DROP) {
+      stats.held_back++;
+      return;
+    }
+    Pre &p = pre_[pre_head_];  // HOLD: keep it briefly, unheard
+    p.n = count;
+    memcpy(p.pcm, pcm, (size_t) count * 2);
     p.ms = now;
     p.from = from;
     pre_head_ = (pre_head_ + 1) % PRE;
@@ -341,10 +322,17 @@ class Link {
     p[10] = (uint8_t) (ssrc_ >> 8);
     p[11] = (uint8_t) ssrc_;
   }
-  void deliver_(const uint8_t *pkt, size_t len, bool to_peer, bool to_tap) {
-    if (to_peer && has_peer_ && !net_->send(peer_, pkt, len))
-      stats.tx_errors++;
-    if (to_tap && tap_.valid() && !(has_peer_ && to_peer && tap_ == peer_) && !net_->send(tap_, pkt, len))
+  // to the targets (if the gate is open) and the tap (once, even if it is also a target)
+  void deliver_(const uint8_t *pkt, size_t len, bool gated) {
+    bool tap_done = false;
+    if (!gated || gate_) {
+      for (int i = 0; i < n_targets_; i++) {
+        if (!net_->send(targets_[i].addr, pkt, len))
+          stats.tx_errors++;
+        tap_done |= targets_[i].addr == tap_;
+      }
+    }
+    if (tap_.valid() && !tap_done && !net_->send(tap_, pkt, len))
       stats.tx_errors++;
   }
   void send_l16_(const int16_t *pcm, int n, bool marker) {
@@ -354,7 +342,7 @@ class Link {
       pkt[12 + 2 * i] = (uint8_t) ((uint16_t) pcm[i] >> 8);
       pkt[13 + 2 * i] = (uint8_t) ((uint16_t) pcm[i] & 0xFF);
     }
-    deliver_(pkt, 12 + 2 * (size_t) n, true, true);
+    deliver_(pkt, 12 + 2 * (size_t) n, true);
     seq_++;
     ts_ += (uint32_t) n;
     stats.tx_packets++;
@@ -363,24 +351,28 @@ class Link {
     uint8_t pkt[13];
     header_(pkt, PT_CN, false);
     pkt[12] = 127;
-    deliver_(pkt, sizeof pkt, true, true);
+    deliver_(pkt, sizeof pkt, false);  // the end of speech always reaches everyone who may have heard the start
     seq_++;
   }
-  void send_latch_() {
+  void send_latch_(Target &t) {
     uint8_t pkt[12 + FRAME * 2] = {0};
-    header_(pkt, PT_L16, latch_left_ == cfg_.latch_frames);
-    deliver_(pkt, sizeof pkt, true, false);
+    header_(pkt, PT_L16, t.latch_left == cfg_.latch_frames);
+    if (!net_->send(t.addr, pkt, sizeof pkt))
+      stats.tx_errors++;
     seq_++;
     ts_ += FRAME;
     stats.tx_packets++;
-    latch_left_--;
+    t.latch_left--;
   }
   void send_keepalive_(uint32_t now) {
     uint8_t pkt[12];
     header_(pkt, PT_L16, false);
-    if (has_peer_)
-      net_->send(peer_, pkt, sizeof pkt);
-    if (tap_.valid() && !(has_peer_ && tap_ == peer_))
+    bool tap_done = false;
+    for (int i = 0; i < n_targets_; i++) {
+      net_->send(targets_[i].addr, pkt, sizeof pkt);
+      tap_done |= targets_[i].addr == tap_;
+    }
+    if (tap_.valid() && !tap_done)
       net_->send(tap_, pkt, sizeof pkt);
     keepalive_ms_ = now;
     keepalive_due_ = false;
@@ -403,16 +395,17 @@ class Link {
   }
   uint32_t avail_() const { return head_.load(std::memory_order_acquire) - tail_.load(std::memory_order_relaxed); }
 
-  Config cfg_;
+  LinkConfig cfg_;
   Transport *net_ = nullptr;
   Sink sink_;
-  Addr peer_, tap_, trusted_;
+  Policy policy_;
+  Target targets_[MAX_TARGETS];
+  int n_targets_ = 0;
+  Addr tap_, trusted_;
   uint32_t trusted_until_ = 0;
-  bool has_peer_ = false, latched_ = false, accept_ = false, first_ = true, clear_after_drain_ = false;
-  volatile bool tx_ = false, closing_ = false;
-  bool remote_held_ = false, keepalive_due_ = false;
-  uint32_t hold_ms_ = 0, last_audio_ms_ = 0, keepalive_ms_ = 0, latch_t0_ = 0;
-  int latch_left_ = 0;
+  bool first_ = true, gate_ = true, keepalive_due_ = false;
+  std::atomic<bool> tx_{false}, closing_{false};  // shared with the mic task (RoomKey review: not volatile)
+  uint32_t keepalive_ms_ = 0;
   uint16_t seq_ = 0;
   uint32_t ts_ = 0, ssrc_ = 0x61697673;  // "aivs"
   Pre pre_[PRE];
