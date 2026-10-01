@@ -17,6 +17,7 @@ from esphome.const import CONF_ID, CONF_MICROPHONE, CONF_PORT, CONF_SPEAKER
 
 CODEOWNERS = ["@aikos-home"]
 DEPENDENCIES = ["network", "microphone"]
+AUTO_LOAD = ["speaker"]  # aikos_voice.h uses the speaker interface; a key without a speaker (yet) must build too
 MULTI_CONF = False
 
 CONF_ROLE = "role"
