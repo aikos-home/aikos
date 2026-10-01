@@ -22,6 +22,20 @@ def resident_talk(activity_file: str) -> tuple[float, float]:
         return 0.0, 0.0
 
 
+def resident_overlap_s(activity_file: str, door_span: tuple[float, float]) -> float:
+    """Seconds a resident talked during this door audio (door_span = start, end); 0 if unknown."""
+    began, last = resident_talk(activity_file)
+    if not began:
+        return 0.0
+    return max(0.0, min(last, door_span[1]) - max(began, door_span[0]))
+
+
+def is_household(name: str, known_names) -> bool:
+    """The speaker's name is one of the household's names ("Jonas", "Jonas Weber")."""
+    known = {n.strip().lower() for n in known_names if n.strip()}
+    return bool(known) and any(w.lower() in known for w in name.split())
+
+
 def strip_echo(text: str, said: str) -> str:
     """Drop the sentences of a door transcript that mostly repeat what the resident said (the door mic hears the door
     speaker). Short sentences (< 3 words) stay: "Ja", "Danke" are too common to call an echo."""
@@ -42,8 +56,8 @@ def drop_echo(text: str, ha_url: str, token: str, door_span: tuple[float, float]
     """The door mic hears the resident through the door speaker (voice v2: door mic on for the whole call). If a
     resident talked while this door audio was recorded (door_span = start, end), drop the door sentences that mostly
     repeat the resident's transcript, waiting up to wait_s for it. No overlap: nothing to drop (and no delay)."""
-    began, last = resident_talk(activity_file)
-    if not began or min(last, door_span[1]) - max(began, door_span[0]) < 0.5:
+    began, _ = resident_talk(activity_file)
+    if resident_overlap_s(activity_file, door_span) < 0.5:
         return text                                    # < 0.5 s together: not even a word of echo
     deadline = time.time() + wait_s
     while True:

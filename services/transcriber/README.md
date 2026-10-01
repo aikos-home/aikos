@@ -33,6 +33,12 @@ crash there never stops the receiver.
 Content = when the resident started talking (Unix time), modification time = the last audio. The door side reads it:
 no live text while a resident talks, and its echo filter only looks at door audio that overlaps.
 
+**Resident's words at the door are never a visitor:** if a door utterance names one of the household (`AIKOS_KNOWN_NAMES`) as
+the speaker while a resident talked for at least 0.5 s during it, it is not published (final and live text). This covers
+the door mic hearing the resident when no room transcript can filter it, e.g. a key whose mic sends silence (system test
+01.10., W1). **Known trade-off:** a household member at the door who introduces themselves while someone inside is
+talking is dropped too; without that overlap ("Hier ist Jonas, ich habe meinen Schlüssel vergessen") it is shown.
+
 Needs: a whisper.cpp server with the OpenAI-compatible `/v1/audio/transcriptions` (large-v3 recommended) and, optional,
 Ollama with `qwen3:8b` (fallback for "who is speaking", and translation).
 

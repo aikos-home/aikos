@@ -22,7 +22,7 @@ import wave
 from pathlib import Path
 
 from .audio import has_speech
-from .echo import drop_echo
+from .echo import drop_echo, is_household, resident_overlap_s
 from .ha import ha, key_for_ip
 from .identity import WHISPER_PROMPT, identify, is_noise, prompt_echo, strip_captions
 from .translate import to_german
@@ -87,14 +87,22 @@ def main():
             original = strip_captions(detected.get("text", "")) or text
             text = (to_german(original, LANGUAGES.get(lang, (lang,))[0], a.llm_url, a.llm_model) if not a.no_llm else "") or text
         took = time.time() - t0
+    door_span = (0.0, 0.0)
     if a.side == "door":
         end = a.wav.stat().st_mtime
-        text = drop_echo(text, a.ha_url, token, (end - duration, end), activity_file, ref_entity=echo_ref)
+        door_span = (end - duration, end)
+        text = drop_echo(text, a.ha_url, token, door_span, activity_file, ref_entity=echo_ref)
         if not text:
             print(f"· door: only an echo of the resident in {a.wav.name}, not published", flush=True)
             return
     who = identify(text, names,
                    "" if a.no_llm else a.llm_url, a.llm_model, side=a.side)
+    if a.side == "door" and who.kind == "name" and is_household(who.name, names) and \
+            resident_overlap_s(activity_file, door_span) >= 0.5:
+        # the door mic heard a resident (crosstalk, or the door speaker) and no room transcript filtered it, e.g. because
+        # the key's mic sent silence: never show the resident's own words as a visitor (system test W1, 01.10.)
+        print(f"· door: \"{who.name}\" while a resident talked: the resident's own words, not published", flush=True)
+        return
     device, key_id = key_for_ip(a.ha_url, token, a.source_ip) if a.source_ip else (None, None)
     created = dt.datetime.now().astimezone().isoformat(timespec="seconds")
     data = {"text": text, "message": who.message, "speaker": who.speaker, "speaker_kind": who.kind,
