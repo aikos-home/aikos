@@ -1,6 +1,6 @@
 """Acceptance test of the aikos call log against a running Home Assistant.
 
-Uses only test entities (sensor.talk_transcript_test, sensor.talk_transcript_door_test, input_button.aikos_test_new_call,
+Uses only test entities (sensor.talk_transcript_test, sensor.talk_transcript_door_test, input_boolean.aikos_test_in_call,
 sensor.aikos_call_log_test) and checks that the live log does not move. Also checks the fields the devices read
 (messages_json: id, side, who, text; sensor.aikos_people keys_json: host, name); reading sensor.aikos_people writes nothing.
 
@@ -45,9 +45,14 @@ def transcript(entity, when, **attributes):
     time.sleep(WAIT)
 
 
-def new_test_call():
-    call("/services/input_button/press", {"entity_id": "input_button.aikos_test_new_call"}, "POST")
+def test_call(on):
+    call("/services/input_boolean/turn_" + ("on" if on else "off"), {"entity_id": "input_boolean.aikos_test_in_call"}, "POST")
     time.sleep(WAIT)
+
+
+def new_test_call():
+    test_call(False)
+    test_call(True)
 
 
 def people_contract():
@@ -102,9 +107,17 @@ def main():
     check(len(msgs) == 3 and msgs[-1]["urgent"] is True and msgs[-1]["who"] == "Besucher",
           "urgent door message without a speaker shows as 'Besucher'")
 
-    new_test_call()
+    # R22: the chat of a call must never show up in the next one, not even for a moment
+    test_call(False)
     log = test_log()
-    check(not log.get("messages") and log.get("call_id") != call_id, "the next test call starts empty, new call_id")
+    check(not log.get("messages") and log.get("active") is False, "R22: the log is empty as soon as the call ends")
+    transcript("sensor.talk_transcript_door_test", stamp(30), **dict(door, text="Spät.", message="Spät."))
+    check(not test_log().get("messages"), "R22: a transcript after the end is not added")
+    test_call(True)
+    log = test_log()
+    check(not log.get("messages") and log.get("call_id") != call_id and log.get("active") is True,
+          "the next test call starts empty, new call_id")
+    test_call(False)
 
     live_after = call("/states/sensor.aikos_call_log")
     check(live_after["last_updated"] == live_before["last_updated"], "the live call log did not move")

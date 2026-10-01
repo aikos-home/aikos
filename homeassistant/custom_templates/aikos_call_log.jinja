@@ -1,7 +1,9 @@
 {#- aikos call log (aikos stack thread). The one place that decides how a transcript becomes a chat message.
     Used by packages/aikos.yaml for sensor.aikos_call_log (live) and sensor.aikos_call_log_test (test), see features/sprechen.md §4b.
     me = this (previous state of the log sensor), trigger = the trigger, call_entity = door call sensor ('' for the test log).
-    Returns JSON: {messages (≤ 20), call_id, active, last_id, state}. -#}
+    Returns JSON: {messages (≤ 20), call_id, active, last_id, state}.
+    R22: the log is emptied when a call ENDS (not only when the next one starts), and a transcript that arrives while no call
+    runs is not added, so a screen can never show the previous call's chat at the start of the next one. -#}
 {% macro aikos_call_log(me, trigger, call_entity) -%}
 {%- set pa = me.attributes if (me is defined and me is not none and me.attributes is defined) else {} -%}
 {%- set pm = pa.get('messages', []) -%}
@@ -9,9 +11,12 @@
 {%- set prev_call = pa.get('call_id', '') -%}
 {%- set call_start = trigger.id == 'call' and trigger.to_state is not none and trigger.to_state.state == 'on'
       and (trigger.from_state is none or trigger.from_state.state != 'on') -%}
-{%- set reset = call_start or trigger.id == 'testcall' -%}
+{%- set call_end = trigger.id == 'call' and trigger.to_state is not none and trigger.to_state.state != 'on'
+      and trigger.from_state is not none and trigger.from_state.state == 'on' -%}
+{%- set reset = call_start or call_end or trigger.id == 'testcall' -%}
+{%- set in_call = (is_state(call_entity, 'on') if call_entity else true) -%}
 {%- set ns = namespace(out=([] if reset else (prev | list))) -%}
-{%- if trigger.id == 'msg' and trigger.to_state is not none and trigger.to_state.state not in ['unknown', 'unavailable', ''] -%}
+{%- if trigger.id == 'msg' and in_call and trigger.to_state is not none and trigger.to_state.state not in ['unknown', 'unavailable', ''] -%}
   {%- set a = trigger.to_state.attributes -%}
   {%- set side = 'door' if '_door' in trigger.entity_id else 'room' -%}
   {%- set spk = a.get('speaker') or '' -%}
