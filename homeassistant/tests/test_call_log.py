@@ -7,6 +7,7 @@ sensor.aikos_call_log_test) and checks that the live log does not move.
 
 Exit code 1 if a check fails.
 """
+import datetime
 import json
 import os
 import sys
@@ -55,7 +56,10 @@ def main():
     check(not log.get("messages") and log.get("call_id"), "a new test call starts empty and has a call_id")
     call_id = log.get("call_id")
 
-    t_door, t_room = "2000-01-01T10:00:01+00:00", "2000-01-01T10:00:09+00:00"
+    # Timestamps unique per run: HA fires no trigger if a sensor gets the same state and attributes again.
+    base = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
+    stamp = lambda s: (base + datetime.timedelta(seconds=s)).isoformat()
+    t_door, t_room, t_urgent = stamp(1), stamp(9), stamp(20)
     door = dict(text="Guten Tag, Paketdienst von DHL, ich habe ein Paket.", message="Ich habe ein Paket.",
                 speaker="Paketdienst · DHL", speaker_role="parcel", urgent=False, language="de")
     transcript("sensor.talk_transcript_door_test", t_door, **door)
@@ -74,7 +78,7 @@ def main():
     msgs = test_log().get("messages") or []
     check(len(msgs) == 2 and msgs[0]["lang"] == "Englisch", "a later update replaces the message (no duplicate)")
 
-    transcript("sensor.talk_transcript_door_test", "2000-01-01T10:00:20+00:00",
+    transcript("sensor.talk_transcript_door_test", t_urgent,
                **dict(door, text="Hilfe, ein Unfall!", message="Hilfe, ein Unfall!", speaker="",
                       speaker_role="emergency", urgent=True))
     msgs = test_log().get("messages") or []
