@@ -96,6 +96,14 @@ cases), configuration, speech detection, the receiver over real UDP (one recordi
 contract), the worker end to end against fake Whisper, Ollama and Home Assistant (test senders never reach live
 entities), and the LaunchAgent writer. Nothing in the tests talks to a real Home Assistant.
 
+**Who is speaking, all eval cases:** `tests/test_identity_snapshot.py` runs the rules (+ visitor type, no LLM, no audio) over
+the 716 cases in `tests/eval/` and compares every case with `tests/eval/snapshot.json`. A rule change that moves any case
+fails; if the move is wanted, regenerate the snapshot on purpose (`python3 services/transcriber/tests/eval/make_snapshot.py`)
+and commit it with the change, so the review sees each changed case; the PR says in one line why each changed answer is
+better (an approved list, not a rubber stamp). The full eval with the local LLM and with audio
+(spoken by macOS voices, degraded, through Whisper) is `tools/talk_eval.py`, a dev tool outside CI: 98.9 % text only
+(708/716, qwen3:8b) on 2026-10-01; rules alone 92.9 %. See `tests/eval/README.md`.
+
 `tests/equivalence/` proved that the move from the RoomKey repository changed nothing (identity: 36,084 checks over
 937 texts; worker: 7 of 7 scenarios). It needs the old code and is not part of CI.
 

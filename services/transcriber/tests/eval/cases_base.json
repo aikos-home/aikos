@@ -1,0 +1,1262 @@
+[
+ {
+  "id": "base-001",
+  "category": "resident",
+  "side": "room",
+  "say": "Hi, hier ist Jonas, ich komme gleich runter.",
+  "text": "Hi, hier ist Jonas, ich komme gleich runter.",
+  "expect_speaker_any": [
+   [
+    "Jonas"
+   ]
+  ],
+  "expect_message_contains": "komme gleich"
+ },
+ {
+  "id": "base-002",
+  "category": "resident",
+  "side": "room",
+  "say": "Hallo, hier ist Anna. Ich bin in zwei Minuten unten.",
+  "text": "Hallo, hier ist Anna. Ich bin in zwei Minuten unten.",
+  "expect_speaker_any": [
+   [
+    "Anna"
+   ]
+  ],
+  "expect_message_contains": "zwei Minuten"
+ },
+ {
+  "id": "base-003",
+  "category": "resident",
+  "side": "room",
+  "say": "Ja, hallo? Ich komme sofort.",
+  "text": "Ja, hallo? Ich komme sofort.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "komme sofort"
+ },
+ {
+  "id": "base-004",
+  "category": "resident",
+  "side": "room",
+  "say": "Wer ist da?",
+  "text": "Wer ist da?",
+  "expect_speaker_any": [],
+  "expect_message_contains": ""
+ },
+ {
+  "id": "base-005",
+  "category": "resident",
+  "side": "room",
+  "say": "Moment bitte, ich mache auf.",
+  "text": "Moment bitte, ich mache auf.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "mache auf"
+ },
+ {
+  "id": "base-006",
+  "category": "resident",
+  "side": "room",
+  "say": "Hier ist Papa, stell das Paket einfach vor die Tür.",
+  "text": "Hier ist Papa, stell das Paket einfach vor die Tür.",
+  "expect_speaker_any": [
+   [
+    "Papa"
+   ]
+  ],
+  "expect_message_contains": "vor die Tür"
+ },
+ {
+  "id": "base-007",
+  "category": "resident",
+  "side": "room",
+  "say": "Ich bin's, Mama. Warte kurz, ich suche meine Schuhe.",
+  "text": "Ich bin's, Mama. Warte kurz, ich suche meine Schuhe.",
+  "expect_speaker_any": [
+   [
+    "Mama"
+   ]
+  ],
+  "expect_message_contains": "Schuhe"
+ },
+ {
+  "id": "base-008",
+  "category": "resident",
+  "side": "room",
+  "say": "Jonas hier. Legen Sie es bitte in den Briefkasten.",
+  "text": "Jonas hier. Legen Sie es bitte in den Briefkasten.",
+  "expect_speaker_any": [
+   [
+    "Jonas"
+   ]
+  ],
+  "expect_message_contains": "Briefkasten"
+ },
+ {
+  "id": "base-009",
+  "category": "resident",
+  "side": "room",
+  "say": "Hallo, Anna Becker hier, einen Moment bitte.",
+  "text": "Hallo, Anna Becker hier, einen Moment bitte.",
+  "expect_speaker_any": [
+   [
+    "Anna"
+   ]
+  ],
+  "expect_message_contains": "Moment"
+ },
+ {
+  "id": "base-010",
+  "category": "resident",
+  "side": "room",
+  "say": "Kannst du bitte später nochmal klingeln? Ich bin gerade in einem Meeting.",
+  "text": "Kannst du bitte später nochmal klingeln? Ich bin gerade in einem Meeting.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Meeting"
+ },
+ {
+  "id": "base-011",
+  "category": "resident",
+  "side": "room",
+  "say": "Ich komme gleich raus, zieh schon mal die Schuhe aus.",
+  "text": "Ich komme gleich raus, zieh schon mal die Schuhe aus.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "gleich raus"
+ },
+ {
+  "id": "base-012",
+  "category": "resident",
+  "side": "room",
+  "say": "Hier ist Tom, ich muss noch tausend Drachen bekämpfen.",
+  "text": "Hier ist Tom, ich muss noch tausend Drachen bekämpfen.",
+  "expect_speaker_any": [
+   [
+    "Tom"
+   ]
+  ],
+  "expect_message_contains": "Drachen"
+ },
+ {
+  "id": "base-013",
+  "category": "resident",
+  "side": "room",
+  "say": "Das ist ja lustig, hier spricht der Weihnachtsmann.",
+  "text": "Das ist ja lustig, hier spricht der Weihnachtsmann.",
+  "expect_speaker_any": [
+   [
+    "Weihnachtsmann"
+   ]
+  ],
+  "expect_message_contains": ""
+ },
+ {
+  "id": "base-014",
+  "category": "resident",
+  "side": "room",
+  "say": "Nein danke, wir kaufen nichts.",
+  "text": "Nein danke, wir kaufen nichts.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "kaufen nichts"
+ },
+ {
+  "id": "base-015",
+  "category": "resident",
+  "side": "room",
+  "say": "Wir sind nicht zu Hause, bitte beim Nachbarn abgeben.",
+  "text": "Wir sind nicht zu Hause, bitte beim Nachbarn abgeben.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Nachbarn"
+ },
+ {
+  "id": "base-016",
+  "category": "family",
+  "side": "door",
+  "say": "Hallo, ich bin's, Mia. Ich habe meinen Schlüssel vergessen.",
+  "text": "Hallo, ich bin's, Mia. Ich habe meinen Schlüssel vergessen.",
+  "expect_speaker_any": [
+   [
+    "Mia"
+   ]
+  ],
+  "expect_message_contains": "Schlüssel"
+ },
+ {
+  "id": "base-017",
+  "category": "family",
+  "side": "door",
+  "say": "Mama, mach auf, ich bin's!",
+  "text": "Mama, mach auf, ich bin's!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "mach auf"
+ },
+ {
+  "id": "base-018",
+  "category": "family",
+  "side": "door",
+  "say": "Papa, ich bin's, Emma. Kannst du aufmachen?",
+  "text": "Papa, ich bin's, Emma. Kannst du aufmachen?",
+  "expect_speaker_any": [
+   [
+    "Emma"
+   ]
+  ],
+  "expect_message_contains": "aufmachen"
+ },
+ {
+  "id": "base-019",
+  "category": "family",
+  "side": "door",
+  "say": "Hallo, hier ist Oma Gerda, wir sind ein bisschen zu früh.",
+  "text": "Hallo, hier ist Oma Gerda, wir sind ein bisschen zu früh.",
+  "expect_speaker_any": [
+   [
+    "Gerda"
+   ],
+   [
+    "Oma"
+   ]
+  ],
+  "expect_message_contains": "zu früh"
+ },
+ {
+  "id": "base-020",
+  "category": "family",
+  "side": "door",
+  "say": "Hi, ich bin Tim, ein Freund von Jonas. Ist er da?",
+  "text": "Hi, ich bin Tim, ein Freund von Jonas. Ist er da?",
+  "expect_speaker_any": [
+   [
+    "Tim"
+   ]
+  ],
+  "expect_message_contains": "Jonas"
+ },
+ {
+  "id": "base-021",
+  "category": "family",
+  "side": "door",
+  "say": "Hier sind Anna und Paul, wir wollten euch abholen.",
+  "text": "Hier sind Anna und Paul, wir wollten euch abholen.",
+  "expect_speaker_any": [
+   [
+    "Anna"
+   ]
+  ],
+  "expect_message_contains": "abholen"
+ },
+ {
+  "id": "base-022",
+  "category": "family",
+  "side": "door",
+  "say": "Tante Sabine hier, ich bringe den Kuchen vorbei.",
+  "text": "Tante Sabine hier, ich bringe den Kuchen vorbei.",
+  "expect_speaker_any": [
+   [
+    "Sabine"
+   ]
+  ],
+  "expect_message_contains": "Kuchen"
+ },
+ {
+  "id": "base-023",
+  "category": "family",
+  "side": "door",
+  "say": "Ich bin's.",
+  "text": "Ich bin's.",
+  "expect_speaker_any": [],
+  "expect_message_contains": ""
+ },
+ {
+  "id": "base-024",
+  "category": "family",
+  "side": "door",
+  "say": "Ist Mia da? Wir wollten zusammen Hausaufgaben machen.",
+  "text": "Ist Mia da? Wir wollten zusammen Hausaufgaben machen.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Hausaufgaben"
+ },
+ {
+  "id": "base-025",
+  "category": "family",
+  "side": "door",
+  "say": "Hallo, ich bin die Mia aus der Klasse von Emma.",
+  "text": "Hallo, ich bin die Mia aus der Klasse von Emma.",
+  "expect_speaker_any": [
+   [
+    "Mia"
+   ]
+  ],
+  "expect_message_contains": "Klasse"
+ },
+ {
+  "id": "base-026",
+  "category": "parcel",
+  "side": "door",
+  "say": "Guten Tag, Paketdienst von DHL, ich habe ein Paket für Sie.",
+  "text": "Guten Tag, Paketdienst von DHL, ich habe ein Paket für Sie.",
+  "expect_speaker_any": [
+   [
+    "DHL"
+   ]
+  ],
+  "expect_message_contains": "Paket für Sie"
+ },
+ {
+  "id": "base-027",
+  "category": "parcel",
+  "side": "door",
+  "say": "Hallo, Hermes. Ein Paket für Schmidt.",
+  "text": "Hallo, Hermes. Ein Paket für Schmidt.",
+  "expect_speaker_any": [
+   [
+    "Hermes"
+   ]
+  ],
+  "expect_message_contains": "Schmidt"
+ },
+ {
+  "id": "base-028",
+  "category": "parcel",
+  "side": "door",
+  "say": "DPD, ich habe eine Sendung für Sie.",
+  "text": "DPD, ich habe eine Sendung für Sie.",
+  "expect_speaker_any": [
+   [
+    "DPD"
+   ]
+  ],
+  "expect_message_contains": "Sendung"
+ },
+ {
+  "id": "base-029",
+  "category": "parcel",
+  "side": "door",
+  "say": "Guten Morgen, UPS, bitte unterschreiben.",
+  "text": "Guten Morgen, UPS, bitte unterschreiben.",
+  "expect_speaker_any": [
+   [
+    "UPS"
+   ]
+  ],
+  "expect_message_contains": "unterschreiben"
+ },
+ {
+  "id": "base-030",
+  "category": "parcel",
+  "side": "door",
+  "say": "Hallo, GLS hier, können Sie ein Paket für den Nachbarn annehmen?",
+  "text": "Hallo, GLS hier, können Sie ein Paket für den Nachbarn annehmen?",
+  "expect_speaker_any": [
+   [
+    "GLS"
+   ]
+  ],
+  "expect_message_contains": "Nachbarn"
+ },
+ {
+  "id": "base-031",
+  "category": "parcel",
+  "side": "door",
+  "say": "Amazon Lieferung, ich lege es vor die Tür.",
+  "text": "Amazon Lieferung, ich lege es vor die Tür.",
+  "expect_speaker_any": [
+   [
+    "Amazon"
+   ]
+  ],
+  "expect_message_contains": "vor die Tür"
+ },
+ {
+  "id": "base-032",
+  "category": "parcel",
+  "side": "door",
+  "say": "Hallo, die Post. Ich habe ein Einschreiben für Sie.",
+  "text": "Hallo, die Post. Ich habe ein Einschreiben für Sie.",
+  "expect_speaker_any": [
+   [
+    "Post"
+   ]
+  ],
+  "expect_message_contains": "Einschreiben"
+ },
+ {
+  "id": "base-033",
+  "category": "parcel",
+  "side": "door",
+  "say": "Paket für Familie Schmidt.",
+  "text": "Paket für Familie Schmidt.",
+  "expect_speaker_any": [
+   [
+    "Paket"
+   ]
+  ],
+  "expect_message_contains": "Schmidt"
+ },
+ {
+  "id": "base-034",
+  "category": "parcel",
+  "side": "door",
+  "say": "Hallo, ich bin der Paketbote, ich habe hier drei Pakete.",
+  "text": "Hallo, ich bin der Paketbote, ich habe hier drei Pakete.",
+  "expect_speaker_any": [
+   [
+    "Paket"
+   ]
+  ],
+  "expect_message_contains": "drei Pakete"
+ },
+ {
+  "id": "base-035",
+  "category": "parcel",
+  "side": "door",
+  "say": "FedEx Express, eine Lieferung aus Amerika.",
+  "text": "FedEx Express, eine Lieferung aus Amerika.",
+  "expect_speaker_any": [
+   [
+    "FedEx"
+   ]
+  ],
+  "expect_message_contains": "Amerika"
+ },
+ {
+  "id": "base-036",
+  "category": "parcel",
+  "side": "door",
+  "say": "Guten Tag, Deutsche Post, bitte einmal unterschreiben.",
+  "text": "Guten Tag, Deutsche Post, bitte einmal unterschreiben.",
+  "expect_speaker_any": [
+   [
+    "Post"
+   ]
+  ],
+  "expect_message_contains": "unterschreiben"
+ },
+ {
+  "id": "base-037",
+  "category": "parcel",
+  "side": "door",
+  "say": "Hallo, Paket. DHL.",
+  "text": "Hallo, Paket. DHL.",
+  "expect_speaker_any": [
+   [
+    "DHL"
+   ]
+  ],
+  "expect_message_contains": ""
+ },
+ {
+  "id": "base-038",
+  "category": "food",
+  "side": "door",
+  "say": "Hallo, Lieferando, Ihre Bestellung ist da.",
+  "text": "Hallo, Lieferando, Ihre Bestellung ist da.",
+  "expect_speaker_any": [
+   [
+    "Lieferando"
+   ]
+  ],
+  "expect_message_contains": "Bestellung"
+ },
+ {
+  "id": "base-039",
+  "category": "food",
+  "side": "door",
+  "say": "Pizza für Schmidt!",
+  "text": "Pizza für Schmidt!",
+  "expect_speaker_any": [
+   [
+    "Pizza"
+   ],
+   [
+    "Liefer"
+   ]
+  ],
+  "expect_message_contains": "Schmidt"
+ },
+ {
+  "id": "base-040",
+  "category": "food",
+  "side": "door",
+  "say": "Hi, Wolt, ich habe Ihr Essen.",
+  "text": "Hi, Wolt, ich habe Ihr Essen.",
+  "expect_speaker_any": [
+   [
+    "Wolt"
+   ]
+  ],
+  "expect_message_contains": "Essen"
+ },
+ {
+  "id": "base-041",
+  "category": "food",
+  "side": "door",
+  "say": "Guten Abend, Ihr Essen von Uber Eats.",
+  "text": "Guten Abend, Ihr Essen von Uber Eats.",
+  "expect_speaker_any": [
+   [
+    "Uber"
+   ]
+  ],
+  "expect_message_contains": ""
+ },
+ {
+  "id": "base-042",
+  "category": "food",
+  "side": "door",
+  "say": "Hallo, Flink Lieferung, ich habe Ihre Einkäufe.",
+  "text": "Hallo, Flink Lieferung, ich habe Ihre Einkäufe.",
+  "expect_speaker_any": [
+   [
+    "Flink"
+   ]
+  ],
+  "expect_message_contains": "Einkäufe"
+ },
+ {
+  "id": "base-043",
+  "category": "food",
+  "side": "door",
+  "say": "Rewe Lieferservice, wohin soll ich die Kisten stellen?",
+  "text": "Rewe Lieferservice, wohin soll ich die Kisten stellen?",
+  "expect_speaker_any": [
+   [
+    "Rewe"
+   ]
+  ],
+  "expect_message_contains": "Kisten"
+ },
+ {
+  "id": "base-044",
+  "category": "police",
+  "side": "door",
+  "say": "Guten Tag, hier ist die Polizei, bitte öffnen Sie die Tür.",
+  "text": "Guten Tag, hier ist die Polizei, bitte öffnen Sie die Tür.",
+  "expect_speaker_any": [
+   [
+    "Polizei"
+   ]
+  ],
+  "expect_message_contains": "öffnen"
+ },
+ {
+  "id": "base-045",
+  "category": "police",
+  "side": "door",
+  "say": "Polizei! Machen Sie bitte auf.",
+  "text": "Polizei! Machen Sie bitte auf.",
+  "expect_speaker_any": [
+   [
+    "Polizei"
+   ]
+  ],
+  "expect_message_contains": "auf"
+ },
+ {
+  "id": "base-046",
+  "category": "police",
+  "side": "door",
+  "say": "Guten Abend, Polizeiobermeister Keller, wir haben ein paar Fragen zu einem Unfall.",
+  "text": "Guten Abend, Polizeiobermeister Keller, wir haben ein paar Fragen zu einem Unfall.",
+  "expect_speaker_any": [
+   [
+    "Polizei"
+   ],
+   [
+    "Keller"
+   ]
+  ],
+  "expect_message_contains": "Unfall"
+ },
+ {
+  "id": "base-047",
+  "category": "police",
+  "side": "door",
+  "say": "Feuerwehr, wir müssen kurz in den Keller, es riecht nach Gas.",
+  "text": "Feuerwehr, wir müssen kurz in den Keller, es riecht nach Gas.",
+  "expect_speaker_any": [
+   [
+    "Feuerwehr"
+   ]
+  ],
+  "expect_message_contains": "Gas"
+ },
+ {
+  "id": "base-048",
+  "category": "police",
+  "side": "door",
+  "say": "Rettungsdienst, jemand hat den Notruf gewählt.",
+  "text": "Rettungsdienst, jemand hat den Notruf gewählt.",
+  "expect_speaker_any": [
+   [
+    "Rettung"
+   ]
+  ],
+  "expect_message_contains": "Notruf"
+ },
+ {
+  "id": "base-049",
+  "category": "police",
+  "side": "door",
+  "say": "Guten Tag, Ordnungsamt, es geht um Ihr Auto auf dem Gehweg.",
+  "text": "Guten Tag, Ordnungsamt, es geht um Ihr Auto auf dem Gehweg.",
+  "expect_speaker_any": [
+   [
+    "Ordnungsamt"
+   ],
+   [
+    "Behörde"
+   ]
+  ],
+  "expect_message_contains": "Gehweg"
+ },
+ {
+  "id": "base-050",
+  "category": "police",
+  "side": "door",
+  "say": "Soll ich die Polizei rufen? Da liegt jemand auf der Straße.",
+  "text": "Soll ich die Polizei rufen? Da liegt jemand auf der Straße.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Straße"
+ },
+ {
+  "id": "base-051",
+  "category": "police",
+  "side": "door",
+  "say": "Gerichtsvollzieher Braun, ich muss Ihnen etwas zustellen.",
+  "text": "Gerichtsvollzieher Braun, ich muss Ihnen etwas zustellen.",
+  "expect_speaker_any": [
+   [
+    "Gerichtsvollzieher"
+   ],
+   [
+    "Braun"
+   ]
+  ],
+  "expect_message_contains": "zustellen"
+ },
+ {
+  "id": "base-052",
+  "category": "trades",
+  "side": "door",
+  "say": "Guten Tag, ich bin der Schornsteinfeger, ich muss die Heizung messen.",
+  "text": "Guten Tag, ich bin der Schornsteinfeger, ich muss die Heizung messen.",
+  "expect_speaker_any": [
+   [
+    "Schornsteinfeger"
+   ]
+  ],
+  "expect_message_contains": "Heizung"
+ },
+ {
+  "id": "base-053",
+  "category": "trades",
+  "side": "door",
+  "say": "Hallo, Stadtwerke, ich möchte den Stromzähler ablesen.",
+  "text": "Hallo, Stadtwerke, ich möchte den Stromzähler ablesen.",
+  "expect_speaker_any": [
+   [
+    "Stadtwerk"
+   ]
+  ],
+  "expect_message_contains": "Stromzähler"
+ },
+ {
+  "id": "base-054",
+  "category": "trades",
+  "side": "door",
+  "say": "Guten Tag, ich komme von der Telekom wegen dem Glasfaseranschluss.",
+  "text": "Guten Tag, ich komme von der Telekom wegen dem Glasfaseranschluss.",
+  "expect_speaker_any": [
+   [
+    "Telekom"
+   ]
+  ],
+  "expect_message_contains": "Glasfaser"
+ },
+ {
+  "id": "base-055",
+  "category": "trades",
+  "side": "door",
+  "say": "Hallo, Firma Elektro Wagner, wir sollen heute die Lampen anschließen.",
+  "text": "Hallo, Firma Elektro Wagner, wir sollen heute die Lampen anschließen.",
+  "expect_speaker_any": [
+   [
+    "Wagner"
+   ]
+  ],
+  "expect_message_contains": "Lampen"
+ },
+ {
+  "id": "base-056",
+  "category": "trades",
+  "side": "door",
+  "say": "Moin, der Hausmeister. Ich muss mal an die Heizung.",
+  "text": "Moin, der Hausmeister. Ich muss mal an die Heizung.",
+  "expect_speaker_any": [
+   [
+    "Hausmeister"
+   ]
+  ],
+  "expect_message_contains": "Heizung"
+ },
+ {
+  "id": "base-057",
+  "category": "trades",
+  "side": "door",
+  "say": "Hallo, ich bin der Klempner, Sie haben einen Wasserschaden gemeldet.",
+  "text": "Hallo, ich bin der Klempner, Sie haben einen Wasserschaden gemeldet.",
+  "expect_speaker_any": [
+   [
+    "Klempner"
+   ],
+   [
+    "Handwerker"
+   ]
+  ],
+  "expect_message_contains": "Wasserschaden"
+ },
+ {
+  "id": "base-058",
+  "category": "trades",
+  "side": "door",
+  "say": "Vodafone Kundenservice, wir machen gerade Termine für den Kabelanschluss.",
+  "text": "Vodafone Kundenservice, wir machen gerade Termine für den Kabelanschluss.",
+  "expect_speaker_any": [
+   [
+    "Vodafone"
+   ]
+  ],
+  "expect_message_contains": "Kabelanschluss"
+ },
+ {
+  "id": "base-059",
+  "category": "trades",
+  "side": "door",
+  "say": "Guten Tag, Hausverwaltung Meier, wir kommen wegen der Wohnungsbesichtigung.",
+  "text": "Guten Tag, Hausverwaltung Meier, wir kommen wegen der Wohnungsbesichtigung.",
+  "expect_speaker_any": [
+   [
+    "Hausverwaltung"
+   ],
+   [
+    "Meier"
+   ]
+  ],
+  "expect_message_contains": "Besichtigung"
+ },
+ {
+  "id": "base-060",
+  "category": "trades",
+  "side": "door",
+  "say": "Die Handwerker sind da, wo sollen wir anfangen?",
+  "text": "Die Handwerker sind da, wo sollen wir anfangen?",
+  "expect_speaker_any": [
+   [
+    "Handwerker"
+   ]
+  ],
+  "expect_message_contains": "anfangen"
+ },
+ {
+  "id": "base-061",
+  "category": "care",
+  "side": "door",
+  "say": "Guten Morgen, Pflegedienst, ich bin die Schwester Monika.",
+  "text": "Guten Morgen, Pflegedienst, ich bin die Schwester Monika.",
+  "expect_speaker_any": [
+   [
+    "Monika"
+   ],
+   [
+    "Pflegedienst"
+   ]
+  ],
+  "expect_message_contains": ""
+ },
+ {
+  "id": "base-062",
+  "category": "care",
+  "side": "door",
+  "say": "Hallo, hier ist die Hebamme, Frau Kraus.",
+  "text": "Hallo, hier ist die Hebamme, Frau Kraus.",
+  "expect_speaker_any": [
+   [
+    "Hebamme"
+   ],
+   [
+    "Kraus"
+   ]
+  ],
+  "expect_message_contains": ""
+ },
+ {
+  "id": "base-063",
+  "category": "care",
+  "side": "door",
+  "say": "Guten Tag, Physiotherapie Hofmann, ich habe einen Hausbesuch.",
+  "text": "Guten Tag, Physiotherapie Hofmann, ich habe einen Hausbesuch.",
+  "expect_speaker_any": [
+   [
+    "Hofmann"
+   ],
+   [
+    "Physio"
+   ]
+  ],
+  "expect_message_contains": "Hausbesuch"
+ },
+ {
+  "id": "base-064",
+  "category": "neighbour",
+  "side": "door",
+  "say": "Hallo, ich bin die Nachbarin von oben, haben Sie mein Paket?",
+  "text": "Hallo, ich bin die Nachbarin von oben, haben Sie mein Paket?",
+  "expect_speaker_any": [
+   [
+    "Nachbarin"
+   ]
+  ],
+  "expect_message_contains": "Paket"
+ },
+ {
+  "id": "base-065",
+  "category": "neighbour",
+  "side": "door",
+  "say": "Guten Tag, Herr Özdemir aus dem Erdgeschoss. Ihr Auto steht offen.",
+  "text": "Guten Tag, Herr Özdemir aus dem Erdgeschoss. Ihr Auto steht offen.",
+  "expect_speaker_any": [
+   [
+    "Özdemir"
+   ]
+  ],
+  "expect_message_contains": "Auto"
+ },
+ {
+  "id": "base-066",
+  "category": "neighbour",
+  "side": "door",
+  "say": "Hier ist Frau Weber von nebenan, ich habe Ihre Post.",
+  "text": "Hier ist Frau Weber von nebenan, ich habe Ihre Post.",
+  "expect_speaker_any": [
+   [
+    "Weber"
+   ]
+  ],
+  "expect_message_contains": "Post"
+ },
+ {
+  "id": "base-067",
+  "category": "neighbour",
+  "side": "door",
+  "say": "Ihr Nachbar, Klaus. Kann ich mir kurz die Leiter ausleihen?",
+  "text": "Ihr Nachbar, Klaus. Kann ich mir kurz die Leiter ausleihen?",
+  "expect_speaker_any": [
+   [
+    "Klaus"
+   ]
+  ],
+  "expect_message_contains": "Leiter"
+ },
+ {
+  "id": "base-068",
+  "category": "neighbour",
+  "side": "door",
+  "say": "Hallo, habt ihr ein Paket für die Nachbarn angenommen?",
+  "text": "Hallo, habt ihr ein Paket für die Nachbarn angenommen?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Paket"
+ },
+ {
+  "id": "base-069",
+  "category": "foreigner",
+  "side": "door",
+  "say": "Hallo, isch habe Paket für Nachbar. Sie nehmen?",
+  "text": "Hallo, isch habe Paket für Nachbar. Sie nehmen?",
+  "expect_speaker_any": [
+   [
+    "Paket"
+   ]
+  ],
+  "expect_message_contains": "Nachbar"
+ },
+ {
+  "id": "base-070",
+  "category": "foreigner",
+  "side": "door",
+  "say": "Merhaba, ich bin Mehmet von oben, haben Sie Salz?",
+  "text": "Merhaba, ich bin Mehmet von oben, haben Sie Salz?",
+  "expect_speaker_any": [
+   [
+    "Mehmet"
+   ]
+  ],
+  "expect_message_contains": "Salz"
+ },
+ {
+  "id": "base-071",
+  "category": "foreigner",
+  "side": "door",
+  "say": "Guten Tag, ich Olena, ich neue Putzfrau.",
+  "text": "Guten Tag, ich Olena, ich neue Putzfrau.",
+  "expect_speaker_any": [
+   [
+    "Olena"
+   ]
+  ],
+  "expect_message_contains": "Putzfrau"
+ },
+ {
+  "id": "base-072",
+  "category": "foreigner",
+  "side": "door",
+  "say": "Hello, delivery for Schmidt, Amazon.",
+  "text": "Hello, delivery for Schmidt, Amazon.",
+  "expect_speaker_any": [
+   [
+    "Amazon"
+   ],
+   [
+    "Delivery"
+   ]
+  ],
+  "expect_message_contains": "Schmidt"
+ },
+ {
+  "id": "base-073",
+  "category": "foreigner",
+  "side": "door",
+  "say": "Hi, it's Sarah from next door. Can I borrow some sugar?",
+  "text": "Hi, it's Sarah from next door. Can I borrow some sugar?",
+  "expect_speaker_any": [
+   [
+    "Sarah"
+   ]
+  ],
+  "expect_message_contains": "sugar"
+ },
+ {
+  "id": "base-074",
+  "category": "foreigner",
+  "side": "door",
+  "say": "Guten Tag, mein Name ist Agnieszka, ich komme für die Reinigung.",
+  "text": "Guten Tag, mein Name ist Agnieszka, ich komme für die Reinigung.",
+  "expect_speaker_any": [
+   [
+    "Agnieszka"
+   ]
+  ],
+  "expect_message_contains": "Reinigung"
+ },
+ {
+  "id": "base-075",
+  "category": "foreigner",
+  "side": "door",
+  "say": "Hallo, ich bin Ahmed, der Fahrer. Das Taxi ist da.",
+  "text": "Hallo, ich bin Ahmed, der Fahrer. Das Taxi ist da.",
+  "expect_speaker_any": [
+   [
+    "Ahmed"
+   ]
+  ],
+  "expect_message_contains": "Taxi"
+ },
+ {
+  "id": "base-076",
+  "category": "foreigner",
+  "side": "door",
+  "say": "Entschuldigung, wo ist Hausnummer zwölf?",
+  "text": "Entschuldigung, wo ist Hausnummer zwölf?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Hausnummer"
+ },
+ {
+  "id": "base-077",
+  "category": "foreigner",
+  "side": "door",
+  "say": "Ich Paket bringen, DHL, bitte aufmachen.",
+  "text": "Ich Paket bringen, DHL, bitte aufmachen.",
+  "expect_speaker_any": [
+   [
+    "DHL"
+   ]
+  ],
+  "expect_message_contains": "aufmachen"
+ },
+ {
+  "id": "base-078",
+  "category": "foreigner",
+  "side": "door",
+  "say": "Guten Tag, mein Name ist Nguyen, ich wohne im dritten Stock.",
+  "text": "Guten Tag, mein Name ist Nguyen, ich wohne im dritten Stock.",
+  "expect_speaker_any": [
+   [
+    "Nguyen"
+   ]
+  ],
+  "expect_message_contains": "dritten Stock"
+ },
+ {
+  "id": "base-079",
+  "category": "foreigner",
+  "side": "door",
+  "say": "Buongiorno, ich bin Marco, der Freund von Anna.",
+  "text": "Buongiorno, ich bin Marco, der Freund von Anna.",
+  "expect_speaker_any": [
+   [
+    "Marco"
+   ]
+  ],
+  "expect_message_contains": "Anna"
+ },
+ {
+  "id": "base-080",
+  "category": "foreigner",
+  "side": "door",
+  "say": "Dobryj den, hier ist Irina, ich bringe den Schlüssel zurück.",
+  "text": "Dobryj den, hier ist Irina, ich bringe den Schlüssel zurück.",
+  "expect_speaker_any": [
+   [
+    "Irina"
+   ]
+  ],
+  "expect_message_contains": "Schlüssel"
+ },
+ {
+  "id": "base-081",
+  "category": "dialect",
+  "side": "door",
+  "say": "Servus, i bin da Sepp, is da Jonas dahoam?",
+  "text": "Servus, i bin da Sepp, is da Jonas dahoam?",
+  "expect_speaker_any": [
+   [
+    "Sepp"
+   ]
+  ],
+  "expect_message_contains": "Jonas"
+ },
+ {
+  "id": "base-082",
+  "category": "dialect",
+  "side": "door",
+  "say": "Grüß Gott, der Kaminkehrer.",
+  "text": "Grüß Gott, der Kaminkehrer.",
+  "expect_speaker_any": [
+   [
+    "Kaminkehrer"
+   ],
+   [
+    "Schornstein"
+   ]
+  ],
+  "expect_message_contains": ""
+ },
+ {
+  "id": "base-083",
+  "category": "dialect",
+  "side": "door",
+  "say": "Moin moin, hier is Hauke, ich bring die Eier.",
+  "text": "Moin moin, hier is Hauke, ich bring die Eier.",
+  "expect_speaker_any": [
+   [
+    "Hauke"
+   ]
+  ],
+  "expect_message_contains": "Eier"
+ },
+ {
+  "id": "base-084",
+  "category": "dialect",
+  "side": "door",
+  "say": "Icke bin's, der Kalle, mach ma uff.",
+  "text": "Icke bin's, der Kalle, mach ma uff.",
+  "expect_speaker_any": [
+   [
+    "Kalle"
+   ]
+  ],
+  "expect_message_contains": "uff"
+ },
+ {
+  "id": "base-085",
+  "category": "dialect",
+  "side": "door",
+  "say": "Grüezi, ich bin d'Frau Huber vom Gemeindeamt.",
+  "text": "Grüezi, ich bin d'Frau Huber vom Gemeindeamt.",
+  "expect_speaker_any": [
+   [
+    "Huber"
+   ],
+   [
+    "Gemeindeamt"
+   ]
+  ],
+  "expect_message_contains": "Gemeindeamt"
+ },
+ {
+  "id": "base-086",
+  "category": "canvass",
+  "side": "door",
+  "say": "Guten Tag, wir sammeln Spenden für das Tierheim.",
+  "text": "Guten Tag, wir sammeln Spenden für das Tierheim.",
+  "expect_speaker_any": [
+   [
+    "∅"
+   ],
+   [
+    "Tierheim"
+   ]
+  ],
+  "expect_message_contains": "Spenden",
+  "notes": "ambiguous: collectors for the animal shelter"
+ },
+ {
+  "id": "base-087",
+  "category": "canvass",
+  "side": "door",
+  "say": "Guten Tag, wir sind von den Zeugen Jehovas und möchten mit Ihnen sprechen.",
+  "text": "Guten Tag, wir sind von den Zeugen Jehovas und möchten mit Ihnen sprechen.",
+  "expect_speaker_any": [
+   [
+    "Zeugen Jehovas"
+   ]
+  ],
+  "expect_message_contains": "sprechen"
+ },
+ {
+  "id": "base-088",
+  "category": "canvass",
+  "side": "door",
+  "say": "Hallo, ich komme von den Stadtwerken, ich muss sofort in Ihre Wohnung.",
+  "text": "Hallo, ich komme von den Stadtwerken, ich muss sofort in Ihre Wohnung.",
+  "expect_speaker_any": [
+   [
+    "Stadtwerk"
+   ]
+  ],
+  "expect_message_contains": "Wohnung"
+ },
+ {
+  "id": "base-089",
+  "category": "canvass",
+  "side": "door",
+  "say": "Guten Tag, eine kurze Umfrage zur Bundestagswahl, hätten Sie zwei Minuten?",
+  "text": "Guten Tag, eine kurze Umfrage zur Bundestagswahl, hätten Sie zwei Minuten?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Umfrage"
+ },
+ {
+  "id": "base-090",
+  "category": "canvass",
+  "side": "door",
+  "say": "Hallo, ich bin Lukas, ich verkaufe Lose für unseren Sportverein.",
+  "text": "Hallo, ich bin Lukas, ich verkaufe Lose für unseren Sportverein.",
+  "expect_speaker_any": [
+   [
+    "Lukas"
+   ]
+  ],
+  "expect_message_contains": "Lose"
+ },
+ {
+  "id": "base-091",
+  "category": "misc",
+  "side": "door",
+  "say": "Oh Entschuldigung, falsche Klingel.",
+  "text": "Oh Entschuldigung, falsche Klingel.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "falsche Klingel"
+ },
+ {
+  "id": "base-092",
+  "category": "misc",
+  "side": "door",
+  "say": "Hallo? Hallo? Ist da jemand?",
+  "text": "Hallo? Hallo? Ist da jemand?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "jemand"
+ },
+ {
+  "id": "base-093",
+  "category": "misc",
+  "side": "door",
+  "say": "Ich suche Herrn Müller, wohnt der hier?",
+  "text": "Ich suche Herrn Müller, wohnt der hier?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Müller"
+ },
+ {
+  "id": "base-094",
+  "category": "misc",
+  "side": "door",
+  "say": "Ihr Auto blockiert meine Einfahrt, bitte sofort wegfahren!",
+  "text": "Ihr Auto blockiert meine Einfahrt, bitte sofort wegfahren!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Einfahrt"
+ },
+ {
+  "id": "base-095",
+  "category": "misc",
+  "side": "door",
+  "say": "Ich habe Ihre Katze gefunden, die saß bei uns im Garten.",
+  "text": "Ich habe Ihre Katze gefunden, die saß bei uns im Garten.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Katze"
+ },
+ {
+  "id": "base-096",
+  "category": "misc",
+  "side": "door",
+  "say": "Hallo, ich bin neu hier eingezogen und wollte mich kurz vorstellen, ich heiße Clara.",
+  "text": "Hallo, ich bin neu hier eingezogen und wollte mich kurz vorstellen, ich heiße Clara.",
+  "expect_speaker_any": [
+   [
+    "Clara"
+   ]
+  ],
+  "expect_message_contains": "eingezogen"
+ },
+ {
+  "id": "base-097",
+  "category": "misc",
+  "side": "door",
+  "say": "Guten Tag, Frau Doktor Weber, ich habe einen Termin um drei.",
+  "text": "Guten Tag, Frau Doktor Weber, ich habe einen Termin um drei.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Termin"
+ },
+ {
+  "id": "base-098",
+  "category": "misc",
+  "side": "door",
+  "say": "Hier ist niemand, der Sie sprechen will.",
+  "text": "Hier ist niemand, der Sie sprechen will.",
+  "expect_speaker_any": [],
+  "expect_message_contains": ""
+ },
+ {
+  "id": "base-099",
+  "category": "misc",
+  "side": "door",
+  "say": "Das Paket von Amazon ist leider beschädigt angekommen.",
+  "text": "Das Paket von Amazon ist leider beschädigt angekommen.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "beschädigt"
+ },
+ {
+  "id": "base-100",
+  "category": "misc",
+  "side": "room",
+  "say": "Hier ist alles gut, danke der Nachfrage.",
+  "text": "Hier ist alles gut, danke der Nachfrage.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "alles gut"
+ },
+ {
+  "id": "base-101",
+  "category": "misc",
+  "side": "room",
+  "say": "Ich bin gleich da, dauert nur eine Minute.",
+  "text": "Ich bin gleich da, dauert nur eine Minute.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Minute"
+ }
+]
