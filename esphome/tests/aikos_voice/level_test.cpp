@@ -76,6 +76,30 @@ int main() {
     g.reset();
     CHECK(!g.voiced_since(0), "reset forgets the speech");
   }
+  {  // door mic, voice v2 live test 01.10.: dropouts (partly empty blocks) pulled the old minimum floor far down
+    VoiceGate g;
+    feed(g, 1000, 6000, [](uint32_t k) { return k % 40 == 7 ? -85.0f : (k % 3 ? -40.0f : -41.5f); });
+    CHECK(!g.voiced_since(0), "dropouts (1 block in 40 at -85 dBFS) don't turn the noise into speech");
+  }
+  {
+    VoiceGate g;
+    feed(g, 1000, 6000, [](uint32_t k) { return k % 6 == 0 ? -24.0f : -40.0f; });   // a crack every 120 ms
+    CHECK(!g.voiced_since(0), "single loud blocks (cracks, 8 per second) are not speech");
+  }
+  {
+    VoiceGate g;
+    feed(g, 1000, 6000, [](uint32_t k) { return k % 40 < 2 ? -20.0f : -40.0f; });   // a double crack every 0.8 s
+    CHECK(!g.voiced_since(0), "two loud blocks in a row are not speech either");
+  }
+  {
+    VoiceGate g;   // the same noise with dropouts, then words: still found, and quiet again after them
+    uint32_t t = feed(g, 1000, 3000, [](uint32_t k) { return k % 40 == 7 ? -85.0f : -40.0f; });
+    const uint32_t t_speech = t;
+    t = feed(g, t, 2000, words);
+    CHECK(g.voiced_since(t_speech), "words over noise with dropouts are speech");
+    t = feed(g, t, 4000, [](uint32_t k) { return k % 40 == 7 ? -85.0f : -40.0f; });
+    CHECK(g.quiet_ms(t) >= 3500, "after the words the noise with dropouts stays quiet");
+  }
   {
     int16_t zero[320] = {0}, full[320], tone[320];
     for (int i = 0; i < 320; i++) {
