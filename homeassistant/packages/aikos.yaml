@@ -97,6 +97,9 @@ input_text:
     max: 255
 
 input_boolean:
+  aikos_test_in_call:
+    name: "TEST aikos Gespräch läuft (Test-Protokoll)"
+    icon: mdi:phone-in-talk
   aikos_test_front_door:
     name: "TEST aikos Haustür (Prüfstand)"
     icon: mdi:door
@@ -148,7 +151,8 @@ template:
           start: "{{ states('input_datetime.aikos_quiet_hours_start')[:5] }}"
           end: "{{ states('input_datetime.aikos_quiet_hours_end')[:5] }}"
   # Call log = the only source of the chat on both screens. The same logic twice: live (real transcripts, door call)
-  # and test (only *_test transcripts + a test button), so tests never touch the live log (tests never write into live entities).
+  # and test (only *_test transcripts + a test call switch), so tests never touch the live log (tests never write into live entities).
+  # R22: emptied at the END of a call; transcripts outside a call are not added.
   - triggers:
       - trigger: state
         entity_id: [sensor.talk_transcript, sensor.talk_transcript_door]
@@ -181,11 +185,15 @@ template:
       - trigger: state
         entity_id: [sensor.talk_transcript_test, sensor.talk_transcript_door_test]
         id: msg
-        variables: {call_entity: ""}
+        variables: {call_entity: input_boolean.aikos_test_in_call}
+      - trigger: state
+        entity_id: input_boolean.aikos_test_in_call
+        id: call
+        variables: {call_entity: input_boolean.aikos_test_in_call}
       - trigger: state
         entity_id: input_button.aikos_test_new_call
         id: testcall
-        variables: {call_entity: ""}
+        variables: {call_entity: input_boolean.aikos_test_in_call}
     sensor:
       - name: "aikos call log test"
         unique_id: aikos_call_log_test
