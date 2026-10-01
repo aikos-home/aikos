@@ -1,0 +1,28 @@
+"""aikos_voice states: this end talks, a conversation is on, the peer holds its button."""
+
+import esphome.codegen as cg
+from esphome.components import binary_sensor
+import esphome.config_validation as cv
+
+from . import CONF_AIKOS_VOICE_ID, AikosVoice
+
+DEPENDENCIES = ["aikos_voice"]
+
+STATES = {
+    "talking": ("set_talking_binary_sensor", "mdi:microphone"),
+    "in_conversation": ("set_in_conversation_binary_sensor", "mdi:phone-in-talk"),
+    "remote_holding": ("set_remote_holding_binary_sensor", "mdi:gesture-tap-hold"),
+}
+
+CONFIG_SCHEMA = cv.Schema(
+    {cv.GenerateID(CONF_AIKOS_VOICE_ID): cv.use_id(AikosVoice)}
+    | {cv.Optional(key): binary_sensor.binary_sensor_schema(icon=icon) for key, (_, icon) in STATES.items()}
+)
+
+
+async def to_code(config):
+    voice = await cg.get_variable(config[CONF_AIKOS_VOICE_ID])
+    for key, (setter, _) in STATES.items():
+        if key in config:
+            b = await binary_sensor.new_binary_sensor(config[key])
+            cg.add(getattr(voice, setter)(b))

@@ -8,3 +8,7 @@ They are maintained jointly by the intercom and roomkey maintainers.
 - Changes go through a pull request reviewed by both device maintainers.
 
 The interface each component implements is documented next to its code.
+
+| Component | Job | Tag |
+|---|---|---|
+| [`aikos_voice`](aikos_voice/README.md) | Voice link door ⇄ room keys (RTP push-to-talk, transcriber copy, door lock) | `voice-v1.0.0` |
