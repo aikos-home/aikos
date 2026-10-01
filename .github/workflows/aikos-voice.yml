@@ -1,0 +1,16 @@
+name: aikos_voice unit checks
+on:
+  push:
+    paths:
+      - "esphome/components/aikos_voice/**"
+      - "esphome/tests/aikos_voice/**"
+      - ".github/workflows/aikos-voice.yml"
+  pull_request:
+jobs:
+  voice-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The rules of voice v1 (voice_core.h) on a PC: every rule tested live has a check. Exit code 1 = a rule broke.
+      - run: g++ -std=c++17 -Wall -Wextra -I esphome/components/aikos_voice esphome/tests/aikos_voice/voice_core_test.cpp -o voice_core_test
+      - run: ./voice_core_test
