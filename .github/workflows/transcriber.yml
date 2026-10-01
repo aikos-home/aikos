@@ -1,0 +1,21 @@
+name: transcriber unit checks
+on:
+  push:
+    paths:
+      - "services/transcriber/**"
+      - ".github/workflows/transcriber.yml"
+  pull_request:
+jobs:
+  transcriber-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: |
+            3.9
+            3.12
+      # Standard library only, nothing to install. 3.9 = the Python of the Mac the service runs on.
+      # Fake Whisper, Ollama and Home Assistant on localhost; nothing talks to a real house.
+      - run: python3.9 -m unittest discover -s services/transcriber/tests
+      - run: python3.12 -m unittest discover -s services/transcriber/tests
