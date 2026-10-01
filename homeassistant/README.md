@@ -23,6 +23,11 @@ After changes: reload `template`, `script`, `automation`, `shell_command`, the `
 | `sensor.aikos_people` | From `aikos_local.yaml`. Attribute `keys` (and `keys_json` as text for ESPHome): room key node name → `{name, room, host}`. |
 | `sensor.aikos_call_log` | The only source of the chat on both screens. State = time of the last message. Attributes `call_id`, `active`, `last_id`, `messages` (≤ 20: `id, t, side, who, role, text, urgent, lang`) and `messages_json` (text for ESPHome; an empty log may arrive as `[]`). A new call (door call sensor off → on) starts empty. A later update of the same transcript (e.g. the language) replaces the message instead of adding one. Every new message also fires the event `aikos_call_message` and writes a logbook entry. |
 
+**Stable for devices (contract):** the door screen and the talk computer read `messages_json` (per message `id`, `side`
+`door`/`room`, `who`, `text`; for a visitor `who` is the recognised role, empty shows as "Besucher") and `keys_json`
+(per key `host`, `name`). These fields change only through the change path (`qualitaet.md` §3, new fields may be added);
+`tests/test_call_log.py` checks them.
+
 The log reads the transcript sensors `sensor.talk_transcript` (room side) and `sensor.talk_transcript_door` (door side)
 written by the transcriber service, and the door call sensor `binary_sensor.aikos_intercom_talk_in_call`.
 
