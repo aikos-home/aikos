@@ -12,7 +12,8 @@ Configuration from the environment (nothing house-specific in this file):
   AIKOS_DOOR_NODE       the door's ESPHome node name with "_" (default aikos_intercom_talk)
 
   python voice_live_test.py
-Exit code 0 = all checks passed. Windows drops unsolicited UDP, so the test sends first on every port it listens on.
+The door config must count aikos_voice's two triggers in template sensors "Conversations started" and
+"Conversations ended" (see the component README). Exit code 0 = all checks passed. Windows drops unsolicited UDP, so the test sends first on every port it listens on.
 """
 import json
 import os

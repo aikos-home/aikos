@@ -113,10 +113,12 @@ core runs on a PC for tests.
 
 ## Never without the tests
 
-1. `esphome/tests/aikos_voice/voice_core_test.cpp`: 47 unit checks on a PC. CI runs them on every push and pull request:
+1. `esphome/tests/aikos_voice/voice_core_test.cpp`: 52 unit checks on a PC. CI runs them on every push and pull request:
    `g++ -std=c++17 -Wall -I esphome/components/aikos_voice esphome/tests/aikos_voice/voice_core_test.cpp -o t && ./t`
-2. `esphome/tests/aikos_voice/voice_live_test.py`: 14 live checks against a door talk computer via Home Assistant. The PC
-   plays a room key; configure it through the environment (see the file).
+2. `esphome/tests/aikos_voice/voice_live_test.py`: 16 live checks against a door talk computer via Home Assistant. The PC
+   plays a room key; configure it through the environment (see the file). The door config must count the two triggers in
+   template sensors named "Conversations started" and "Conversations ended" (incremented in `on_conversation_start` /
+   `on_conversation_end`), so the test can see them fire.
 
 Both must pass before a tag. Devices pin a tag. Changes go through a pull request reviewed by the intercom and roomkey
 maintainers (see [`CLAUDE.md`](../../../CLAUDE.md)).
