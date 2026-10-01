@@ -105,20 +105,31 @@ in what starts the call.
 | | |
 |---|---|
 | Start | Case 1: after a ring the visitor presses "Sprechen" once, or a key holds. Case 2: a key holds without a ring |
+| Join | Holding a key joins and talks; one short press joins to listen only (R19) |
 | Door mic | Open for the whole call, closed outside it. Towards the keys it is muted while the door speaker plays and 0.3 s after (echo); the transcriber copy is never muted |
 | Key mic | Open only while its button is held |
 | Door speaker | Plays the key that has the floor, only while it holds. The first key to hold has the floor; a second one is busy ("besetzt") and gets the floor if it still holds when the first lets go. Every key that answered is in the call |
-| Key speaker | Plays the door only while that key does not hold, and only if it answered, or its owner wants to hear visitors before answering (per-key setting with times) |
+| Key speaker | Plays the door only while that key does not hold, and only if it is in the call, or its owner wants to hear visitors before answering (per-key setting with times) and no key has answered yet (R19) |
+| Busy | A key that holds while another has the floor sends nothing, not even to the transcriber |
 | End | 10 s without speech on either side (a held button counts as speech), 5 min at most, from outside (front door, API), or every key that answered has left. Each key also leaves on its own silence or max length, or when the front door opens and its owner switched that on |
 | Holds | Keys resend "holds" every second; none for 3 s = released. A button still held when a call ends starts no new call until pressed again |
+| Gaps | A key that misses the door's "call on" (Wi-Fi gap) stays in the call for 3 s + the silence time. A key that started a call and hears nothing from the door for 3 s shows "door unreachable" |
+| Ids | Call ids continue from a random 24-bit start after every boot |
 
-**`DoorCall`** (the door is the arbiter): events `ring`, `visitor_speak`, `hold(key, held)`, `key_in_call(key, in)`,
-`speech(side)`, `door_played`, `end(why)`, `loop`; state `active`, `id`, `started_by`, `ended_by`, `members`, `floor`,
-`busy(key)`; routes `mic_open`, `mic_to_keys(now)`, `plays(from)`.
+**`DoorCall`** (the door is the arbiter): `seed_id` at boot; events `ring`, `visitor_speak`, `hold(key, held)`,
+`key_in_call(key, in)`, `speech(side)`, `door_played`, `end(why)`, `loop`; state `active`, `id`, `answered`,
+`started_by`, `ended_by`, `members`, `floor`, `busy(key)`; routes `mic_open`, `mic_to_keys(now)`, `plays(from)`.
 
-**`KeyCall`** (one room key): events `hold(held)`, `door_call(on, id)`, `floor_taken(by_other)`, `speech(side)`,
-`front_door`, `loop`; state `in_call` (sent to the door), `door_on`, `left_by`; routes `mic_open`, `busy`,
-`plays_door(hear_visitor_before_answer)`.
+**`KeyCall`** (one room key): events `hold(held)`, `join` (short press), `door_call(on, id, answered)`,
+`floor_taken(by_other)`, `speech(side)`, `front_door`, `loop`; state `in_call` (sent to the door), `door_on`,
+`door_lost(now)`, `left_by`; routes `mic_open`, `sends`, `busy`, `plays_door(hear_visitor_before_answer)`.
+
+Messages between the devices (ESPHome `packet_transport`, encrypted, on change and every second):
+
+| From | To | `remote_id` | |
+|---|---|---|---|
+| key | door | `talk_held` (binary), `in_call` (binary) | `DoorCall::hold`, `key_in_call` |
+| door | keys | `door_call` (binary), `door_call_id` (sensor), `door_answered` (binary), `floor_key` (sensor: last octet, 0 = none) | `KeyCall::door_call`, `floor_taken` |
 
 The device glue (door, keys) and the link wiring follow in the next steps. Until v2 is tagged, devices stay on
 `voice-v1.0.0`.
@@ -143,7 +154,7 @@ core runs on a PC for tests.
 
 ## Never without the tests
 
-1. `esphome/tests/aikos_voice/voice_core_test.cpp`: 52 unit checks on a PC, and `call_test.cpp`: 86 scenario checks
+1. `esphome/tests/aikos_voice/voice_core_test.cpp`: 52 unit checks on a PC, and `call_test.cpp`: 101 scenario checks
    for the v2 call model (every rule above has one; checked by breaking each rule on purpose). CI runs them on every push and pull request:
    `g++ -std=c++17 -Wall -I esphome/components/aikos_voice esphome/tests/aikos_voice/voice_core_test.cpp -o t && ./t`
 2. `esphome/tests/aikos_voice/voice_live_test.py`: 16 live checks against a door talk computer via Home Assistant. The PC

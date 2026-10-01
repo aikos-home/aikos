@@ -243,21 +243,48 @@ static void test_everyone_left() {
   CHECK(v.active(), "the visitor's call goes on");
 }
 
+static void test_door_answered_and_join() {
+  puts("R19: the door says whether anyone answered; a key can join by a short press (listen only)");
+  DoorCall c;
+  c.ring(0);
+  c.visitor_speak(1000);
+  CHECK(!c.answered(), "the visitor talks, nobody answered");
+  c.key_in_call(C, true, 8000);
+  CHECK(c.answered() && c.member(C), "a key joined by a short press: answered");
+  CHECK(!c.plays(C), "joined to listen: not played (it doesn't hold)");
+  c.loop(1000 + 10000);
+  CHECK(c.active(), "joining gave the call a fresh silence window");
+  c.loop(8000 + 10000);
+  CHECK(!c.active() && !c.answered(), "then silence ends it");
+}
+
+static void test_door_ids() {
+  puts("ids: seeded at boot from a random number, 24 bits, never 0");
+  DoorCall c;
+  c.seed_id(0x12ABCDEF);
+  c.hold(A, true, 0);
+  CHECK(c.id() == 0xABCDF0, "first call = seed (24 bits) + 1");
+  DoorCall w;
+  w.seed_id(0xFFFFFF);
+  w.hold(A, true, 0);
+  CHECK(w.id() == 1, "wraps to 1, never 0");
+}
+
 static void test_key_case2_and_hearing() {
   puts("key: holding opens its mic; it never plays the door while it holds (R17.3, R17.4)");
   KeyCall k;
   CHECK(!k.mic_open() && !k.in_call(), "idle");
   k.hold(true, 1000);
-  CHECK(k.mic_open() && k.in_call(), "held: mic open, in the call (case 2: it starts the call)");
-  k.door_call(true, 7, 1300);
+  CHECK(k.mic_open() && k.in_call() && k.sends(), "held: mic open, sends, in the call (case 2: it starts the call)");
+  k.door_call(true, 7, true, 1300);
   CHECK(k.in_call() && k.door_id() == 7, "joins the call the door announces");
   CHECK(!k.plays_door(true), "never plays the door while holding (R17.4)");
   k.hold(false, 2000);
-  CHECK(!k.mic_open(), "released: mic closed at once (R17.3)");
+  CHECK(!k.mic_open() && !k.sends(), "released: mic closed at once (R17.3)");
   CHECK(k.plays_door(false), "released: plays the door (it answered)");
-  k.door_call(true, 7, 2300);
+  k.door_call(true, 7, true, 2300);
   CHECK(k.in_call(), "the door's refresh changes nothing");
-  k.door_call(false, 7, 5000);
+  k.door_call(false, 7, false, 5000);
   CHECK(!k.in_call() && !k.plays_door(true) && k.left_by() == CallEnd::DOOR_ENDED, "the door ended the call");
 }
 
@@ -267,73 +294,106 @@ static void test_key_short_press_before_announcement() {
   k.hold(true, 0);
   k.hold(false, 400);
   CHECK(k.in_call(), "pending: in the call it started");
-  k.door_call(true, 1, 800);
+  k.door_call(true, 1, true, 800);
   CHECK(k.in_call() && k.plays_door(false), "joined call 1 and hears the visitor's answer");
-  k.door_call(true, 2, 1500);  // the door's "call 1 is over" got lost, and call 2 began
+  k.door_call(true, 2, false, 1500);  // the door's "call 1 is over" got lost, and call 2 began
   CHECK(!k.in_call() && !k.plays_door(false), "only in the call it joined: not in call 2");
 }
 
-static void test_key_hear_before_answer() {
-  puts("R17.13: before answering, a key plays the visitor only if its owner wants that");
+static void test_key_door_unreachable() {
+  puts("key: case 2 and the door never answers: give up after 3 s, door unreachable");
   KeyCall k;
-  k.door_call(true, 3, 0);
+  k.hold(true, 0);
+  k.loop(3000);
+  CHECK(k.in_call() && k.mic_open(), "3.0 s: still waiting");
+  k.loop(3001);
+  CHECK(!k.in_call() && k.left_by() == CallEnd::DOOR_UNREACHABLE, "door unreachable");
+  CHECK(!k.mic_open(), "the held button no longer talks");
+}
+
+static void test_key_hear_before_answer() {
+  puts("R17.13 + R19: before anyone answers a key plays the visitor only if its owner wants that; after: only by joining");
+  KeyCall k;
+  k.door_call(true, 3, false, 0);
   CHECK(!k.in_call(), "a visitor's call: this key hasn't answered");
   CHECK(!k.plays_door(false), "setting off (or bedroom after 22:00): silent, text only");
-  CHECK(k.plays_door(true), "setting on (Männerzimmer): plays the visitor at once");
-  k.hold(true, 1000);
-  CHECK(k.in_call() && !k.plays_door(true), "answering: in the call, silent while holding");
-  k.hold(false, 2000);
-  CHECK(k.plays_door(false), "after answering it plays whatever the setting");
+  CHECK(k.plays_door(true), "setting on: plays the visitor at once");
+  k.door_call(true, 3, true, 1000);  // another room answered
+  CHECK(!k.plays_door(true), "R19: someone else answered: silent although the setting is on");
+  k.join(1500);
+  CHECK(k.in_call() && k.plays_door(false) && !k.mic_open(), "a short press: joined, listens, mic closed");
+  KeyCall h;
+  h.door_call(true, 4, false, 0);
+  h.hold(true, 1000);
+  CHECK(h.in_call() && !h.plays_door(true), "answering by holding: in the call, silent while holding");
+  h.hold(false, 2000);
+  CHECK(h.plays_door(false), "after answering it plays whatever the setting");
 }
 
 static void test_key_front_door_and_new_call() {
   puts("R17.8: the front door ends the call for a key that has it switched on; a new door call starts fresh");
   KeyCall k;
-  k.door_call(true, 4, 0);
+  k.door_call(true, 4, false, 0);
   k.hold(true, 500);
   k.hold(false, 1500);
   k.front_door(2000);
   CHECK(!k.in_call() && k.left_by() == CallEnd::FRONT_DOOR, "left the call");
-  k.door_call(true, 4, 2500);
+  k.door_call(true, 4, true, 2500);
   CHECK(!k.in_call() && !k.plays_door(true), "the door's refresh of the same call doesn't bring it back");
-  k.door_call(false, 4, 9000);
-  k.door_call(true, 5, 20000);
+  k.door_call(false, 4, false, 9000);
+  k.door_call(true, 5, false, 20000);
   CHECK(k.plays_door(true) && !k.in_call(), "call 5: hears the visitor again (setting on), not answered yet");
 }
 
-static void test_key_own_end_rules() {
-  puts("key: leaves on its own silence; the door's announcement stopping counts as the end");
+static void test_key_wifi_gap() {
+  puts("key: a Wi-Fi gap keeps it in the call; it stays a member when the same call comes back");
   KeyCall k;
-  k.door_call(true, 1, 0);
+  k.door_call(true, 7, true, 0);
+  k.hold(true, 100);
+  k.hold(false, 500);
+  k.door_call(true, 7, true, 1000);
+  k.loop(4500);
+  CHECK(k.door_lost(4500), "3.5 s without the door: a gap");
+  CHECK(k.in_call(), "still in the call (no in_call=false to the door, so no EVERYONE_LEFT)");
+  k.door_call(true, 7, true, 4500);
+  CHECK(k.in_call() && k.plays_door(false) && !k.door_lost(4500), "the same call is back: carries on");
+}
+
+static void test_key_own_end_rules() {
+  puts("key: leaves on its own silence; the door's announcement stopping for good counts as the end");
+  KeyCall k;
+  k.door_call(true, 1, true, 0);
   k.hold(true, 0);
   k.hold(false, 1000);
   for (uint32_t t = 1000; t <= 10000; t += 1000)
-    k.door_call(true, 1, t);
+    k.door_call(true, 1, true, t);
   k.loop(10999);
   CHECK(k.in_call(), "9.999 s after its last words: in");
   k.loop(11000);
   CHECK(!k.in_call() && k.left_by() == CallEnd::SILENCE, "10 s silence: left");
 
   KeyCall g;
-  g.door_call(true, 2, 0);
+  g.door_call(true, 2, true, 0);
   g.hold(true, 100);
   g.hold(false, 200);
-  g.loop(3000);
-  CHECK(g.in_call(), "3.0 s after the door's last announcement: in");
-  g.loop(3001);
-  CHECK(!g.in_call() && !g.door_on() && g.left_by() == CallEnd::DOOR_ENDED, "door silent > 3 s: over");
+  for (uint32_t t = 1000; t <= 13000; t += 1000)
+    g.speech(Role::DOOR, t);  // e.g. visitor text arriving while the door's "call on" packets are lost
+  g.loop(13000);
+  CHECK(g.in_call(), "13.0 s after the door's last announcement: still in");
+  g.loop(13001);
+  CHECK(!g.in_call() && !g.door_on() && g.left_by() == CallEnd::DOOR_ENDED, "3 s + 10 s without it: over");
 }
 
 static void test_key_busy_and_stale() {
-  puts("key: busy while another key has the floor; a held button doesn't talk into an ended call");
+  puts("key: busy while another key has the floor (sends nothing); a held button doesn't talk into an ended call");
   KeyCall k;
-  k.door_call(true, 1, 0);
+  k.door_call(true, 1, true, 0);
   k.hold(true, 100);
   k.floor_taken(true);
-  CHECK(k.busy(), "another key has the floor: besetzt");
+  CHECK(k.busy() && !k.sends(), "another key has the floor: besetzt, sends nothing (not even the transcriber)");
   k.floor_taken(false);
-  CHECK(!k.busy(), "free again");
-  k.door_call(false, 1, 1000);
+  CHECK(!k.busy() && k.sends(), "free again: sends");
+  k.door_call(false, 1, false, 1000);
   CHECK(!k.mic_open(), "the call ended while held: mic closed");
   k.hold(false, 1500);
   k.hold(true, 2000);
@@ -353,10 +413,14 @@ int main() {
   test_mute_tail();
   test_end_from_outside_and_stale_hold();
   test_everyone_left();
+  test_door_answered_and_join();
+  test_door_ids();
   test_key_case2_and_hearing();
   test_key_short_press_before_announcement();
+  test_key_door_unreachable();
   test_key_hear_before_answer();
   test_key_front_door_and_new_call();
+  test_key_wifi_gap();
   test_key_own_end_rules();
   test_key_busy_and_stale();
   printf("\n%d checks, %d failed\n", checks, failures);
