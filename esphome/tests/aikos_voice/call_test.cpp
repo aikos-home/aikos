@@ -117,6 +117,8 @@ static void test_floor_and_busy() {
   CHECK(c.plays(A) && !c.plays(B), "only A is played");
   CHECK(c.busy(B) && !c.busy(A), "B is busy");
   CHECK(c.members() == 2, "both are in the call");
+  Addr list[DoorCall::MAX_KEYS];
+  CHECK(c.member_list(list, DoorCall::MAX_KEYS) == 2 && list[0].ip == A.ip && list[1].ip == B.ip, "member_list names both");
   c.hold(A, false, 3000);
   CHECK(c.floor() != nullptr && c.floor()->ip == B.ip && c.plays(B), "A lets go: B, still holding, gets the floor");
   CHECK(!c.busy(B), "B no longer busy");

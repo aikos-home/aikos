@@ -215,6 +215,14 @@ class DoorCall {
     const Slot *s = find_(key);
     return s != nullptr && s->held && !s->stale;
   }
+  // the keys in the call (up to `max`), for a screen that shows who listens; returns how many
+  int member_list(Addr *out, int max) const {
+    int n = 0;
+    for (const Slot &s : slots_)
+      if (s.used && s.in_call && n < max)
+        out[n++] = s.addr;
+    return n;
+  }
   // the key that has the floor, or nullptr
   const Addr *floor() const { return floor_ >= 0 ? &slots_[floor_].addr : nullptr; }
   // the key holds, but another one has the floor ("besetzt")

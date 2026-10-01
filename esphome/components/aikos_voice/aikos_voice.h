@@ -84,6 +84,7 @@ class AikosVoice : public Component {
   bool busy() const { return this->key_.busy(); }
   uint32_t call_id() const { return this->role_ == VoiceRole::DOOR ? this->door_.id() : this->key_.door_id(); }
   int floor_last_octet() const;
+  std::string member_octets() const;  // door: "144,110": the last octets of the keys in the call, for the screen
   const ::aikos::voice::Stats &stats() const { return this->link_.stats; }
 
   Trigger<> *get_talk_start_trigger() { return &this->talk_start_trigger_; }

@@ -233,6 +233,15 @@ void AikosVoice::set_call_max_length(uint32_t ms) {
   this->key_.configure(this->call_cfg_);
 }
 
+std::string AikosVoice::member_octets() const {
+  ::aikos::voice::Addr list[::aikos::voice::DoorCall::MAX_KEYS];
+  const int n = this->door_.member_list(list, ::aikos::voice::DoorCall::MAX_KEYS);
+  std::string out;
+  for (int i = 0; i < n; i++)
+    out += (out.empty() ? "" : ",") + std::to_string((list[i].ip >> 24) & 0xFF);  // network order, little-endian chip
+  return out;
+}
+
 bool AikosVoice::in_call() const { return this->door_role_() ? this->door_.active() : this->key_.in_call(); }
 
 int AikosVoice::floor_last_octet() const {
