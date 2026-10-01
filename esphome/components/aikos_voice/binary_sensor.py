@@ -1,4 +1,7 @@
-"""aikos_voice states: this end talks, a conversation is on, the peer holds its button."""
+"""aikos_voice states: this end talks, in a call, a key has the floor (door), someone answered (door), busy (key).
+
+The door sends `in_call` and `answered` to the room keys with packet_transport, so they must be binary sensors here.
+"""
 
 import esphome.codegen as cg
 from esphome.components import binary_sensor
@@ -10,8 +13,11 @@ DEPENDENCIES = ["aikos_voice"]
 
 STATES = {
     "talking": ("set_talking_binary_sensor", "mdi:microphone"),
-    "in_conversation": ("set_in_conversation_binary_sensor", "mdi:phone-in-talk"),
+    "in_call": ("set_in_call_binary_sensor", "mdi:phone-in-talk"),
     "remote_holding": ("set_remote_holding_binary_sensor", "mdi:gesture-tap-hold"),
+    "answered": ("set_answered_binary_sensor", "mdi:phone-check"),
+    "busy": ("set_busy_binary_sensor", "mdi:phone-cancel"),
+    "speech": ("set_speech_binary_sensor", "mdi:account-voice"),  # the speech detector hears speech at this mic now
 }
 
 CONFIG_SCHEMA = cv.Schema(

@@ -117,6 +117,8 @@ static void test_floor_and_busy() {
   CHECK(c.plays(A) && !c.plays(B), "only A is played");
   CHECK(c.busy(B) && !c.busy(A), "B is busy");
   CHECK(c.members() == 2, "both are in the call");
+  Addr list[DoorCall::MAX_KEYS];
+  CHECK(c.member_list(list, DoorCall::MAX_KEYS) == 2 && list[0].ip == A.ip && list[1].ip == B.ip, "member_list names both");
   c.hold(A, false, 3000);
   CHECK(c.floor() != nullptr && c.floor()->ip == B.ip && c.plays(B), "A lets go: B, still holding, gets the floor");
   CHECK(!c.busy(B), "B no longer busy");
@@ -282,10 +284,12 @@ static void test_key_case2_and_hearing() {
   k.hold(false, 2000);
   CHECK(!k.mic_open() && !k.sends(), "released: mic closed at once (R17.3)");
   CHECK(k.plays_door(false), "released: plays the door (it answered)");
+  CHECK(k.state() == 1, "key_state 1: in the call, not holding");
   k.door_call(true, 7, true, 2300);
   CHECK(k.in_call(), "the door's refresh changes nothing");
   k.door_call(false, 7, false, 5000);
   CHECK(!k.in_call() && !k.plays_door(true) && k.left_by() == CallEnd::DOOR_ENDED, "the door ended the call");
+  CHECK(k.state() == 0, "key_state 0: idle");
 }
 
 static void test_key_short_press_before_announcement() {
@@ -391,6 +395,7 @@ static void test_key_busy_and_stale() {
   k.hold(true, 100);
   k.floor_taken(true);
   CHECK(k.busy() && !k.sends(), "another key has the floor: besetzt, sends nothing (not even the transcriber)");
+  CHECK(k.state() == 2, "key_state still says holding while busy: the door must know, to hand it the floor");
   k.floor_taken(false);
   CHECK(!k.busy() && k.sends(), "free again: sends");
   k.door_call(false, 1, false, 1000);
@@ -398,6 +403,47 @@ static void test_key_busy_and_stale() {
   k.hold(false, 1500);
   k.hold(true, 2000);
   CHECK(k.mic_open() && k.in_call(), "a new press: talks again");
+}
+
+static void test_stuck_button() {
+  puts("hold_max: a button held longer than 90 s is stuck: it loses the floor and counts no longer until let go");
+  DoorCall c;
+  c.hold(A, true, 0);
+  for (uint32_t t = 1000; t <= 90000; t += 1000) {
+    c.hold(A, true, t);
+    c.loop(t);
+  }
+  CHECK(c.plays(A) && c.holds(A), "90 s: still talking");
+  c.hold(B, true, 90500);
+  c.hold(A, true, 91000);
+  c.loop(91000);
+  CHECK(!c.plays(A) && !c.holds(A), "after 90 s: A is stuck, not played, not holding");
+  CHECK(c.floor() != nullptr && c.floor()->ip == B.ip && c.plays(B), "B, holding meanwhile, gets the floor");
+  c.hold(B, false, 92000);
+  for (uint32_t t = 92000; t <= 101000; t += 1000) {
+    c.hold(A, true, t);  // the stuck button keeps reporting "holds"
+    c.loop(t);
+  }
+  c.loop(102001);
+  CHECK(!c.active() && c.ended_by() == CallEnd::SILENCE, "the stuck button doesn't keep the call open");
+  c.hold(A, false, 103000);
+  c.hold(A, true, 104000);
+  CHECK(c.active() && c.plays(A), "let go and pressed again: talks again");
+
+  KeyCall k;
+  k.door_call(true, 1, true, 0);
+  k.hold(true, 0);
+  for (uint32_t t = 1000; t <= 90000; t += 1000) {  // the door announces its call every second
+    k.door_call(true, 1, true, t);
+    k.loop(t);
+  }
+  CHECK(k.mic_open() && k.state() == 2, "the key: 90 s still talking");
+  k.door_call(true, 1, true, 90001);
+  k.loop(90001);
+  CHECK(!k.mic_open() && k.state() != 2, "the key: after 90 s its mic closes and it no longer reports holding");
+  k.hold(false, 95000);
+  k.hold(true, 96000);
+  CHECK(k.mic_open(), "the key: let go and pressed again: talks again");
 }
 
 int main() {
@@ -408,6 +454,7 @@ int main() {
   test_floor_and_busy();
   test_lock();
   test_hold_refresh();
+  test_stuck_button();
   test_holding_keeps_call_on();
   test_max_length();
   test_mute_tail();
