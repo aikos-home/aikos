@@ -20,3 +20,24 @@ jobs:
       # voice v2: the speech detector (level.h) behind the speech-based call end
       - run: g++ -std=c++17 -Wall -Wextra -I esphome/components/aikos_voice esphome/tests/aikos_voice/level_test.cpp -o level_test
       - run: ./level_test
+  voice-host:
+    # v2.1: the component builds and runs on an ESPHome host build (no microphone, no speaker; the room key simulator)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install esphome==2026.9.0
+      - run: esphome compile esphome/tests/aikos_voice/host/aikos-voice-host.yaml
+      # run it for 8 s: it must still be running (exit 124 from timeout), open its socket, and talk with pushed samples
+      - run: |
+          prog=$(find esphome/tests/aikos_voice/host/.esphome -type f -name program | head -1)
+          set +e
+          timeout 8 "$prog" > host.log 2>&1
+          rc=$?
+          set -e
+          tail -n 40 host.log
+          test "$rc" -eq 124
+          grep -q "voice link on UDP 5004 (role room)" host.log
+          grep -q "talk on" host.log

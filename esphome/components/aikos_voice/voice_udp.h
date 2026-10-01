@@ -46,6 +46,27 @@ inline bool resolve(const std::string &host_port, uint16_t default_port, Addr &o
   return true;
 }
 
+// the local IPv4 address this device sends from to reach `to` (0 = unknown). A connected UDP socket sends nothing; it
+// only asks the routing table. For a host build, which has no ESPHome network interface that knows its address.
+inline uint32_t local_ip_toward(const Addr &to) {
+  if (!to.valid())
+    return 0;
+  const int s = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+  if (s < 0)
+    return 0;
+  sockaddr_in a{};
+  a.sin_family = AF_INET;
+  a.sin_addr.s_addr = to.ip;
+  a.sin_port = to.port;
+  sockaddr_in me{};
+  socklen_t ml = sizeof me;
+  uint32_t ip = 0;
+  if (::connect(s, (const sockaddr *) &a, sizeof a) == 0 && ::getsockname(s, (sockaddr *) &me, &ml) == 0)
+    ip = me.sin_addr.s_addr;
+  ::close(s);
+  return ip;
+}
+
 inline std::string to_string(const Addr &a) {
   in_addr i{};
   i.s_addr = a.ip;

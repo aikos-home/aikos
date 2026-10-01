@@ -1,0 +1,61 @@
+# aikos_voice on an ESPHome host build (v2.1): no microphone, no speaker; the mic's samples come from push_samples().
+# CI compiles this and runs it for a few seconds, so the component keeps building without audio hardware (the room key
+# simulator runs like this). Nothing here belongs to a real house: the door is this machine.
+esphome:
+  name: aikos-voice-host
+
+host:
+
+logger:
+  level: DEBUG
+
+external_components:
+  - source:
+      type: local
+      path: ../../../components
+    components: [aikos_voice]
+
+aikos_voice:
+  id: voice
+  role: room
+  door: 127.0.0.1:5004
+  on_call_start:
+    - logger.log: "call start"
+  on_call_end:
+    - logger.log:
+        format: "call end: %s"
+        args: [reason.c_str()]
+
+sensor:
+  - platform: aikos_voice
+    key_state:
+      name: Key state
+    speech_level:
+      name: Speech level
+
+binary_sensor:
+  - platform: aikos_voice
+    in_call:
+      name: In call
+    speech:
+      name: Speech
+
+interval:
+  # what a simulator does: blocks of 512 samples (32 ms), not the mic task's 20 ms
+  - interval: 32ms
+    then:
+      - lambda: |-
+          static int16_t block[512];
+          static uint32_t phase = 0;
+          for (int i = 0; i < 512; i++, phase++)
+            block[i] = (int16_t) (8000.0f * sinf(6.2831853f * 440.0f * phase / 16000.0f));
+          id(voice).push_samples(block, 512);
+  # one hold, so the mic path runs. The floor is "key 1" = this machine (127.0.0.1): only if the host finds its own
+  # address is the key not busy, and only then does CI see "talk on".
+  - interval: 10s
+    startup_delay: 2s
+    then:
+      - aikos_voice.floor_key: 1
+      - aikos_voice.hold: true
+      - delay: 2s
+      - aikos_voice.hold: false

@@ -3,9 +3,10 @@
 The voice link between the aikos door station and the room keys. It is one ESPHome external component that **both**
 devices use, so they can't drift apart.
 
-**This branch is voice v2** (rule R17 of the project owner, `features/sprechen.md`): a **call** ("Telefonat") instead of
-push-to-talk at the door. **voice v1** is frozen at tag `voice-v1.0.0` (see [`FROZEN.md`](../../../FROZEN.md)); its README
-is at that tag. Until v2 is tagged, devices stay on `voice-v1.0.0`.
+**voice v2** (rule R17 of the project owner, `features/sprechen.md`): a **call** ("Telefonat") instead of push-to-talk at
+the door, frozen at tag `voice-v2.0.0`. **voice v1** (push-to-talk) is frozen at tag `voice-v1.0.0` and stays usable as the
+fallback (see [`FROZEN.md`](../../../FROZEN.md)); its README is at that tag. **v2.1** adds a build without a microphone
+and speaker, e.g. on a PC (see "Without a microphone"); devices with a microphone behave exactly as in v2.0.
 
 Screens, buttons and Home Assistant glue stay in the device configs and may change as often as needed. The voice link
 itself only changes through this component and its tests.
@@ -46,7 +47,7 @@ external_components:
 aikos_voice:
   id: voice
   role: door                 # door (the arbiter of the call) | room (one room key)        (required)
-  microphone: mic            # a 16-bit mono microphone source at 16 kHz                    (required)
+  microphone: mic            # a 16-bit mono microphone source at 16 kHz     (optional since v2.1, see below)
   speaker: spk               # optional; without it nothing is played
   # door: ""                  room: the door's "host[:port]" (also at runtime: aikos_voice.set_door)
   # transcriber: ""           "host:port" that gets a copy of what this end says; empty = off
@@ -104,6 +105,25 @@ sensor:
 
 Conditions: `aikos_voice.is_talking`, `aikos_voice.in_call`, `aikos_voice.remote_holding`.
 
+### Without a microphone (v2.1: host build, simulator)
+
+`microphone:` and `speaker:` are optional. A host build (`host:` platform, e.g. the room key simulator) has neither:
+ESPHome's audio components exist only on the ESP32. Then:
+
+- The mic's samples come from **`push_samples(const int16_t *pcm, size_t n)`** (C++, e.g. in a lambda): 16 kHz, mono,
+  16 bit, **blocks of any length** (a simulator's 512, the mic task's 320). They take the mic's path: high-pass, gain,
+  limiter, speech detector, link.
+- They are taken only while the call has the mic open (room: while the button is held; door: during a call), like a real
+  mic, which is stopped otherwise. Samples pushed at other times are dropped.
+- **One producer.** With a `microphone:` configured, `push_samples()` is ignored (one warning in the log): two producers
+  would race in the link's buffer. Call it from one task only (on a host: the main loop, e.g. an `interval`).
+- Without a speaker nothing is played; the speech detector still hears what arrives, so the call still ends on silence.
+- `floor_key` compares with this device's own address. On the chip the network interface knows it; on a host it is the
+  address the route to the door leaves from.
+
+Example: [`esphome/tests/aikos_voice/host/aikos-voice-host.yaml`](../../tests/aikos_voice/host/aikos-voice-host.yaml)
+(CI builds it and runs it for 8 s).
+
 ### Messages between the devices
 
 ESPHome `packet_transport`, encrypted with a shared key, sent on change and every second. A **sensor** fires on every
@@ -131,6 +151,9 @@ The door sends its messages as broadcast, so a new key needs no reflash of the d
 | The main loop can't keep up with the mic | Samples are dropped; the RTP sequence shows a gap rather than spliced audio |
 | Keepalives, comfort-noise packets, other payload types | Nothing to play; ignored |
 | More than 8 keys | The ninth is ignored |
+| `push_samples()` on a device with a microphone | Ignored, one warning in the log |
+| Samples pushed while the call has the mic closed | Dropped, like a stopped mic |
+| A host build that can't find its own address yet (no door set) | `floor_key` asks again next time; until then every floor counts as another key's (busy) |
 
 ## Built for what comes next
 
@@ -148,17 +171,19 @@ core runs on a PC for tests. Pairing in the HA GUI (`features/kopplung.md`) will
 | `level.h` | `VoiceGate`: "is somebody talking?" from levels (speech-based call end), and `level_db` |
 | `call.h` | The call model (`DoorCall`, `KeyCall`): who hears what, start and end |
 | `voice_core.h` | The link: moves audio (targets, gate, play policy, wire); pure C++17, no ESPHome, no sockets |
-| `voice_udp.h` | The UDP transport (lwIP; BSD sockets in a host build) |
+| `voice_udp.h` | The UDP transport (lwIP; BSD sockets in a host build), address lookup |
 | `aikos_voice.h/.cpp`, `*.py` | The ESPHome component: wires call, link, mic, speaker, actions and sensors |
 
 ## Never without the tests
 
-CI runs all three on every pull request, also with `-Wall -Wextra`:
+CI runs these on every pull request (the three host programs also with `-Wall -Wextra`):
 
 1. `esphome/tests/aikos_voice/voice_core_test.cpp`: 51 checks of the link (wire rules from v1, targets, gate, policy).
 2. `esphome/tests/aikos_voice/call_test.cpp`: 113 scenario checks of the call model, one per rule (each rule was broken
    on purpose once and caught).
 3. `esphome/tests/aikos_voice/level_test.cpp`: the speech detector.
+4. `esphome/tests/aikos_voice/host/aikos-voice-host.yaml` (job `voice-host`, v2.1): the component as an ESPHome host build
+   without microphone and speaker; it must keep running for 8 s, open its socket and talk with pushed 512-sample blocks.
 
 ### From v1 to v2: the 25 v1 checks that changed
 
