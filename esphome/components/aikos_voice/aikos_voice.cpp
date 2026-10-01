@@ -272,6 +272,7 @@ void AikosVoice::allow_source(const std::string &host, uint32_t ms) {
 }
 
 int AikosVoice::find_own_octet_() const {
+#ifndef USE_HOST  // on a host, get_ip_addresses() is always empty (and IPAddress has no is_set())
   char buf[network::IP_ADDRESS_BUFFER_SIZE];
   for (auto &ip : network::get_ip_addresses()) {
     if (!ip.is_set() || !ip.is_ip4())
@@ -281,7 +282,8 @@ int AikosVoice::find_own_octet_() const {
     if (dot != nullptr)
       return atoi(dot + 1);
   }
-  // a host build has no network interface component: the address this device sends to the door from
+#endif
+  // no network interface that knows the address (a host build): the address this device sends to the door from
   const uint32_t ip = ::aikos::voice::local_ip_toward(this->door_addr_);
   return ip != 0 ? (int) ((ip >> 24) & 0xFF) : -1;  // network byte order on a little-endian machine
 }
