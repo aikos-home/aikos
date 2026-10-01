@@ -1,0 +1,3921 @@
+[
+ {
+  "id": "adv-001",
+  "category": "family_room",
+  "side": "room",
+  "say": "Hier ist Martin, ich komme gleich runter.",
+  "text": "Hier ist Martin, ich komme gleich runter.",
+  "expect_speaker_any": [
+   [
+    "Martin"
+   ]
+  ],
+  "expect_message_contains": "komme gleich runter",
+  "notes": "baseline resident intro"
+ },
+ {
+  "id": "adv-002",
+  "category": "family_room",
+  "side": "room",
+  "say": "Papa hier. Wer ist denn da?",
+  "text": "Papa hier. Wer ist denn da?",
+  "expect_speaker_any": [
+   [
+    "Papa"
+   ]
+  ],
+  "expect_message_contains": "Wer ist denn da",
+  "notes": "'X hier' followed by a question to the door"
+ },
+ {
+  "id": "adv-003",
+  "category": "family_room",
+  "side": "room",
+  "say": "Ja?",
+  "text": "Ja?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "",
+  "notes": "one-word answer from a room, greeting only"
+ },
+ {
+  "id": "adv-004",
+  "category": "family_room",
+  "side": "room",
+  "say": "Wer ist da?",
+  "text": "Wer ist da?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Wer ist da",
+  "notes": "question, no introduction"
+ },
+ {
+  "id": "adv-005",
+  "category": "family_room",
+  "side": "room",
+  "say": "Moment, ich komme.",
+  "text": "Moment, ich komme.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "ich komme",
+  "notes": "no introduction; 'Moment' is a filler"
+ },
+ {
+  "id": "adv-006",
+  "category": "family_room",
+  "side": "room",
+  "say": "Mhm. Ja. Was ist?",
+  "text": "Mhm. Ja. Was ist?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Was ist",
+  "notes": "teenager mumbling, fillers only"
+ },
+ {
+  "id": "adv-007",
+  "category": "family_room",
+  "side": "room",
+  "say": "Ich bin oben im Bad, legen Sie das Paket bitte vor die Tür.",
+  "text": "Ich bin oben im Bad, legen Sie das Paket bitte vor die Tür.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Paket bitte vor die Tür",
+  "notes": "'ich bin' + location; 'Paket' is a topic, resident talks to the courier"
+ },
+ {
+  "id": "adv-008",
+  "category": "family_room",
+  "side": "room",
+  "say": "Mama hier. Lena, zieh bitte die Schuhe aus, bevor du reinkommst.",
+  "text": "Mama hier. Lena, zieh bitte die Schuhe aus, bevor du reinkommst.",
+  "expect_speaker_any": [
+   [
+    "Mama"
+   ]
+  ],
+  "expect_message_contains": "Schuhe aus",
+  "notes": "vocative 'Lena' after the intro must not become the speaker"
+ },
+ {
+  "id": "adv-009",
+  "category": "family_room",
+  "side": "room",
+  "say": "Hallo Oma, hier ist die Lena, ich mach dir auf.",
+  "text": "Hallo Oma, hier ist die Lena, ich mach dir auf.",
+  "expect_speaker_any": [
+   [
+    "Lena"
+   ]
+  ],
+  "expect_message_contains": "mach dir auf",
+  "notes": "vocative 'Oma' before the intro"
+ },
+ {
+  "id": "adv-010",
+  "category": "family_room",
+  "side": "door",
+  "say": "Ich bin's, Schatz, machst du auf?",
+  "text": "Ich bin's, Schatz, machst du auf?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "machst du auf",
+  "notes": "'Schatz' after \"ich bin's\" is a vocative term of endearment, not a name; the speaker gives no name"
+ },
+ {
+  "id": "adv-011",
+  "category": "family_room",
+  "side": "room",
+  "say": "Ja, hallo? Ich hör nichts, sprechen Sie bitte lauter.",
+  "text": "Ja, hallo? Ich hör nichts, sprechen Sie bitte lauter.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "sprechen Sie bitte lauter",
+  "notes": "no introduction"
+ },
+ {
+  "id": "adv-012",
+  "category": "family_room",
+  "side": "door",
+  "say": "Mama, ich bin's, mach auf!",
+  "text": "Mama, ich bin's, mach auf!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "mach auf",
+  "notes": "kid at the door: 'Mama' is the addressee, \"ich bin's\" without a name"
+ },
+ {
+  "id": "adv-013",
+  "category": "family_room",
+  "side": "door",
+  "say": "Ich bin's, der Paul! Mama, mach auf, ich muss aufs Klo!",
+  "text": "Ich bin's, der Paul! Mama, mach auf, ich muss aufs Klo!",
+  "expect_speaker_any": [
+   [
+    "Paul"
+   ]
+  ],
+  "expect_message_contains": "aufs Klo",
+  "notes": "name with article; vocative 'Mama' later"
+ },
+ {
+  "id": "adv-014",
+  "category": "family_room",
+  "side": "room",
+  "say": "Hier ist die Mama von Jonas, er kommt gleich runter.",
+  "text": "Hier ist die Mama von Jonas, er kommt gleich runter.",
+  "expect_speaker_any": [
+   [
+    "Mama"
+   ]
+  ],
+  "expect_message_contains": "kommt gleich runter",
+  "notes": "relational intro 'die Mama von Jonas' – Jonas is not the speaker"
+ },
+ {
+  "id": "adv-015",
+  "category": "family_room",
+  "side": "room",
+  "say": "Ja, bitte? Hier Wagner.",
+  "text": "Ja, bitte? Hier Wagner.",
+  "expect_speaker_any": [
+   [
+    "Wagner"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "German phone-style answer: 'Hier <Surname>' without 'ist'"
+ },
+ {
+  "id": "adv-016",
+  "category": "family_room",
+  "side": "room",
+  "say": "Wagner, hallo?",
+  "text": "Wagner, hallo?",
+  "expect_speaker_any": [
+   [
+    "Wagner"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "ambiguous: bare surname answer (German phone convention); a careful human reads it as the resident naming the household"
+ },
+ {
+  "id": "adv-017",
+  "category": "family_room",
+  "side": "room",
+  "say": "Pizza ist da, kommt runter!",
+  "text": "Pizza ist da, kommt runter!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "kommt runter",
+  "notes": "room side: a parent calling the family; food word up front is not a courier (detector has no side input)"
+ },
+ {
+  "id": "adv-018",
+  "category": "family_room",
+  "side": "room",
+  "say": "Ich bin Montag nicht da, kannst du das Paket annehmen?",
+  "text": "Ich bin Montag nicht da, kannst du das Paket annehmen?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Montag nicht da",
+  "notes": "'ich bin' + capitalised weekday is not a name"
+ },
+ {
+  "id": "adv-019",
+  "category": "family_room",
+  "side": "room",
+  "say": "Kinder, Essen ist fertig! Kommt runter!",
+  "text": "Kinder, Essen ist fertig! Kommt runter!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Essen ist fertig",
+  "notes": "'Essen' is dinner, not a food courier"
+ },
+ {
+  "id": "adv-020",
+  "category": "family_room",
+  "side": "room",
+  "say": "Hier ist Wasser im Keller, komm mal schnell runter!",
+  "text": "Hier ist Wasser im Keller, komm mal schnell runter!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Wasser im Keller",
+  "notes": "'hier ist' + capitalised noun (not a name); urgent message must survive intact"
+ },
+ {
+  "id": "adv-021",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Ich bin's, Oma!",
+  "text": "Ich bin's, Oma!",
+  "expect_speaker_any": [
+   [
+    "Oma"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "ambiguous: could be a grandchild addressing Oma, but at the door the natural reading is grandma announcing herself"
+ },
+ {
+  "id": "adv-022",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Hallo, hier ist Tante Gabi, ich bring den Kuchen vorbei.",
+  "text": "Hallo, hier ist Tante Gabi, ich bring den Kuchen vorbei.",
+  "expect_speaker_any": [
+   [
+    "Gabi"
+   ]
+  ],
+  "expect_message_contains": "Kuchen",
+  "notes": "kinship title + name"
+ },
+ {
+  "id": "adv-023",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Hallo Martin, hier ist Lena, machst du mal auf?",
+  "text": "Hallo Martin, hier ist Lena, machst du mal auf?",
+  "expect_speaker_any": [
+   [
+    "Lena"
+   ]
+  ],
+  "expect_message_contains": "machst du mal auf",
+  "notes": "vocative name (resident) before the intro"
+ },
+ {
+  "id": "adv-024",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Martin, mach auf, ich bin's!",
+  "text": "Martin, mach auf, ich bin's!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "mach auf",
+  "notes": "vocative only; \"ich bin's\" without a name"
+ },
+ {
+  "id": "adv-025",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Na, rat mal, wer hier ist!",
+  "text": "Na, rat mal, wer hier ist!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "rat mal",
+  "notes": "playful: 'wer hier ist' is not an introduction"
+ },
+ {
+  "id": "adv-026",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Hallo, wir sind's, Anna und Jonas, wir sind etwas zu früh.",
+  "text": "Hallo, wir sind's, Anna und Jonas, wir sind etwas zu früh.",
+  "expect_speaker_any": [
+   [
+    "Anna",
+    "Jonas"
+   ]
+  ],
+  "expect_message_contains": "etwas zu früh",
+  "notes": "two people; \"wir sind's\" + 'und'"
+ },
+ {
+  "id": "adv-027",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Hi, hier sind Anna und Jonas.",
+  "text": "Hi, hier sind Anna und Jonas.",
+  "expect_speaker_any": [
+   [
+    "Anna",
+    "Jonas"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "two people; plural 'hier sind' + 'und'"
+ },
+ {
+  "id": "adv-028",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Guten Abend, hier ist der Onkel Klaus aus Dortmund.",
+  "text": "Guten Abend, hier ist der Onkel Klaus aus Dortmund.",
+  "expect_speaker_any": [
+   [
+    "Klaus"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "'aus Dortmund' is a place, not a company"
+ },
+ {
+  "id": "adv-029",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Hallo, ich bin ein Freund von Jonas, ist er zu Hause?",
+  "text": "Hallo, ich bin ein Freund von Jonas, ist er zu Hause?",
+  "expect_speaker_any": [
+   [
+    "Freund"
+   ]
+  ],
+  "expect_message_contains": "zu Hause",
+  "notes": "relational intro; Jonas is not the speaker"
+ },
+ {
+  "id": "adv-030",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Hallo, ist Lena da? Wir wollten zusammen zur Schule.",
+  "text": "Hallo, ist Lena da? Wir wollten zusammen zur Schule.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Lena da",
+  "notes": "asking for someone"
+ },
+ {
+  "id": "adv-031",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Ich bin's, dein Bruder.",
+  "text": "Ich bin's, dein Bruder.",
+  "expect_speaker_any": [
+   [
+    "Bruder"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "kinship noun as identity"
+ },
+ {
+  "id": "adv-032",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Huhu, die Omi ist da!",
+  "text": "Huhu, die Omi ist da!",
+  "expect_speaker_any": [
+   [
+    "Omi"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "ambiguous: third-person self-reference, typical for grandparents; at the door clearly the speaker"
+ },
+ {
+  "id": "adv-033",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Wir sind's, Oma und Opa!",
+  "text": "Wir sind's, Oma und Opa!",
+  "expect_speaker_any": [
+   [
+    "Oma",
+    "Opa"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "two people, plural"
+ },
+ {
+  "id": "adv-034",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Hallo, das hier ist Anna, und ich bin Paul, wir wollen zu Jonas.",
+  "text": "Hallo, das hier ist Anna, und ich bin Paul, wir wollen zu Jonas.",
+  "expect_speaker_any": [
+   [
+    "Paul"
+   ]
+  ],
+  "expect_message_contains": "zu Jonas",
+  "notes": "the speaker first introduces a companion ('das hier ist Anna'); the speaker is Paul"
+ },
+ {
+  "id": "adv-035",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Hallo, ich bin der Vater von Mia, ich wollte sie abholen.",
+  "text": "Hallo, ich bin der Vater von Mia, ich wollte sie abholen.",
+  "expect_speaker_any": [
+   [
+    "Vater",
+    "Mia"
+   ],
+   [
+    "Papa",
+    "Mia"
+   ]
+  ],
+  "expect_message_contains": "abholen",
+  "notes": "relational intro; 'Vater' alone is useless, the child's name is the key"
+ },
+ {
+  "id": "adv-036",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Hallo, Paket. DHL.",
+  "text": "Hallo, Paket. DHL.",
+  "expect_speaker_any": [
+   [
+    "DHL"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "company after a full stop, not joined to the role word"
+ },
+ {
+  "id": "adv-037",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Guten Tag, Amazon Lieferung.",
+  "text": "Guten Tag, Amazon Lieferung.",
+  "expect_speaker_any": [
+   [
+    "Amazon"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "company + noun, no verb"
+ },
+ {
+  "id": "adv-038",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Hallo, ich habe Paket für Nachbar. Können Sie nehmen?",
+  "text": "Hallo, ich habe Paket für Nachbar. Können Sie nehmen?",
+  "expect_speaker_any": [
+   [
+    "Paket"
+   ],
+   [
+    "Zusteller"
+   ],
+   [
+    "Kurier"
+   ]
+  ],
+  "expect_message_contains": "Können Sie nehmen",
+  "notes": "broken German, no article; role only implied by the delivery; 'Nachbar' is the recipient, never the speaker (ambiguous: implied role)"
+ },
+ {
+  "id": "adv-039",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Hi, delivery for Schmidt.",
+  "text": "Hi, delivery for Schmidt.",
+  "expect_speaker_any": [
+   [
+    "Paket"
+   ],
+   [
+    "Zusteller"
+   ],
+   [
+    "Kurier"
+   ],
+   [
+    "Liefer"
+   ],
+   [
+    "Deliver"
+   ],
+   [
+    "Courier"
+   ]
+  ],
+  "expect_message_contains": "Schmidt",
+  "notes": "English only; Schmidt is the recipient"
+ },
+ {
+  "id": "adv-040",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Hallo, Hermes. Ich hab hier ein Paket für die Familie Wagner aus dem dritten Stock, können Sie das annehmen?",
+  "text": "Hallo, Hermes. Ich hab hier ein Paket für die Familie Wagner aus dem dritten Stock, können Sie das annehmen?",
+  "expect_speaker_any": [
+   [
+    "Hermes"
+   ]
+  ],
+  "expect_message_contains": "Familie Wagner",
+  "notes": "long message after a one-word company"
+ },
+ {
+  "id": "adv-041",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Guten Tag, ich bin von UPS, ich brauche eine Unterschrift.",
+  "text": "Guten Tag, ich bin von UPS, ich brauche eine Unterschrift.",
+  "expect_speaker_any": [
+   [
+    "UPS"
+   ]
+  ],
+  "expect_message_contains": "Unterschrift",
+  "notes": "'ich bin von <Org>' – no name between"
+ },
+ {
+  "id": "adv-042",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Die Post ist da! Einschreiben für Kowalczyk.",
+  "text": "Die Post ist da! Einschreiben für Kowalczyk.",
+  "expect_speaker_any": [
+   [
+    "Post"
+   ]
+  ],
+  "expect_message_contains": "Einschreiben",
+  "notes": "third-person 'Die Post ist da'"
+ },
+ {
+  "id": "adv-043",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Guten Tag, GLS. Ich hab ein Paket für Ihren Nachbarn, Herrn Becker, der ist nicht da.",
+  "text": "Guten Tag, GLS. Ich hab ein Paket für Ihren Nachbarn, Herrn Becker, der ist nicht da.",
+  "expect_speaker_any": [
+   [
+    "GLS"
+   ]
+  ],
+  "expect_message_contains": "Herrn Becker",
+  "notes": "neighbour + name mentioned as recipient"
+ },
+ {
+  "id": "adv-044",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Hallo, DPD Paketdienst, ich stell's Ihnen in den Hausflur, ja?",
+  "text": "Hallo, DPD Paketdienst, ich stell's Ihnen in den Hausflur, ja?",
+  "expect_speaker_any": [
+   [
+    "DPD"
+   ]
+  ],
+  "expect_message_contains": "Hausflur",
+  "notes": "company + role word"
+ },
+ {
+  "id": "adv-045",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "FedEx, I have a package for Mr. Hoffmann, signature please.",
+  "text": "FedEx, I have a package for Mr. Hoffmann, signature please.",
+  "expect_speaker_any": [
+   [
+    "FedEx"
+   ]
+  ],
+  "expect_message_contains": "Hoffmann",
+  "notes": "English courier"
+ },
+ {
+  "id": "adv-046",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Hallo, hier ist der Paketbote, ich hab was für Weber, kann ich das bei Ihnen lassen?",
+  "text": "Hallo, hier ist der Paketbote, ich hab was für Weber, kann ich das bei Ihnen lassen?",
+  "expect_speaker_any": [
+   [
+    "Paket"
+   ],
+   [
+    "Zusteller"
+   ],
+   [
+    "Kurier"
+   ]
+  ],
+  "expect_message_contains": "für Weber",
+  "notes": "recipient surname after the intro"
+ },
+ {
+  "id": "adv-047",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Guten Tag, ich habe hier ein Paket von Amazon für Sie.",
+  "text": "Guten Tag, ich habe hier ein Paket von Amazon für Sie.",
+  "expect_speaker_any": [
+   [
+    "Paket"
+   ],
+   [
+    "Zusteller"
+   ],
+   [
+    "Kurier"
+   ],
+   [
+    "Amazon"
+   ]
+  ],
+  "expect_message_contains": "Paket von Amazon",
+  "notes": "ambiguous: implied courier; 'Paket von Amazon' in a courier's mouth (compare the resident's 'mein Paket von Amazon')"
+ },
+ {
+  "id": "adv-048",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Hallo, hier ist die Deutsche Post, Sie haben ein Einschreiben.",
+  "text": "Hallo, hier ist die Deutsche Post, Sie haben ein Einschreiben.",
+  "expect_speaker_any": [
+   [
+    "Post"
+   ]
+  ],
+  "expect_message_contains": "Einschreiben",
+  "notes": "two-word company"
+ },
+ {
+  "id": "adv-049",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Hallo, Amazon. Ist für Yilmaz, der macht nicht auf. Kann ich bei Ihnen abgeben?",
+  "text": "Hallo, Amazon. Ist für Yilmaz, der macht nicht auf. Kann ich bei Ihnen abgeben?",
+  "expect_speaker_any": [
+   [
+    "Amazon"
+   ]
+  ],
+  "expect_message_contains": "abgeben",
+  "notes": "recipient's name must not become the speaker"
+ },
+ {
+  "id": "adv-050",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Hallo, ich bin der Fahrer von Amazon, das Paket ist zu groß für den Briefkasten.",
+  "text": "Hallo, ich bin der Fahrer von Amazon, das Paket ist zu groß für den Briefkasten.",
+  "expect_speaker_any": [
+   [
+    "Amazon"
+   ]
+  ],
+  "expect_message_contains": "zu groß",
+  "notes": "'Fahrer' is a role, not a name"
+ },
+ {
+  "id": "adv-051",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Hallo, ich komme von Hermes, ich habe drei Pakete für das Haus.",
+  "text": "Hallo, ich komme von Hermes, ich habe drei Pakete für das Haus.",
+  "expect_speaker_any": [
+   [
+    "Hermes"
+   ]
+  ],
+  "expect_message_contains": "drei Pakete",
+  "notes": "'ich komme von <Org>'"
+ },
+ {
+  "id": "adv-052",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Paketzustellung, hallo? Ist jemand da?",
+  "text": "Paketzustellung, hallo? Ist jemand da?",
+  "expect_speaker_any": [
+   [
+    "Paket"
+   ],
+   [
+    "Zusteller"
+   ],
+   [
+    "Kurier"
+   ]
+  ],
+  "expect_message_contains": "jemand da",
+  "notes": "compound role noun up front"
+ },
+ {
+  "id": "adv-053",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Hallo, die Briefträgerin, ich hab ein Päckchen, das passt nicht in den Kasten.",
+  "text": "Hallo, die Briefträgerin, ich hab ein Päckchen, das passt nicht in den Kasten.",
+  "expect_speaker_any": [
+   [
+    "Post"
+   ],
+   [
+    "Briefträger"
+   ]
+  ],
+  "expect_message_contains": "Päckchen",
+  "notes": "female role noun"
+ },
+ {
+  "id": "adv-054",
+  "category": "food",
+  "side": "door",
+  "say": "Hallo, Lieferando!",
+  "text": "Hallo, Lieferando!",
+  "expect_speaker_any": [
+   [
+    "Lieferando"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "baseline"
+ },
+ {
+  "id": "adv-055",
+  "category": "food",
+  "side": "door",
+  "say": "Hi, Wolt. Your food is here.",
+  "text": "Hi, Wolt. Your food is here.",
+  "expect_speaker_any": [
+   [
+    "Wolt"
+   ]
+  ],
+  "expect_message_contains": "food is here",
+  "notes": "English"
+ },
+ {
+  "id": "adv-056",
+  "category": "food",
+  "side": "door",
+  "say": "Hallo, Ihre Pizza ist da.",
+  "text": "Hallo, Ihre Pizza ist da.",
+  "expect_speaker_any": [
+   [
+    "Pizza"
+   ],
+   [
+    "Liefer"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "implied food courier"
+ },
+ {
+  "id": "adv-057",
+  "category": "food",
+  "side": "door",
+  "say": "Guten Abend, Uber Eats, Bestellung für Neumann.",
+  "text": "Guten Abend, Uber Eats, Bestellung für Neumann.",
+  "expect_speaker_any": [
+   [
+    "Uber"
+   ]
+  ],
+  "expect_message_contains": "Neumann",
+  "notes": "two-word company; recipient"
+ },
+ {
+  "id": "adv-058",
+  "category": "food",
+  "side": "door",
+  "say": "Hallo, Flink, Ihre Einkäufe.",
+  "text": "Hallo, Flink, Ihre Einkäufe.",
+  "expect_speaker_any": [
+   [
+    "Flink"
+   ]
+  ],
+  "expect_message_contains": "Einkäufe",
+  "notes": "quick-commerce company not in any list"
+ },
+ {
+  "id": "adv-059",
+  "category": "food",
+  "side": "door",
+  "say": "Guten Tag, Rewe Lieferservice, ich hab Ihre Bestellung, wo soll ich die hinstellen?",
+  "text": "Guten Tag, Rewe Lieferservice, ich hab Ihre Bestellung, wo soll ich die hinstellen?",
+  "expect_speaker_any": [
+   [
+    "Rewe"
+   ]
+  ],
+  "expect_message_contains": "hinstellen",
+  "notes": "supermarket delivery, company not in any list"
+ },
+ {
+  "id": "adv-060",
+  "category": "food",
+  "side": "door",
+  "say": "Hallo, ich bin der Fahrer von Lieferando, ich finde die Klingel nicht, welcher Stock?",
+  "text": "Hallo, ich bin der Fahrer von Lieferando, ich finde die Klingel nicht, welcher Stock?",
+  "expect_speaker_any": [
+   [
+    "Lieferando"
+   ]
+  ],
+  "expect_message_contains": "welcher Stock",
+  "notes": "'Fahrer' is a role, not a name"
+ },
+ {
+  "id": "adv-061",
+  "category": "food",
+  "side": "door",
+  "say": "Pizza Roma, zwei Pizzen für Hoffmann.",
+  "text": "Pizza Roma, zwei Pizzen für Hoffmann.",
+  "expect_speaker_any": [
+   [
+    "Pizza"
+   ],
+   [
+    "Liefer"
+   ]
+  ],
+  "expect_message_contains": "Hoffmann",
+  "notes": "restaurant name; recipient"
+ },
+ {
+  "id": "adv-062",
+  "category": "food",
+  "side": "room",
+  "say": "Lieferando braucht noch zwanzig Minuten, hat die App gesagt.",
+  "text": "Lieferando braucht noch zwanzig Minuten, hat die App gesagt.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "zwanzig Minuten",
+  "notes": "room-side chat; company up front is the subject of a sentence"
+ },
+ {
+  "id": "adv-063",
+  "category": "food",
+  "side": "door",
+  "say": "Hallo, Ihr Essen von Lieferando.",
+  "text": "Hallo, Ihr Essen von Lieferando.",
+  "expect_speaker_any": [
+   [
+    "Lieferando"
+   ],
+   [
+    "Liefer"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "'Essen' must not become a personal name"
+ },
+ {
+  "id": "adv-064",
+  "category": "food",
+  "side": "door",
+  "say": "Hallo, Ihre Bestellung vom Sushi Palast.",
+  "text": "Hallo, Ihre Bestellung vom Sushi Palast.",
+  "expect_speaker_any": [
+   [
+    "Sushi"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "restaurant after 'vom'; 'Bestellung' is not a name"
+ },
+ {
+  "id": "adv-065",
+  "category": "authorities",
+  "side": "door",
+  "say": "Polizei! Öffnen Sie die Tür!",
+  "text": "Polizei! Öffnen Sie die Tür!",
+  "expect_speaker_any": [
+   [
+    "Polizei"
+   ]
+  ],
+  "expect_message_contains": "Öffnen Sie die Tür",
+  "notes": "baseline"
+ },
+ {
+  "id": "adv-066",
+  "category": "authorities",
+  "side": "door",
+  "say": "Guten Abend, Polizei Frankfurt, wir haben ein paar Fragen zu einem Vorfall im Haus.",
+  "text": "Guten Abend, Polizei Frankfurt, wir haben ein paar Fragen zu einem Vorfall im Haus.",
+  "expect_speaker_any": [
+   [
+    "Polizei"
+   ]
+  ],
+  "expect_message_contains": "Vorfall",
+  "notes": "role + city"
+ },
+ {
+  "id": "adv-067",
+  "category": "authorities",
+  "side": "room",
+  "say": "Soll ich die Polizei rufen? Da liegt einer vor der Tür.",
+  "text": "Soll ich die Polizei rufen? Da liegt einer vor der Tür.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Polizei rufen",
+  "notes": "role word as topic"
+ },
+ {
+  "id": "adv-068",
+  "category": "authorities",
+  "side": "door",
+  "say": "Feuerwehr! Bitte verlassen Sie sofort das Gebäude!",
+  "text": "Feuerwehr! Bitte verlassen Sie sofort das Gebäude!",
+  "expect_speaker_any": [
+   [
+    "Feuerwehr"
+   ]
+  ],
+  "expect_message_contains": "verlassen Sie sofort",
+  "notes": "baseline"
+ },
+ {
+  "id": "adv-069",
+  "category": "authorities",
+  "side": "door",
+  "say": "Hallo, Rettungsdienst, wir wurden in den dritten Stock gerufen.",
+  "text": "Hallo, Rettungsdienst, wir wurden in den dritten Stock gerufen.",
+  "expect_speaker_any": [
+   [
+    "Rettung"
+   ],
+   [
+    "Notarzt"
+   ],
+   [
+    "Sanitä"
+   ]
+  ],
+  "expect_message_contains": "dritten Stock",
+  "notes": "baseline"
+ },
+ {
+  "id": "adv-070",
+  "category": "authorities",
+  "side": "door",
+  "say": "Guten Tag, Ordnungsamt Köln, es geht um Ihr Auto vor der Einfahrt.",
+  "text": "Guten Tag, Ordnungsamt Köln, es geht um Ihr Auto vor der Einfahrt.",
+  "expect_speaker_any": [
+   [
+    "Ordnungsamt"
+   ]
+  ],
+  "expect_message_contains": "Einfahrt",
+  "notes": "a generic label like 'Behörde' would hide who it is"
+ },
+ {
+  "id": "adv-071",
+  "category": "authorities",
+  "side": "door",
+  "say": "Guten Tag, mein Name ist Weber, ich bin Gerichtsvollzieherin, bitte öffnen Sie mir.",
+  "text": "Guten Tag, mein Name ist Weber, ich bin Gerichtsvollzieherin, bitte öffnen Sie mir.",
+  "expect_speaker_any": [
+   [
+    "Gerichtsvollzieh"
+   ]
+  ],
+  "expect_message_contains": "öffnen Sie mir",
+  "notes": "surname first, role in a second 'ich bin' clause; the role is the important part"
+ },
+ {
+  "id": "adv-072",
+  "category": "authorities",
+  "side": "door",
+  "say": "Guten Tag, Hauptzollamt, Vollstreckungsstelle. Sind Sie Herr Kaya?",
+  "text": "Guten Tag, Hauptzollamt, Vollstreckungsstelle. Sind Sie Herr Kaya?",
+  "expect_speaker_any": [
+   [
+    "Zoll"
+   ]
+  ],
+  "expect_message_contains": "Herr Kaya",
+  "notes": "compound 'Hauptzollamt'; Herr Kaya is the addressee"
+ },
+ {
+  "id": "adv-073",
+  "category": "authorities",
+  "side": "door",
+  "say": "Grüß Gott, der Kaminkehrer. Ich muss zum Messen in den Keller.",
+  "text": "Grüß Gott, der Kaminkehrer. Ich muss zum Messen in den Keller.",
+  "expect_speaker_any": [
+   [
+    "Kaminkehrer"
+   ],
+   [
+    "Schornsteinfeger"
+   ]
+  ],
+  "expect_message_contains": "Messen",
+  "notes": "southern word for chimney sweep"
+ },
+ {
+  "id": "adv-074",
+  "category": "authorities",
+  "side": "door",
+  "say": "Guten Tag, Bezirksschornsteinfeger Müller, ich komme zur Feuerstättenschau.",
+  "text": "Guten Tag, Bezirksschornsteinfeger Müller, ich komme zur Feuerstättenschau.",
+  "expect_speaker_any": [
+   [
+    "Schornsteinfeger"
+   ]
+  ],
+  "expect_message_contains": "Feuerstättenschau",
+  "notes": "compound 'Bezirks-schornsteinfeger' + surname"
+ },
+ {
+  "id": "adv-075",
+  "category": "authorities",
+  "side": "room",
+  "say": "Ich rufe gleich die Feuerwehr, wenn Sie nicht aufhören zu klingeln!",
+  "text": "Ich rufe gleich die Feuerwehr, wenn Sie nicht aufhören zu klingeln!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "aufhören zu klingeln",
+  "notes": "role word as topic, angry resident"
+ },
+ {
+  "id": "adv-076",
+  "category": "authorities",
+  "side": "door",
+  "say": "Kriminalpolizei, mein Name ist Hauptkommissarin Braun.",
+  "text": "Kriminalpolizei, mein Name ist Hauptkommissarin Braun.",
+  "expect_speaker_any": [
+   [
+    "Polizei"
+   ],
+   [
+    "Kommissar"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "compound 'Kriminalpolizei' + rank + surname"
+ },
+ {
+  "id": "adv-077",
+  "category": "authorities",
+  "side": "room",
+  "say": "Da steht ein Mann vom Ordnungsamt vor der Tür, soll ich aufmachen?",
+  "text": "Da steht ein Mann vom Ordnungsamt vor der Tür, soll ich aufmachen?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "soll ich aufmachen",
+  "notes": "third person 'ein Mann vom Ordnungsamt'"
+ },
+ {
+  "id": "adv-078",
+  "category": "authorities",
+  "side": "door",
+  "say": "Hallo, ist das die Wohnung von Herrn Krüger? Wir sind von der Kriminalpolizei.",
+  "text": "Hallo, ist das die Wohnung von Herrn Krüger? Wir sind von der Kriminalpolizei.",
+  "expect_speaker_any": [
+   [
+    "Polizei"
+   ]
+  ],
+  "expect_message_contains": "Herrn Krüger",
+  "notes": "introduction comes last; 'wir sind von der'"
+ },
+ {
+  "id": "adv-079",
+  "category": "authorities",
+  "side": "door",
+  "say": "Hallo, hier ist das Ordnungsamt.",
+  "text": "Hallo, hier ist das Ordnungsamt.",
+  "expect_speaker_any": [
+   [
+    "Ordnungsamt"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "specific authority must be kept"
+ },
+ {
+  "id": "adv-080",
+  "category": "authorities",
+  "side": "door",
+  "say": "Guten Tag, Gerichtsvollzieher Hartmann. Ich möchte zu Herrn Koslowski.",
+  "text": "Guten Tag, Gerichtsvollzieher Hartmann. Ich möchte zu Herrn Koslowski.",
+  "expect_speaker_any": [
+   [
+    "Gerichtsvollzieh"
+   ]
+  ],
+  "expect_message_contains": "Koslowski",
+  "notes": "role + surname; the debtor's name is not the speaker"
+ },
+ {
+  "id": "adv-081",
+  "category": "authorities",
+  "side": "room",
+  "say": "Ruf einen Krankenwagen, Papa ist gestürzt!",
+  "text": "Ruf einen Krankenwagen, Papa ist gestürzt!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Papa ist gestürzt",
+  "notes": "emergency; role word as topic, 'Papa' third person"
+ },
+ {
+  "id": "adv-082",
+  "category": "authorities",
+  "side": "room",
+  "say": "Mein Paket hängt beim Zoll fest.",
+  "text": "Mein Paket hängt beim Zoll fest.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Zoll",
+  "notes": "role words as topic"
+ },
+ {
+  "id": "adv-083",
+  "category": "utilities_trades",
+  "side": "door",
+  "say": "Guten Tag, Stadtwerke, ich komme zum Ablesen der Zähler.",
+  "text": "Guten Tag, Stadtwerke, ich komme zum Ablesen der Zähler.",
+  "expect_speaker_any": [
+   [
+    "Stadtwerk"
+   ]
+  ],
+  "expect_message_contains": "Ablesen",
+  "notes": "baseline"
+ },
+ {
+  "id": "adv-084",
+  "category": "utilities_trades",
+  "side": "door",
+  "say": "Hallo, ich komme von den Stadtwerken, wegen der Wasseruhr.",
+  "text": "Hallo, ich komme von den Stadtwerken, wegen der Wasseruhr.",
+  "expect_speaker_any": [
+   [
+    "Stadtwerk"
+   ]
+  ],
+  "expect_message_contains": "Wasseruhr",
+  "notes": "'ich komme von den …' (dative plural)"
+ },
+ {
+  "id": "adv-085",
+  "category": "utilities_trades",
+  "side": "door",
+  "say": "Guten Tag, Telekom, wir bauen gerade Glasfaser aus, haben Sie kurz Zeit?",
+  "text": "Guten Tag, Telekom, wir bauen gerade Glasfaser aus, haben Sie kurz Zeit?",
+  "expect_speaker_any": [
+   [
+    "Telekom"
+   ]
+  ],
+  "expect_message_contains": "Glasfaser",
+  "notes": "big company not in any list"
+ },
+ {
+  "id": "adv-086",
+  "category": "utilities_trades",
+  "side": "door",
+  "say": "Hallo, mein Name ist Krause, ich bin der Techniker von Vodafone, wegen Ihrer Störung.",
+  "text": "Hallo, mein Name ist Krause, ich bin der Techniker von Vodafone, wegen Ihrer Störung.",
+  "expect_speaker_any": [
+   [
+    "Vodafone"
+   ]
+  ],
+  "expect_message_contains": "Störung",
+  "notes": "surname first, company in a second clause; the company is what matters for a stranger"
+ },
+ {
+  "id": "adv-087",
+  "category": "utilities_trades",
+  "side": "door",
+  "say": "Hallo, Elektriker, Sie hatten wegen dem Sicherungskasten angerufen.",
+  "text": "Hallo, Elektriker, Sie hatten wegen dem Sicherungskasten angerufen.",
+  "expect_speaker_any": [
+   [
+    "Elektriker"
+   ],
+   [
+    "Handwerker"
+   ]
+  ],
+  "expect_message_contains": "Sicherungskasten",
+  "notes": "baseline trade"
+ },
+ {
+  "id": "adv-088",
+  "category": "utilities_trades",
+  "side": "door",
+  "say": "Guten Morgen, Firma Heizung Schulze, wir sollen heute die Therme warten.",
+  "text": "Guten Morgen, Firma Heizung Schulze, wir sollen heute die Therme warten.",
+  "expect_speaker_any": [
+   [
+    "Schulze"
+   ],
+   [
+    "Heizung"
+   ]
+  ],
+  "expect_message_contains": "Therme",
+  "notes": "'Firma <trade> <surname>' company name"
+ },
+ {
+  "id": "adv-089",
+  "category": "utilities_trades",
+  "side": "door",
+  "say": "Hallo, Hausmeister. Ich muss kurz in den Keller, die Heizung entlüften.",
+  "text": "Hallo, Hausmeister. Ich muss kurz in den Keller, die Heizung entlüften.",
+  "expect_speaker_any": [
+   [
+    "Hausmeister"
+   ]
+  ],
+  "expect_message_contains": "Heizung entlüften",
+  "notes": "Hausmeister is not the Hausverwaltung"
+ },
+ {
+  "id": "adv-090",
+  "category": "utilities_trades",
+  "side": "door",
+  "say": "Guten Tag, hier ist Frau Berger von der Hausverwaltung, wir machen morgen die Wohnungsbegehung.",
+  "text": "Guten Tag, hier ist Frau Berger von der Hausverwaltung, wir machen morgen die Wohnungsbegehung.",
+  "expect_speaker_any": [
+   [
+    "Berger"
+   ]
+  ],
+  "expect_message_contains": "Wohnungsbegehung",
+  "notes": "'Frau' + surname + 'von der' + org"
+ },
+ {
+  "id": "adv-091",
+  "category": "utilities_trades",
+  "side": "door",
+  "say": "Hallo, ich bin der neue Vermieter, Herr Schäfer, ich wollte mich kurz vorstellen.",
+  "text": "Hallo, ich bin der neue Vermieter, Herr Schäfer, ich wollte mich kurz vorstellen.",
+  "expect_speaker_any": [
+   [
+    "Schäfer"
+   ],
+   [
+    "Vermieter"
+   ]
+  ],
+  "expect_message_contains": "vorstellen",
+  "notes": "adjective between article and role; 'Herr' + surname"
+ },
+ {
+  "id": "adv-092",
+  "category": "utilities_trades",
+  "side": "door",
+  "say": "Guten Tag, ich bin von der Deutschen Glasfaser, wir bauen hier gerade aus.",
+  "text": "Guten Tag, ich bin von der Deutschen Glasfaser, wir bauen hier gerade aus.",
+  "expect_speaker_any": [
+   [
+    "Glasfaser"
+   ]
+  ],
+  "expect_message_contains": "bauen hier gerade aus",
+  "notes": "'ich bin von der' + inflected company name"
+ },
+ {
+  "id": "adv-093",
+  "category": "utilities_trades",
+  "side": "room",
+  "say": "Kannst du morgen früh für den Heizungsmonteur aufmachen? Ich bin schon weg.",
+  "text": "Kannst du morgen früh für den Heizungsmonteur aufmachen? Ich bin schon weg.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Heizungsmonteur",
+  "notes": "role word as topic"
+ },
+ {
+  "id": "adv-094",
+  "category": "utilities_trades",
+  "side": "room",
+  "say": "Der Techniker von der Telekom kommt heute zwischen acht und zwölf.",
+  "text": "Der Techniker von der Telekom kommt heute zwischen acht und zwölf.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "zwischen acht und zwölf",
+  "notes": "role + company up front, but third person (appointment info)"
+ },
+ {
+  "id": "adv-095",
+  "category": "utilities_trades",
+  "side": "door",
+  "say": "Guten Tag, Zählerablesung. Ich müsste in den Keller zu den Zählern.",
+  "text": "Guten Tag, Zählerablesung. Ich müsste in den Keller zu den Zählern.",
+  "expect_speaker_any": [
+   [
+    "Zähler"
+   ],
+   [
+    "Ables"
+   ],
+   [
+    "Stadtwerk"
+   ]
+  ],
+  "expect_message_contains": "Keller",
+  "notes": "compound role noun"
+ },
+ {
+  "id": "adv-096",
+  "category": "utilities_trades",
+  "side": "door",
+  "say": "Hallo, Elektro Wagner, wir sind für die Wallbox da.",
+  "text": "Hallo, Elektro Wagner, wir sind für die Wallbox da.",
+  "expect_speaker_any": [
+   [
+    "Wagner"
+   ],
+   [
+    "Elektr"
+   ]
+  ],
+  "expect_message_contains": "Wallbox",
+  "notes": "'Elektro <Surname>' company name"
+ },
+ {
+  "id": "adv-097",
+  "category": "utilities_trades",
+  "side": "door",
+  "say": "Taxi für Hoffmann!",
+  "text": "Taxi für Hoffmann!",
+  "expect_speaker_any": [
+   [
+    "Taxi"
+   ]
+  ],
+  "expect_message_contains": "Hoffmann",
+  "notes": "taxi driver; recipient name"
+ },
+ {
+  "id": "adv-098",
+  "category": "utilities_trades",
+  "side": "door",
+  "say": "Guten Tag, ich bin der Maler, soll ich gleich mit dem Treppenhaus anfangen?",
+  "text": "Guten Tag, ich bin der Maler, soll ich gleich mit dem Treppenhaus anfangen?",
+  "expect_speaker_any": [
+   [
+    "Maler"
+   ]
+  ],
+  "expect_message_contains": "Treppenhaus",
+  "notes": "trade not in any list"
+ },
+ {
+  "id": "adv-099",
+  "category": "care_health",
+  "side": "door",
+  "say": "Guten Morgen, Pflegedienst, ich bin's, die Schwester Monika.",
+  "text": "Guten Morgen, Pflegedienst, ich bin's, die Schwester Monika.",
+  "expect_speaker_any": [
+   [
+    "Monika"
+   ],
+   [
+    "Pflege"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "role word + 'Schwester' title + name"
+ },
+ {
+  "id": "adv-100",
+  "category": "care_health",
+  "side": "door",
+  "say": "Hallo, die Caritas, ich komme zum Waschen von Frau Lehmann.",
+  "text": "Hallo, die Caritas, ich komme zum Waschen von Frau Lehmann.",
+  "expect_speaker_any": [
+   [
+    "Caritas"
+   ],
+   [
+    "Pflege"
+   ]
+  ],
+  "expect_message_contains": "Frau Lehmann",
+  "notes": "care organisation not in any list; patient's name is not the speaker"
+ },
+ {
+  "id": "adv-101",
+  "category": "care_health",
+  "side": "door",
+  "say": "Hallo, hier ist die Hebamme, Frau Schulte.",
+  "text": "Hallo, hier ist die Hebamme, Frau Schulte.",
+  "expect_speaker_any": [
+   [
+    "Hebamme"
+   ],
+   [
+    "Schulte"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "role + name after comma"
+ },
+ {
+  "id": "adv-102",
+  "category": "care_health",
+  "side": "door",
+  "say": "Guten Tag, Physiotherapie Hausbesuch, ich bin der Tim.",
+  "text": "Guten Tag, Physiotherapie Hausbesuch, ich bin der Tim.",
+  "expect_speaker_any": [
+   [
+    "Tim"
+   ],
+   [
+    "Physio"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "role phrase then name"
+ },
+ {
+  "id": "adv-103",
+  "category": "care_health",
+  "side": "door",
+  "say": "Hallo, Essen auf Rädern!",
+  "text": "Hallo, Essen auf Rädern!",
+  "expect_speaker_any": [
+   [
+    "Rädern"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "meal service for the elderly; 'Essen' up front"
+ },
+ {
+  "id": "adv-104",
+  "category": "care_health",
+  "side": "room",
+  "say": "Der Pflegedienst ist da, kannst du aufmachen?",
+  "text": "Der Pflegedienst ist da, kannst du aufmachen?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "kannst du aufmachen",
+  "notes": "room side: a resident announces the care service to another resident (detector has no side input)"
+ },
+ {
+  "id": "adv-105",
+  "category": "care_health",
+  "side": "door",
+  "say": "Hallo, ich bin die Nachtschwester vom Pflegedienst Sonnenschein.",
+  "text": "Hallo, ich bin die Nachtschwester vom Pflegedienst Sonnenschein.",
+  "expect_speaker_any": [
+   [
+    "Pflege"
+   ],
+   [
+    "Nachtschwester"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "role + named care service"
+ },
+ {
+  "id": "adv-106",
+  "category": "care_health",
+  "side": "door",
+  "say": "Hallo, Johanniter, Hausnotruf. Frau Petrović hat den Knopf gedrückt.",
+  "text": "Hallo, Johanniter, Hausnotruf. Frau Petrović hat den Knopf gedrückt.",
+  "expect_speaker_any": [
+   [
+    "Johanniter"
+   ],
+   [
+    "Hausnotruf"
+   ]
+  ],
+  "expect_message_contains": "Knopf gedrückt",
+  "notes": "aid organisation not in any list; patient's name with diacritic is not the speaker"
+ },
+ {
+  "id": "adv-107",
+  "category": "care_health",
+  "side": "room",
+  "say": "Die Hebamme kommt um zehn, kannst du dann aufmachen?",
+  "text": "Die Hebamme kommt um zehn, kannst du dann aufmachen?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "um zehn",
+  "notes": "role word as topic"
+ },
+ {
+  "id": "adv-108",
+  "category": "care_health",
+  "side": "door",
+  "say": "Guten Tag, ich bin Frau Albrecht vom Medizinischen Dienst, wegen der Pflegegrad-Begutachtung.",
+  "text": "Guten Tag, ich bin Frau Albrecht vom Medizinischen Dienst, wegen der Pflegegrad-Begutachtung.",
+  "expect_speaker_any": [
+   [
+    "Albrecht"
+   ],
+   [
+    "Medizinisch"
+   ]
+  ],
+  "expect_message_contains": "Begutachtung",
+  "notes": "'Frau' + surname + 'vom' + adjective org"
+ },
+ {
+  "id": "adv-109",
+  "category": "care_health",
+  "side": "door",
+  "say": "Hallo, Praxis Dr. Hansen, ich bringe die Rezepte vorbei.",
+  "text": "Hallo, Praxis Dr. Hansen, ich bringe die Rezepte vorbei.",
+  "expect_speaker_any": [
+   [
+    "Hansen"
+   ],
+   [
+    "Praxis"
+   ]
+  ],
+  "expect_message_contains": "Rezepte",
+  "notes": "'Praxis Dr. <Name>' with an abbreviation full stop"
+ },
+ {
+  "id": "adv-110",
+  "category": "neighbours",
+  "side": "door",
+  "say": "Hallo, ich bin die Nachbarin von oben, haben Sie kurz Zeit?",
+  "text": "Hallo, ich bin die Nachbarin von oben, haben Sie kurz Zeit?",
+  "expect_speaker_any": [
+   [
+    "Nachbar"
+   ]
+  ],
+  "expect_message_contains": "kurz Zeit",
+  "notes": "baseline"
+ },
+ {
+  "id": "adv-111",
+  "category": "neighbours",
+  "side": "door",
+  "say": "Hallo, Nachbar aus dem Erdgeschoss, Herr Özdemir. Ihr Auto steht in meiner Einfahrt.",
+  "text": "Hallo, Nachbar aus dem Erdgeschoss, Herr Özdemir. Ihr Auto steht in meiner Einfahrt.",
+  "expect_speaker_any": [
+   [
+    "Özdemir"
+   ]
+  ],
+  "expect_message_contains": "Einfahrt",
+  "notes": "role first, 'Herr' + name later; the name must not be lost"
+ },
+ {
+  "id": "adv-112",
+  "category": "neighbours",
+  "side": "door",
+  "say": "Hi, hier ist Sabine von gegenüber, ich hab eure Katze im Treppenhaus gefunden.",
+  "text": "Hi, hier ist Sabine von gegenüber, ich hab eure Katze im Treppenhaus gefunden.",
+  "expect_speaker_any": [
+   [
+    "Sabine"
+   ]
+  ],
+  "expect_message_contains": "Katze",
+  "notes": "baseline"
+ },
+ {
+  "id": "adv-113",
+  "category": "neighbours",
+  "side": "door",
+  "say": "Entschuldigung, ich wohne im zweiten Stock und hab meinen Schlüssel vergessen, könnten Sie mir aufmachen?",
+  "text": "Entschuldigung, ich wohne im zweiten Stock und hab meinen Schlüssel vergessen, könnten Sie mir aufmachen?",
+  "expect_speaker_any": [
+   [
+    "Nachbar"
+   ],
+   [
+    "Stock"
+   ]
+  ],
+  "expect_message_contains": "Schlüssel vergessen",
+  "notes": "ambiguous: self-description by address only ('ich wohne im zweiten Stock'); a careful human would show 'Nachbar (2. Stock)'"
+ },
+ {
+  "id": "adv-114",
+  "category": "neighbours",
+  "side": "door",
+  "say": "Guten Abend, Müller von nebenan. Ihr Rauchmelder piept seit Stunden.",
+  "text": "Guten Abend, Müller von nebenan. Ihr Rauchmelder piept seit Stunden.",
+  "expect_speaker_any": [
+   [
+    "Müller"
+   ]
+  ],
+  "expect_message_contains": "Rauchmelder",
+  "notes": "'<Surname> von nebenan' without a verb"
+ },
+ {
+  "id": "adv-115",
+  "category": "neighbours",
+  "side": "room",
+  "say": "Legen Sie es bitte zum Nachbarn, Herrn Özdemir, im Erdgeschoss.",
+  "text": "Legen Sie es bitte zum Nachbarn, Herrn Özdemir, im Erdgeschoss.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Özdemir",
+  "notes": "resident instructs the courier; neighbour + name as topic"
+ },
+ {
+  "id": "adv-116",
+  "category": "neighbours",
+  "side": "room",
+  "say": "Die Nachbarn haben sich über den Lärm beschwert, macht die Musik leiser.",
+  "text": "Die Nachbarn haben sich über den Lärm beschwert, macht die Musik leiser.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Musik leiser",
+  "notes": "role word as subject, not an introduction"
+ },
+ {
+  "id": "adv-117",
+  "category": "neighbours",
+  "side": "door",
+  "say": "Hallo, hier ist der Jürgen aus dem dritten Stock, habt ihr eine Leiter?",
+  "text": "Hallo, hier ist der Jürgen aus dem dritten Stock, habt ihr eine Leiter?",
+  "expect_speaker_any": [
+   [
+    "Jürgen"
+   ]
+  ],
+  "expect_message_contains": "Leiter",
+  "notes": "baseline"
+ },
+ {
+  "id": "adv-118",
+  "category": "neighbours",
+  "side": "door",
+  "say": "Hallo, Ihre Nachbarin hier, die Frau Schmitz, Sie haben das Licht am Auto angelassen.",
+  "text": "Hallo, Ihre Nachbarin hier, die Frau Schmitz, Sie haben das Licht am Auto angelassen.",
+  "expect_speaker_any": [
+   [
+    "Schmitz"
+   ]
+  ],
+  "expect_message_contains": "Licht am Auto",
+  "notes": "role + 'hier', name follows as apposition"
+ },
+ {
+  "id": "adv-119",
+  "category": "neighbours",
+  "side": "room",
+  "say": "Die Nachbarin hat angerufen, sie kommt später vorbei.",
+  "text": "Die Nachbarin hat angerufen, sie kommt später vorbei.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "kommt später vorbei",
+  "notes": "role word as subject"
+ },
+ {
+  "id": "adv-120",
+  "category": "neighbours",
+  "side": "door",
+  "say": "Hallo, hier ist Frau Krämer von unten, bei mir tropft es von der Decke!",
+  "text": "Hallo, hier ist Frau Krämer von unten, bei mir tropft es von der Decke!",
+  "expect_speaker_any": [
+   [
+    "Krämer"
+   ]
+  ],
+  "expect_message_contains": "tropft",
+  "notes": "'Frau' + surname"
+ },
+ {
+  "id": "adv-121",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Guten Tag, wir sind von den Zeugen Jehovas und möchten Ihnen gern etwas vorlesen.",
+  "text": "Guten Tag, wir sind von den Zeugen Jehovas und möchten Ihnen gern etwas vorlesen.",
+  "expect_speaker_any": [
+   [
+    "Jehova"
+   ]
+  ],
+  "expect_message_contains": "vorlesen",
+  "notes": "'wir sind von den' + organisation"
+ },
+ {
+  "id": "adv-122",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Guten Tag, wir sind heute in Ihrer Nachbarschaft unterwegs und möchten mit Ihnen über die Bibel sprechen.",
+  "text": "Guten Tag, wir sind heute in Ihrer Nachbarschaft unterwegs und möchten mit Ihnen über die Bibel sprechen.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Bibel",
+  "notes": "no introduction; 'Nachbarschaft' contains 'Nachbar'"
+ },
+ {
+  "id": "adv-123",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Hallo, ich bin vom Tierschutzverein und sammle Spenden, hätten Sie einen Moment?",
+  "text": "Hallo, ich bin vom Tierschutzverein und sammle Spenden, hätten Sie einen Moment?",
+  "expect_speaker_any": [
+   [
+    "Tierschutz"
+   ]
+  ],
+  "expect_message_contains": "einen Moment",
+  "notes": "'ich bin vom' + organisation"
+ },
+ {
+  "id": "adv-124",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Guten Tag, ich komme von den Stadtwerken, wir überprüfen gerade alle Stromzähler hier im Haus, ich müsste kurz rein.",
+  "text": "Guten Tag, ich komme von den Stadtwerken, wir überprüfen gerade alle Stromzähler hier im Haus, ich müsste kurz rein.",
+  "expect_speaker_any": [
+   [
+    "Stadtwerk"
+   ]
+  ],
+  "expect_message_contains": "Stromzähler",
+  "notes": "classic scam wording; still shown as said"
+ },
+ {
+  "id": "adv-125",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Hallo, Umfrage der Uni Mainz, hätten Sie fünf Minuten?",
+  "text": "Hallo, Umfrage der Uni Mainz, hätten Sie fünf Minuten?",
+  "expect_speaker_any": [
+   [
+    "Uni"
+   ]
+  ],
+  "expect_message_contains": "fünf Minuten",
+  "notes": "ambiguous: activity + institution; the institution they speak for is 'Uni Mainz'"
+ },
+ {
+  "id": "adv-126",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Hallo, wir sind von der Grundschule und verkaufen Kuchen für unsere Klassenfahrt!",
+  "text": "Hallo, wir sind von der Grundschule und verkaufen Kuchen für unsere Klassenfahrt!",
+  "expect_speaker_any": [
+   [
+    "Schul"
+   ]
+  ],
+  "expect_message_contains": "Kuchen",
+  "notes": "kids selling; 'wir sind von der'"
+ },
+ {
+  "id": "adv-127",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Guten Tag, ich bin Herr Lange von der Firma Solarprofi, wir machen gerade kostenlose Dachchecks in Ihrer Straße.",
+  "text": "Guten Tag, ich bin Herr Lange von der Firma Solarprofi, wir machen gerade kostenlose Dachchecks in Ihrer Straße.",
+  "expect_speaker_any": [
+   [
+    "Lange"
+   ],
+   [
+    "Solarprofi"
+   ]
+  ],
+  "expect_message_contains": "Dachchecks",
+  "notes": "'Herr' + surname + 'von der Firma'"
+ },
+ {
+  "id": "adv-128",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Guten Tag, Vodafone, wir haben ein Angebot für Ihren Internetanschluss.",
+  "text": "Guten Tag, Vodafone, wir haben ein Angebot für Ihren Internetanschluss.",
+  "expect_speaker_any": [
+   [
+    "Vodafone"
+   ]
+  ],
+  "expect_message_contains": "Angebot",
+  "notes": "company not in any list"
+ },
+ {
+  "id": "adv-129",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Hallo, Sie haben gewonnen! Machen Sie kurz auf, ich hab Ihren Preis dabei.",
+  "text": "Hallo, Sie haben gewonnen! Machen Sie kurz auf, ich hab Ihren Preis dabei.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "gewonnen",
+  "notes": "no introduction"
+ },
+ {
+  "id": "adv-130",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Guten Tag, ich bin vom Wasserwerk, bei Ihnen im Haus ist ein Rohrbruch, ich muss sofort in die Wohnung.",
+  "text": "Guten Tag, ich bin vom Wasserwerk, bei Ihnen im Haus ist ein Rohrbruch, ich muss sofort in die Wohnung.",
+  "expect_speaker_any": [
+   [
+    "Wasserwerk"
+   ]
+  ],
+  "expect_message_contains": "Rohrbruch",
+  "notes": "'ich bin vom' + organisation (scam pattern)"
+ },
+ {
+  "id": "adv-131",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Hallo, wir sind die Sternsinger!",
+  "text": "Hallo, wir sind die Sternsinger!",
+  "expect_speaker_any": [
+   [
+    "Sternsinger"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "group identity"
+ },
+ {
+  "id": "adv-132",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Guten Tag, hätten Sie Interesse an einem Zeitungsabo?",
+  "text": "Guten Tag, hätten Sie Interesse an einem Zeitungsabo?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Zeitungsabo",
+  "notes": "canvasser without introduction"
+ },
+ {
+  "id": "adv-133",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Hallo, ich bin Student und verkaufe Zeitschriften, um mein Studium zu finanzieren.",
+  "text": "Hallo, ich bin Student und verkaufe Zeitschriften, um mein Studium zu finanzieren.",
+  "expect_speaker_any": [
+   [
+    "Student"
+   ]
+  ],
+  "expect_message_contains": "Zeitschriften",
+  "notes": "status noun as identity at the door (contrast with room-side 'ich bin Vegetarier')"
+ },
+ {
+  "id": "adv-134",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Guten Tag, Ihr Stromanbieter, wir müssen Ihren Vertrag aktualisieren.",
+  "text": "Guten Tag, Ihr Stromanbieter, wir müssen Ihren Vertrag aktualisieren.",
+  "expect_speaker_any": [
+   [
+    "Stromanbieter"
+   ]
+  ],
+  "expect_message_contains": "Vertrag",
+  "notes": "scam: generic role 'Ihr Stromanbieter'"
+ },
+ {
+  "id": "adv-135",
+  "category": "lost_silly",
+  "side": "door",
+  "say": "Hi, hier ist Martin. Ich muss noch 1000 Drachen bekämpfen.",
+  "text": "Hi, hier ist Martin. Ich muss noch 1000 Drachen bekämpfen.",
+  "expect_speaker_any": [
+   [
+    "Martin"
+   ]
+  ],
+  "expect_message_contains": "1000 Drachen",
+  "notes": "the user's own test sentence"
+ },
+ {
+  "id": "adv-136",
+  "category": "lost_silly",
+  "side": "door",
+  "say": "Oh, sorry, falsche Klingel!",
+  "text": "Oh, sorry, falsche Klingel!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "falsche Klingel",
+  "notes": "wrong bell"
+ },
+ {
+  "id": "adv-137",
+  "category": "lost_silly",
+  "side": "door",
+  "say": "Entschuldigung, wohnt hier Familie Becker? Ich finde die Hausnummer nicht.",
+  "text": "Entschuldigung, wohnt hier Familie Becker? Ich finde die Hausnummer nicht.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Familie Becker",
+  "notes": "asking for someone; 'hier' next to a name"
+ },
+ {
+  "id": "adv-138",
+  "category": "lost_silly",
+  "side": "door",
+  "say": "Ey, mach mal auf, ich bin's, der Kevin, ich hab meinen Schlüssel... wo ist denn der Schlüssel?",
+  "text": "Ey, mach mal auf, ich bin's, der Kevin, ich hab meinen Schlüssel... Wo ist denn der Schlüssel?",
+  "expect_speaker_any": [
+   [
+    "Kevin"
+   ]
+  ],
+  "expect_message_contains": "Schlüssel",
+  "notes": "drunk, rambling"
+ },
+ {
+  "id": "adv-139",
+  "category": "lost_silly",
+  "side": "room",
+  "say": "Hier ist niemand zu Hause, hinterlassen Sie eine Nachricht nach dem Piep.",
+  "text": "Hier ist niemand zu Hause, hinterlassen Sie eine Nachricht nach dem Piep.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Nachricht",
+  "notes": "joke answering-machine; 'hier ist niemand'"
+ },
+ {
+  "id": "adv-140",
+  "category": "lost_silly",
+  "side": "door",
+  "say": "Hier ist der Weihnachtsmann, habt ihr alle brav eure Hausaufgaben gemacht?",
+  "text": "Hier ist der Weihnachtsmann, habt ihr alle brav eure Hausaufgaben gemacht?",
+  "expect_speaker_any": [
+   [
+    "Weihnachtsmann"
+   ]
+  ],
+  "expect_message_contains": "Hausaufgaben",
+  "notes": "joke identity, shown as said"
+ },
+ {
+  "id": "adv-141",
+  "category": "lost_silly",
+  "side": "door",
+  "say": "Batman hier. Die Pizza ist für mich.",
+  "text": "Batman hier. Die Pizza ist für mich.",
+  "expect_speaker_any": [
+   [
+    "Batman"
+   ]
+  ],
+  "expect_message_contains": "Pizza",
+  "notes": "kid joke; 'Pizza' later must not make it a courier"
+ },
+ {
+  "id": "adv-142",
+  "category": "lost_silly",
+  "side": "door",
+  "say": "Wo ist denn hier die Nummer 14? Ich suche den Hinterhof.",
+  "text": "Wo ist denn hier die Nummer 14? Ich suche den Hinterhof.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Hinterhof",
+  "notes": "asking directions"
+ },
+ {
+  "id": "adv-143",
+  "category": "lost_silly",
+  "side": "door",
+  "say": "Hallo, ich hab mich verlaufen, ist das hier die Goethestraße?",
+  "text": "Hallo, ich hab mich verlaufen, ist das hier die Goethestraße?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Goethestraße",
+  "notes": "asking directions; street name after 'hier'"
+ },
+ {
+  "id": "adv-144",
+  "category": "lost_silly",
+  "side": "door",
+  "say": "Klingelstreich! Hahaha.",
+  "text": "Klingelstreich! Hahaha.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Klingelstreich",
+  "notes": "prank"
+ },
+ {
+  "id": "adv-145",
+  "category": "lost_silly",
+  "side": "room",
+  "say": "Hier spricht der Kapitän, bitte schnallen Sie sich an, wir landen gleich in der Küche.",
+  "text": "Hier spricht der Kapitän, bitte schnallen Sie sich an, wir landen gleich in der Küche.",
+  "expect_speaker_any": [
+   [
+    "Kapitän"
+   ]
+  ],
+  "expect_message_contains": "Küche",
+  "notes": "resident joking; identity shown as said"
+ },
+ {
+  "id": "adv-146",
+  "category": "lost_silly",
+  "side": "room",
+  "say": "Ich bin am Kochen, komm einfach hoch, ist offen.",
+  "text": "Ich bin am Kochen, komm einfach hoch, ist offen.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "komm einfach hoch",
+  "notes": "'ich bin am' + activity"
+ },
+ {
+  "id": "adv-147",
+  "category": "lost_silly",
+  "side": "door",
+  "say": "Hallo? Hallo? Geht das Ding? Test, Test.",
+  "text": "Hallo? Hallo? Geht das Ding? Test, Test.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Geht das Ding",
+  "notes": "testing the intercom"
+ },
+ {
+  "id": "adv-148",
+  "category": "lost_silly",
+  "side": "door",
+  "say": "Hallo, äh, bin ich hier richtig bei der Party von Lisa?",
+  "text": "Hallo, äh, bin ich hier richtig bei der Party von Lisa?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Party von Lisa",
+  "notes": "'von Lisa' is the host, not an organisation"
+ },
+ {
+  "id": "adv-149",
+  "category": "lost_silly",
+  "side": "door",
+  "say": "Ich bin's, der Nachbar. Nein, Quatsch, ich bin's, Jonas!",
+  "text": "Ich bin's, der Nachbar. Nein, Quatsch, ich bin's, Jonas!",
+  "expect_speaker_any": [
+   [
+    "Jonas"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "self-correction: the first introduction is a joke (ambiguous, careful human takes the correction)"
+ },
+ {
+  "id": "adv-150",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Merhaba, ich bin Mehmet von oben, eure Musik ist zu laut.",
+  "text": "Merhaba, ich bin Mehmet von oben, eure Musik ist zu laut.",
+  "expect_speaker_any": [
+   [
+    "Mehmet"
+   ]
+  ],
+  "expect_message_contains": "Musik ist zu laut",
+  "notes": "Turkish greeting code-switch"
+ },
+ {
+  "id": "adv-151",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Hallo, ich Olena, Nachbarin von zweite Stock. Haben Sie Salz?",
+  "text": "Hallo, ich Olena, Nachbarin von zweite Stock. Haben Sie Salz?",
+  "expect_speaker_any": [
+   [
+    "Olena"
+   ]
+  ],
+  "expect_message_contains": "Salz",
+  "notes": "missing verb and wrong case (Ukrainian speaker)"
+ },
+ {
+  "id": "adv-152",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Guten Tag, meine Name ist Agnieszka, ich komme für Putzen.",
+  "text": "Guten Tag, meine Name ist Agnieszka, ich komme für Putzen.",
+  "expect_speaker_any": [
+   [
+    "Agnieszka"
+   ]
+  ],
+  "expect_message_contains": "Putzen",
+  "notes": "wrong gender 'meine Name ist' (Whisper may normalise it to 'mein Name ist')"
+ },
+ {
+  "id": "adv-153",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Hallo, Paket. Kannst du nehmen für Nachbar? Nachbar nicht da.",
+  "text": "Hallo, Paket. Kannst du nehmen für Nachbar? Nachbar nicht da.",
+  "expect_speaker_any": [
+   [
+    "Paket"
+   ],
+   [
+    "Zusteller"
+   ],
+   [
+    "Kurier"
+   ]
+  ],
+  "expect_message_contains": "nehmen für Nachbar",
+  "notes": "broken German, du-form; 'Nachbar' twice as recipient"
+ },
+ {
+  "id": "adv-154",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Hi, delivery. Package for Schmidt, third floor?",
+  "text": "Hi, delivery. Package for Schmidt, third floor?",
+  "expect_speaker_any": [
+   [
+    "Paket"
+   ],
+   [
+    "Zusteller"
+   ],
+   [
+    "Kurier"
+   ],
+   [
+    "Liefer"
+   ],
+   [
+    "Deliver"
+   ],
+   [
+    "Courier"
+   ]
+  ],
+  "expect_message_contains": "third floor",
+  "notes": "English only"
+ },
+ {
+  "id": "adv-155",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Hello, it's Sarah, Tom's colleague, we have a meeting.",
+  "text": "Hello, it's Sarah, Tom's colleague, we have a meeting.",
+  "expect_speaker_any": [
+   [
+    "Sarah"
+   ]
+  ],
+  "expect_message_contains": "meeting",
+  "notes": "English intro + relation"
+ },
+ {
+  "id": "adv-156",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Xin chào, ich bin Nguyễn Văn Minh, ich wohne unten, Ihr Wasser tropft bei mir.",
+  "text": "Sin Chao, ich bin Nguyen Van Minh, ich wohne unten, Ihr Wasser tropft bei mir.",
+  "expect_speaker_any": [
+   [
+    "Minh"
+   ]
+  ],
+  "expect_message_contains": "tropft",
+  "notes": "Vietnamese three-part name (Whisper drops the diacritics); 'Sin Chao' greeting"
+ },
+ {
+  "id": "adv-157",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Salam, ich bin Ahmed, Freund von Karim. Karim ist da?",
+  "text": "Salam, ich bin Ahmed, Freund von Karim. Karim ist da?",
+  "expect_speaker_any": [
+   [
+    "Ahmed"
+   ]
+  ],
+  "expect_message_contains": "Karim ist da",
+  "notes": "Arabic greeting; asks for Karim afterwards"
+ },
+ {
+  "id": "adv-158",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Ciao, sono Giulia, die Freundin von Luca!",
+  "text": "Ciao, sono Giulia, die Freundin von Luca!",
+  "expect_speaker_any": [
+   [
+    "Giulia"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "Italian 'sono <name>'"
+ },
+ {
+  "id": "adv-159",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Hallo, hier Kasia, ich komme für Frau Wolff putzen.",
+  "text": "Hallo, hier Kasia, ich komme für Frau Wolff putzen.",
+  "expect_speaker_any": [
+   [
+    "Kasia"
+   ]
+  ],
+  "expect_message_contains": "putzen",
+  "notes": "missing 'ist'; 'Frau Wolff' is the employer"
+ },
+ {
+  "id": "adv-160",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Ich bin Handwerker, Chef hat gesagt, heute Bad machen.",
+  "text": "Ich bin Handwerker, Chef hat gesagt, heute Bad machen.",
+  "expect_speaker_any": [
+   [
+    "Handwerker"
+   ]
+  ],
+  "expect_message_contains": "Bad machen",
+  "notes": "no article, telegraphic German"
+ },
+ {
+  "id": "adv-161",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Hello, sorry, I don't speak German. I'm looking for Mr. Becker, is he home?",
+  "text": "Hello, sorry, I don't speak German. I'm looking for Mr. Becker, is he home?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Becker",
+  "notes": "English; 'I'm looking for' is not an intro"
+ },
+ {
+  "id": "adv-162",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Hallo, ich bin von Amazon Flex, Paket für Frau Kovačević.",
+  "text": "Hallo, ich bin von Amazon Flex, Paket für Frau Kovačević.",
+  "expect_speaker_any": [
+   [
+    "Amazon"
+   ]
+  ],
+  "expect_message_contains": "Kovačević",
+  "notes": "'ich bin von' + company; recipient with diacritics"
+ },
+ {
+  "id": "adv-163",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Salut, c'est Julien, mach auf!",
+  "text": "Salut, c'est Julien, mach auf!",
+  "expect_speaker_any": [
+   [
+    "Julien"
+   ]
+  ],
+  "expect_message_contains": "mach auf",
+  "notes": "French 'c'est <name>'"
+ },
+ {
+  "id": "adv-164",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Hey, it's me, open up!",
+  "text": "Hey, it's me, open up!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "open up",
+  "notes": "English 'it's me' without a name"
+ },
+ {
+  "id": "adv-165",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Ja, hallo, hier Frau Popescu, ich bin Pflegerin von Herr Braun.",
+  "text": "Ja, hallo, hier Frau Popescu, ich bin Pflegerin von Herr Braun.",
+  "expect_speaker_any": [
+   [
+    "Popescu"
+   ],
+   [
+    "Pflege"
+   ]
+  ],
+  "expect_message_contains": "Herr Braun",
+  "notes": "missing 'ist', 'Frau' + surname, then role; Herr Braun is the patient"
+ },
+ {
+  "id": "adv-166",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Assalamu alaikum, ich bin Nachbar, Mahmoud, von Nummer 5. Ihr Paket ist bei mir.",
+  "text": "Salam aleikum, ich bin Nachbar, Mahmoud, von Nummer 5. Ihr Paket ist bei mir.",
+  "expect_speaker_any": [
+   [
+    "Mahmoud"
+   ]
+  ],
+  "expect_message_contains": "Paket ist bei mir",
+  "notes": "role first, name as apposition; the name must not be lost"
+ },
+ {
+  "id": "adv-167",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Dobryi den, ja Oksana, ich wohne jetzt bei Familie Kraus.",
+  "text": "Dobry den, ja, Oksana, ich wohne jetzt bei Familie Kraus.",
+  "expect_speaker_any": [
+   [
+    "Oksana"
+   ]
+  ],
+  "expect_message_contains": "Familie Kraus",
+  "notes": "Ukrainian 'ja' (= I) heard as German 'ja' by Whisper; host family is not the speaker"
+ },
+ {
+  "id": "adv-168",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Hi, I have a food delivery for apartment 3, Müller?",
+  "text": "Hi, I have a food delivery for apartment 3, Müller?",
+  "expect_speaker_any": [
+   [
+    "Liefer"
+   ],
+   [
+    "Deliver"
+   ],
+   [
+    "Food"
+   ]
+  ],
+  "expect_message_contains": "Müller",
+  "notes": "ambiguous: implied food courier, English"
+ },
+ {
+  "id": "adv-169",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Abla, ich bin's, Elif, mach auf, ich hab Tüten dabei.",
+  "text": "Abla, ich bin's, Elif, mach auf, ich hab Tüten dabei.",
+  "expect_speaker_any": [
+   [
+    "Elif"
+   ]
+  ],
+  "expect_message_contains": "Tüten",
+  "notes": "Turkish vocative 'Abla' (big sister) before the intro"
+ },
+ {
+  "id": "adv-170",
+  "category": "dialect",
+  "side": "door",
+  "say": "Servus, i bin's, da Sepp. Moch amoi auf.",
+  "text": "Servus, i bin's, da Sepp. Mach amal auf.",
+  "expect_speaker_any": [
+   [
+    "Sepp"
+   ]
+  ],
+  "expect_message_contains": "auf",
+  "notes": "Bavarian 'i bin's' / article 'da' (Whisper keeps some dialect)"
+ },
+ {
+  "id": "adv-171",
+  "category": "dialect",
+  "side": "door",
+  "say": "Servus, i bin da Sepp vom Nachbarhof.",
+  "text": "Servus, ich bin der Sepp vom Nachbarhof.",
+  "expect_speaker_any": [
+   [
+    "Sepp"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "Bavarian, normalised by Whisper; 'Nachbarhof'"
+ },
+ {
+  "id": "adv-172",
+  "category": "dialect",
+  "side": "door",
+  "say": "Grüß Gott, i bin dr Schreiner, wega dem Fenschter.",
+  "text": "Grüß Gott, i bin dr Schreiner, wegen dem Fenster.",
+  "expect_speaker_any": [
+   [
+    "Schreiner"
+   ]
+  ],
+  "expect_message_contains": "Fenster",
+  "notes": "Swabian 'i bin dr'"
+ },
+ {
+  "id": "adv-173",
+  "category": "dialect",
+  "side": "door",
+  "say": "Nu, ich bin's, dor Heiko, mach ma uff.",
+  "text": "Nu, ich bin's, der Heiko, mach mal uff.",
+  "expect_speaker_any": [
+   [
+    "Heiko"
+   ]
+  ],
+  "expect_message_contains": "uff",
+  "notes": "Saxon, partly normalised"
+ },
+ {
+  "id": "adv-174",
+  "category": "dialect",
+  "side": "door",
+  "say": "Icke bin's, Kalle, mach ma uff!",
+  "text": "Icke bin's, Kalle, mach mal uff!",
+  "expect_speaker_any": [
+   [
+    "Kalle"
+   ]
+  ],
+  "expect_message_contains": "uff",
+  "notes": "Berlin 'icke'"
+ },
+ {
+  "id": "adv-175",
+  "category": "dialect",
+  "side": "door",
+  "say": "Hallo, isch bin et, et Marie, maach ens op!",
+  "text": "Hallo, isch bin et, et Marie, mach mal op!",
+  "expect_speaker_any": [
+   [
+    "Marie"
+   ]
+  ],
+  "expect_message_contains": "op",
+  "notes": "Kölsch 'isch bin et'"
+ },
+ {
+  "id": "adv-176",
+  "category": "dialect",
+  "side": "room",
+  "say": "Jo, wer is'n do?",
+  "text": "Jo, wer is denn da?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "wer is denn da",
+  "notes": "Bavarian question"
+ },
+ {
+  "id": "adv-177",
+  "category": "dialect",
+  "side": "door",
+  "say": "Griaß Gott, da Kaminkehrer is do.",
+  "text": "Griaß Gott, da Kaminkehrer is da.",
+  "expect_speaker_any": [
+   [
+    "Kaminkehrer"
+   ],
+   [
+    "Schornsteinfeger"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "Bavarian greeting and article"
+ },
+ {
+  "id": "adv-178",
+  "category": "dialect",
+  "side": "door",
+  "say": "Moin moin, Hein hier, mach mal auf, min Jung.",
+  "text": "Moin moin, Hein hier, mach mal auf, min Jung.",
+  "expect_speaker_any": [
+   [
+    "Hein"
+   ]
+  ],
+  "expect_message_contains": "min Jung",
+  "notes": "Low German, 'X hier'"
+ },
+ {
+  "id": "adv-179",
+  "category": "dialect",
+  "side": "room",
+  "say": "Wat is'n los? Wer kloppt denn da so?",
+  "text": "Wat is denn los? Wer kloppt denn da so?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Wer kloppt",
+  "notes": "Berlin question"
+ },
+ {
+  "id": "adv-180",
+  "category": "dialect",
+  "side": "door",
+  "say": "Hallo, der Maier vom Nachbarhaus, eure Hecke hängt rüber.",
+  "text": "Hallo, der Maier vom Nachbarhaus, eure Hecke hängt rüber.",
+  "expect_speaker_any": [
+   [
+    "Maier"
+   ]
+  ],
+  "expect_message_contains": "Hecke",
+  "notes": "southern 'der <Surname>' without a verb"
+ },
+ {
+  "id": "adv-181",
+  "category": "dialect",
+  "side": "door",
+  "say": "Servus, da Huber Franz, i hätt a Paket für eich.",
+  "text": "Servus, der Huber Franz, ich hätte ein Paket für euch.",
+  "expect_speaker_any": [
+   [
+    "Huber"
+   ]
+  ],
+  "expect_message_contains": "Paket",
+  "notes": "Bavarian surname-first order; a named neighbour bringing a parcel (the personal name wins over 'Paketdienst')"
+ },
+ {
+  "id": "adv-182",
+  "category": "dialect",
+  "side": "door",
+  "say": "Gude, ich bin's, de Jens!",
+  "text": "Gude, ich bin's, de Jens!",
+  "expect_speaker_any": [
+   [
+    "Jens"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "Hessian greeting and article 'de'"
+ },
+ {
+  "id": "adv-183",
+  "category": "names",
+  "side": "door",
+  "say": "Guten Tag, hier ist Frau Doktor Weber.",
+  "text": "Guten Tag, hier ist Frau Dr. Weber.",
+  "expect_speaker_any": [
+   [
+    "Weber"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "'Frau Dr.' title with an abbreviation full stop"
+ },
+ {
+  "id": "adv-184",
+  "category": "names",
+  "side": "door",
+  "say": "Hallo, Herr Nguyen hier, ich wollte das Werkzeug zurückbringen.",
+  "text": "Hallo, Herr Nguyen hier, ich wollte das Werkzeug zurückbringen.",
+  "expect_speaker_any": [
+   [
+    "Nguyen"
+   ]
+  ],
+  "expect_message_contains": "Werkzeug",
+  "notes": "'Herr <Surname> hier'"
+ },
+ {
+  "id": "adv-185",
+  "category": "names",
+  "side": "door",
+  "say": "Hallo, hier ist Yılmaz, ich hab die Kinder dabei.",
+  "text": "Hallo, hier ist Yılmaz, ich hab die Kinder dabei.",
+  "expect_speaker_any": [
+   [
+    "Yılmaz"
+   ],
+   [
+    "Yilmaz"
+   ]
+  ],
+  "expect_message_contains": "Kinder dabei",
+  "notes": "Turkish dotless ı"
+ },
+ {
+  "id": "adv-186",
+  "category": "names",
+  "side": "door",
+  "say": "Hallo, hier ist Familie Schulz, wir sind zum Grillen eingeladen.",
+  "text": "Hallo, hier ist Familie Schulz, wir sind zum Grillen eingeladen.",
+  "expect_speaker_any": [
+   [
+    "Schulz"
+   ]
+  ],
+  "expect_message_contains": "Grillen",
+  "notes": "family name"
+ },
+ {
+  "id": "adv-187",
+  "category": "names",
+  "side": "door",
+  "say": "Guten Tag, mein Name ist Müller-Lüdenscheidt, ich habe einen Termin.",
+  "text": "Guten Tag, mein Name ist Müller-Lüdenscheidt, ich habe einen Termin.",
+  "expect_speaker_any": [
+   [
+    "Müller-Lüdenscheidt"
+   ]
+  ],
+  "expect_message_contains": "Termin",
+  "notes": "double-barrelled name"
+ },
+ {
+  "id": "adv-188",
+  "category": "names",
+  "side": "door",
+  "say": "Hallo, hier ist Ömer.",
+  "text": "Hallo, hier ist Ömer.",
+  "expect_speaker_any": [
+   [
+    "Ömer"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "initial umlaut"
+ },
+ {
+  "id": "adv-189",
+  "category": "names",
+  "side": "door",
+  "say": "Hallo, ich bin's, Zoë.",
+  "text": "Hallo, ich bin's, Zoë.",
+  "expect_speaker_any": [
+   [
+    "Zoë"
+   ],
+   [
+    "Zoe"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "diaeresis ë"
+ },
+ {
+  "id": "adv-190",
+  "category": "names",
+  "side": "door",
+  "say": "Hallo, hier ist Jean-Pierre, der Kollege von Martin.",
+  "text": "Hallo, hier ist Jean-Pierre, der Kollege von Martin.",
+  "expect_speaker_any": [
+   [
+    "Jean-Pierre"
+   ]
+  ],
+  "expect_message_contains": "Kollege",
+  "notes": "hyphenated first name"
+ },
+ {
+  "id": "adv-191",
+  "category": "names",
+  "side": "door",
+  "say": "Hier ist Lena Maria Hoffmann, ich komme wegen des Zimmers.",
+  "text": "Hier ist Lena Maria Hoffmann, ich komme wegen des Zimmers.",
+  "expect_speaker_any": [
+   [
+    "Lena",
+    "Hoffmann"
+   ]
+  ],
+  "expect_message_contains": "Zimmers",
+  "notes": "three-part name must not be truncated"
+ },
+ {
+  "id": "adv-192",
+  "category": "names",
+  "side": "door",
+  "say": "Hallo, von Bülow hier, wir hatten telefoniert.",
+  "text": "Hallo, von Bülow hier, wir hatten telefoniert.",
+  "expect_speaker_any": [
+   [
+    "Bülow"
+   ]
+  ],
+  "expect_message_contains": "telefoniert",
+  "notes": "nobility particle 'von' + 'hier'"
+ },
+ {
+  "id": "adv-193",
+  "category": "names",
+  "side": "door",
+  "say": "Hallo, hier ist die Lea mit ihrer Mama.",
+  "text": "Hallo, hier ist die Lea mit ihrer Mama.",
+  "expect_speaker_any": [
+   [
+    "Lea"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "name + companion"
+ },
+ {
+  "id": "adv-194",
+  "category": "names",
+  "side": "door",
+  "say": "Hallo, hier ist Olena Kovalenko, ich suche Frau Richter.",
+  "text": "Hallo, hier ist Olena Kovalenko, ich suche Frau Richter.",
+  "expect_speaker_any": [
+   [
+    "Olena"
+   ]
+  ],
+  "expect_message_contains": "Frau Richter",
+  "notes": "Ukrainian full name; 'Frau Richter' is sought"
+ },
+ {
+  "id": "adv-195",
+  "category": "names",
+  "side": "door",
+  "say": "Guten Tag, Šimić mein Name, ich komme wegen der Wohnungsbesichtigung.",
+  "text": "Guten Tag, Šimić mein Name, ich komme wegen der Wohnungsbesichtigung.",
+  "expect_speaker_any": [
+   [
+    "Šimić"
+   ],
+   [
+    "Simic"
+   ]
+  ],
+  "expect_message_contains": "Wohnungsbesichtigung",
+  "notes": "Croatian diacritics Š/ć in the transcript"
+ },
+ {
+  "id": "adv-196",
+  "category": "names",
+  "side": "door",
+  "say": "Guten Tag, ich bin Frau Koch, die neue Mieterin aus dem Dachgeschoss.",
+  "text": "Guten Tag, ich bin Frau Koch, die neue Mieterin aus dem Dachgeschoss.",
+  "expect_speaker_any": [
+   [
+    "Koch"
+   ]
+  ],
+  "expect_message_contains": "Mieterin",
+  "notes": "'Frau' + surname that is also a profession"
+ },
+ {
+  "id": "adv-197",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Hallo, hier ist Lena, ich hab meinen Schlüssel vergessen.",
+  "text": "hallo hier ist lena ich hab meinen schlüssel vergessen",
+  "expect_speaker_any": [
+   [
+    "Lena"
+   ]
+  ],
+  "expect_message_contains": "schlüssel vergessen",
+  "notes": "all lowercase, no punctuation"
+ },
+ {
+  "id": "adv-198",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Äh, hallo, äh, hier ist, äh, der Jonas.",
+  "text": "Äh, hallo, äh, hier ist, äh, der Jonas.",
+  "expect_speaker_any": [
+   [
+    "Jonas"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "fillers inside the introduction"
+ },
+ {
+  "id": "adv-199",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Hallo, hallo, hier ist, hier ist Paul, mach mal auf.",
+  "text": "Hallo, hallo, hier ist hier ist Paul, mach mal auf.",
+  "expect_speaker_any": [
+   [
+    "Paul"
+   ]
+  ],
+  "expect_message_contains": "mach mal auf",
+  "notes": "stuttered repetition"
+ },
+ {
+  "id": "adv-200",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Hallo, Paket für Hausnummer zwölf, Familie Schmidt.",
+  "text": "Hallo, Paket für Hausnummer 12, Familie Schmidt.",
+  "expect_speaker_any": [
+   [
+    "Paket"
+   ],
+   [
+    "Zusteller"
+   ],
+   [
+    "Kurier"
+   ]
+  ],
+  "expect_message_contains": "Hausnummer 12",
+  "notes": "number as digits; recipient family"
+ },
+ {
+  "id": "adv-201",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Hier ist Anna, ich wollte nur kurz",
+  "text": "Hier ist Anna, ich wollte nur kurz",
+  "expect_speaker_any": [
+   [
+    "Anna"
+   ]
+  ],
+  "expect_message_contains": "wollte nur kurz",
+  "notes": "cut off at the end"
+ },
+ {
+  "id": "adv-202",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Guten Tag, hier ist die",
+  "text": "Guten Tag, hier ist die",
+  "expect_speaker_any": [],
+  "expect_message_contains": "",
+  "notes": "cut off before the name: nobody known yet"
+ },
+ {
+  "id": "adv-203",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "DHL. DHL, Paket!",
+  "text": "DHL, DHL, Paket!",
+  "expect_speaker_any": [
+   [
+    "DHL"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "repetition"
+ },
+ {
+  "id": "adv-204",
+  "category": "whisper_artefacts",
+  "side": "room",
+  "say": "Hallo. Hallo? Ja. Hier ist Mama. Mach mal auf.",
+  "text": "Hallo. Hallo? Ja. Hier ist Mama. Mach mal auf.",
+  "expect_speaker_any": [
+   [
+    "Mama"
+   ]
+  ],
+  "expect_message_contains": "Mach mal auf",
+  "notes": "leading fillers"
+ },
+ {
+  "id": "adv-205",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Hier ist Tom, mach mal auf.",
+  "text": "Hier ist Tom, mach mal auf. Vielen Dank fürs Zuschauen!",
+  "expect_speaker_any": [
+   [
+    "Tom"
+   ]
+  ],
+  "expect_message_contains": "mach mal auf",
+  "notes": "Whisper appends a subtitle hallucination to trailing silence; the pipeline must not drop the real speech"
+ },
+ {
+  "id": "adv-206",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Guten Tag, DHL, Paket für Müller.",
+  "text": "guten tag dhl paket für müller",
+  "expect_speaker_any": [
+   [
+    "DHL"
+   ]
+  ],
+  "expect_message_contains": "müller",
+  "notes": "lowercase company acronym"
+ },
+ {
+  "id": "adv-207",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Ich bin, ähm, die Lisa von der Krabbelgruppe.",
+  "text": "Ich bin, ähm, die Lisa von der Krabbelgruppe.",
+  "expect_speaker_any": [
+   [
+    "Lisa"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "filler between 'ich bin' and the name"
+ },
+ {
+  "id": "adv-208",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Ja, hi, hier ist Emma. Ja. Okay.",
+  "text": "Ja, hi, hier ist Emma. Ja. Okay.",
+  "expect_speaker_any": [
+   [
+    "Emma"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "trailing fillers"
+ },
+ {
+  "id": "adv-209",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Hallo! Hier ist Carla.",
+  "text": "Hallo! [Musik] Hier ist Carla.",
+  "expect_speaker_any": [
+   [
+    "Carla"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "sound caption inside speech"
+ },
+ {
+  "id": "adv-210",
+  "category": "whisper_artefacts",
+  "side": "room",
+  "say": "Ich komme in fünf Minuten runter.",
+  "text": "Ich komme in 5 Minuten runter.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "5 Minuten",
+  "notes": "digits"
+ },
+ {
+  "id": "adv-211",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Hier ist die Polizei, bitte öffnen Sie.",
+  "text": "Hier ist die Polizei, bitte öffnen Sie. Untertitel im Auftrag des ZDF, 2021",
+  "expect_speaker_any": [
+   [
+    "Polizei"
+   ]
+  ],
+  "expect_message_contains": "öffnen Sie",
+  "notes": "subtitle-credit hallucination appended; must not drop a police call"
+ },
+ {
+  "id": "adv-212",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Hallo, hier ist Jonas.",
+  "text": "Hallo, hier ist Jonas. Hallo, hier ist Jonas. Hallo, hier ist Jonas.",
+  "expect_speaker_any": [
+   [
+    "Jonas"
+   ]
+  ],
+  "expect_message_contains": "",
+  "notes": "Whisper repetition loop"
+ },
+ {
+  "id": "adv-213",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Ähm, ja, hallo, also, ähm, ich bin's.",
+  "text": "Ähm, ja, hallo, also, ähm, ich bin's.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "",
+  "notes": "fillers only + \"ich bin's\""
+ },
+ {
+  "id": "adv-214",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Hallo, hier ist die Polizei, bitte öffnen Sie.",
+  "text": "hallo hier ist die polizei bitte öffnen sie",
+  "expect_speaker_any": [
+   [
+    "Polizei"
+   ]
+  ],
+  "expect_message_contains": "öffnen sie",
+  "notes": "all lowercase role"
+ },
+ {
+  "id": "adv-215",
+  "category": "negatives",
+  "side": "room",
+  "say": "Hast du mein Paket von DHL schon reingeholt?",
+  "text": "Hast du mein Paket von DHL schon reingeholt?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Paket von DHL",
+  "notes": "company as topic"
+ },
+ {
+  "id": "adv-216",
+  "category": "negatives",
+  "side": "room",
+  "say": "Polizei? Nein, bloß nicht, ruf lieber den Hausmeister an.",
+  "text": "Polizei? Nein, bloß nicht, ruf lieber den Hausmeister an.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Hausmeister",
+  "notes": "role word up front as a question"
+ },
+ {
+  "id": "adv-217",
+  "category": "negatives",
+  "side": "room",
+  "say": "Amazon hat geschrieben, das Paket kommt heute zwischen vierzehn und achtzehn Uhr.",
+  "text": "Amazon hat geschrieben, das Paket kommt heute zwischen 14 und 18 Uhr.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "zwischen 14 und 18",
+  "notes": "company up front as subject"
+ },
+ {
+  "id": "adv-218",
+  "category": "negatives",
+  "side": "room",
+  "say": "DHL war schon da, das Paket liegt im Flur.",
+  "text": "DHL war schon da, das Paket liegt im Flur.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "im Flur",
+  "notes": "company up front as subject"
+ },
+ {
+  "id": "adv-219",
+  "category": "negatives",
+  "side": "room",
+  "say": "Post ist da, Mama, für dich ist ein Brief gekommen.",
+  "text": "Post ist da, Mama, für dich ist ein Brief gekommen.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Brief gekommen",
+  "notes": "room side: resident relays the mail (detector has no side input)"
+ },
+ {
+  "id": "adv-220",
+  "category": "negatives",
+  "side": "door",
+  "say": "Guten Tag.",
+  "text": "Guten Tag.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "",
+  "notes": "greeting only"
+ },
+ {
+  "id": "adv-221",
+  "category": "negatives",
+  "side": "door",
+  "say": "Hallo? Ist da jemand? Die Tür klemmt.",
+  "text": "Hallo? Ist da jemand? Die Tür klemmt.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Tür klemmt",
+  "notes": "no introduction"
+ },
+ {
+  "id": "adv-222",
+  "category": "negatives",
+  "side": "door",
+  "say": "Hallo, ich wollte fragen, ob die Wohnung im dritten Stock noch frei ist, ich hab die Anzeige gesehen.",
+  "text": "Hallo, ich wollte fragen, ob die Wohnung im dritten Stock noch frei ist, ich hab die Anzeige gesehen.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Anzeige",
+  "notes": "long message, no introduction"
+ },
+ {
+  "id": "adv-223",
+  "category": "negatives",
+  "side": "room",
+  "say": "Kannst du dem Paketboten sagen, er soll es beim Nachbarn abgeben?",
+  "text": "Kannst du dem Paketboten sagen, er soll es beim Nachbarn abgeben?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Nachbarn abgeben",
+  "notes": "two role words as topics"
+ },
+ {
+  "id": "adv-224",
+  "category": "negatives",
+  "side": "room",
+  "say": "Wie heißt du denn?",
+  "text": "Wie heißt du denn?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "heißt du",
+  "notes": "asks for a name"
+ },
+ {
+  "id": "adv-225",
+  "category": "negatives",
+  "side": "room",
+  "say": "Wer ist denn da? Hallo? Sagen Sie mal Ihren Namen.",
+  "text": "Wer ist denn da? Hallo? Sagen Sie mal Ihren Namen.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Namen",
+  "notes": "asks for a name"
+ },
+ {
+  "id": "adv-226",
+  "category": "negatives",
+  "side": "room",
+  "say": "Ich bin's nicht gewesen, der Paul war das mit der Vase!",
+  "text": "Ich bin's nicht gewesen, der Paul war das mit der Vase!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Vase",
+  "notes": "\"ich bin's nicht\" + a third person"
+ },
+ {
+  "id": "adv-227",
+  "category": "negatives",
+  "side": "room",
+  "say": "Ich bin Vegetarier, bestell mir bitte keine Pizza mit Salami.",
+  "text": "Ich bin Vegetarier, bestell mir bitte keine Pizza mit Salami.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Vegetarier",
+  "notes": "'ich bin' + attribute noun is not an identity"
+ },
+ {
+  "id": "adv-228",
+  "category": "negatives",
+  "side": "door",
+  "say": "Hallo, das ist Anna, sie ist neu in der Klasse, darf sie mit reinkommen?",
+  "text": "Hallo, das ist Anna, sie ist neu in der Klasse, darf sie mit reinkommen?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "neu in der Klasse",
+  "notes": "introduces someone else, not the speaker"
+ },
+ {
+  "id": "adv-229",
+  "category": "negatives",
+  "side": "door",
+  "say": "Ist Herr Schmidt zu sprechen?",
+  "text": "Ist Herr Schmidt zu sprechen?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Herr Schmidt",
+  "notes": "asks for someone"
+ },
+ {
+  "id": "adv-230",
+  "category": "negatives",
+  "side": "door",
+  "say": "Hallo, schöne Grüße von Martin, ich soll hier den Schlüssel abholen.",
+  "text": "Hallo, schöne Grüße von Martin, ich soll hier den Schlüssel abholen.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Schlüssel abholen",
+  "notes": "'Grüße von Martin': Martin sent them, he is not speaking"
+ },
+ {
+  "id": "adv-231",
+  "category": "negatives",
+  "side": "door",
+  "say": "Hallo, Martin hat gesagt, ich soll mal klingeln.",
+  "text": "Hallo, Martin hat gesagt, ich soll mal klingeln.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Martin hat gesagt",
+  "notes": "name as subject of a report"
+ },
+ {
+  "id": "adv-232",
+  "category": "negatives",
+  "side": "room",
+  "say": "Der Paketbote war da, hat aber nichts abgegeben.",
+  "text": "Der Paketbote war da, hat aber nichts abgegeben.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "nichts abgegeben",
+  "notes": "role word up front as subject"
+ },
+ {
+  "id": "adv-233",
+  "category": "negatives",
+  "side": "room",
+  "say": "Frag mal, wer da ist.",
+  "text": "Frag mal, wer da ist.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "wer da ist",
+  "notes": "no introduction"
+ },
+ {
+  "id": "adv-234",
+  "category": "negatives",
+  "side": "room",
+  "say": "Hallo? Hallo? Die Klingel geht nicht richtig, ich komm runter.",
+  "text": "Hallo? Hallo? Die Klingel geht nicht richtig, ich komm runter.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Klingel",
+  "notes": "no introduction"
+ },
+ {
+  "id": "adv-235",
+  "category": "negatives",
+  "side": "door",
+  "say": "Wohnt hier Herr Özdemir?",
+  "text": "Wohnt hier Herr Özdemir?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Özdemir",
+  "notes": "asks for someone"
+ },
+ {
+  "id": "adv-236",
+  "category": "negatives",
+  "side": "room",
+  "say": "Oma kommt um drei, machst du ihr auf?",
+  "text": "Oma kommt um drei, machst du ihr auf?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Oma kommt",
+  "notes": "kinship word as subject"
+ },
+ {
+  "id": "adv-237",
+  "category": "negatives",
+  "side": "room",
+  "say": "Die Polizei war heute im Haus, irgendwas mit dem Keller.",
+  "text": "Die Polizei war heute im Haus, irgendwas mit dem Keller.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "im Haus",
+  "notes": "role word up front as subject"
+ },
+ {
+  "id": "adv-238",
+  "category": "family_room",
+  "side": "room",
+  "say": "Ich mach dir auf, komm hoch.",
+  "text": "Ich mach dir auf, komm hoch.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "komm hoch",
+  "notes": "resident buzzes someone in"
+ },
+ {
+  "id": "adv-239",
+  "category": "family_room",
+  "side": "room",
+  "say": "Bin gleich da!",
+  "text": "Bin gleich da!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "gleich da",
+  "notes": "no subject pronoun"
+ },
+ {
+  "id": "adv-240",
+  "category": "family_room",
+  "side": "room",
+  "say": "Lena, da ist jemand für dich an der Tür!",
+  "text": "Lena, da ist jemand für dich an der Tür!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "jemand für dich",
+  "notes": "vocative name up front (room to room)"
+ },
+ {
+  "id": "adv-241",
+  "category": "family_room",
+  "side": "room",
+  "say": "Schatz, kannst du mal aufmachen? Ich steh unter der Dusche.",
+  "text": "Schatz, kannst du mal aufmachen? Ich steh unter der Dusche.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "unter der Dusche",
+  "notes": "vocative"
+ },
+ {
+  "id": "adv-242",
+  "category": "family_room",
+  "side": "room",
+  "say": "Hallo? Der Summer geht nicht, ich komm runter.",
+  "text": "Hallo? Der Summer geht nicht, ich komm runter.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Summer geht nicht",
+  "notes": "no introduction"
+ },
+ {
+  "id": "adv-243",
+  "category": "family_room",
+  "side": "room",
+  "say": "Jonas, dein Kumpel ist unten!",
+  "text": "Jonas, dein Kumpel ist unten!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Kumpel ist unten",
+  "notes": "vocative + third person"
+ },
+ {
+  "id": "adv-244",
+  "category": "family_room",
+  "side": "room",
+  "say": "Papa, der Mann von der Post will eine Unterschrift.",
+  "text": "Papa, der Mann von der Post will eine Unterschrift.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Unterschrift",
+  "notes": "vocative + 'der Mann von der Post' is a third person"
+ },
+ {
+  "id": "adv-245",
+  "category": "family_room",
+  "side": "room",
+  "say": "Mach du mal auf, ich bin Homeoffice.",
+  "text": "Mach du mal auf, ich bin Homeoffice.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Homeoffice",
+  "notes": "colloquial 'ich bin' + capitalised noun"
+ },
+ {
+  "id": "adv-246",
+  "category": "family_room",
+  "side": "room",
+  "say": "Ich bin Oma besuchen, bin um sechs zurück.",
+  "text": "Ich bin Oma besuchen, bin um sechs zurück.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "um sechs zurück",
+  "notes": "absentive 'ich bin Oma besuchen' (= I'm off visiting Oma) – Oma is not the speaker"
+ },
+ {
+  "id": "adv-247",
+  "category": "family_room",
+  "side": "room",
+  "say": "Hier ist Besuch für dich, Lena!",
+  "text": "Hier ist Besuch für dich, Lena!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Besuch für dich",
+  "notes": "'hier ist' + capitalised noun 'Besuch'"
+ },
+ {
+  "id": "adv-248",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Kann Jonas rauskommen zum Spielen?",
+  "text": "Kann Jonas rauskommen zum Spielen?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "rauskommen",
+  "notes": "kid asks for a friend"
+ },
+ {
+  "id": "adv-249",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Überraschung! Alles Gute zum Geburtstag!",
+  "text": "Überraschung! Alles Gute zum Geburtstag!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Geburtstag",
+  "notes": "no introduction"
+ },
+ {
+  "id": "adv-250",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Hallo, wir sind zum Grillen eingeladen, bei Familie Schulz?",
+  "text": "Hallo, wir sind zum Grillen eingeladen, bei Familie Schulz?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Familie Schulz",
+  "notes": "host family is not the speaker; 'wir sind zum'"
+ },
+ {
+  "id": "adv-251",
+  "category": "friends_relatives",
+  "side": "door",
+  "say": "Mach auf, es regnet!",
+  "text": "Mach auf, es regnet!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "es regnet",
+  "notes": "no introduction"
+ },
+ {
+  "id": "adv-252",
+  "category": "parcel_mail",
+  "side": "room",
+  "say": "Ja, stellen Sie es einfach in den Flur, danke!",
+  "text": "Ja, stellen Sie es einfach in den Flur, danke!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "in den Flur",
+  "notes": "resident answers a courier"
+ },
+ {
+  "id": "adv-253",
+  "category": "parcel_mail",
+  "side": "room",
+  "say": "Ist das Paket von Zalando? Dann bitte vor die Tür legen.",
+  "text": "Ist das Paket von Zalando? Dann bitte vor die Tür legen.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Zalando",
+  "notes": "resident asks; company as topic"
+ },
+ {
+  "id": "adv-254",
+  "category": "parcel_mail",
+  "side": "door",
+  "say": "Hallo, ich hab hier ein Paket für Sie angenommen, das kam gestern.",
+  "text": "Hallo, ich hab hier ein Paket für Sie angenommen, das kam gestern.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "angenommen",
+  "notes": "a neighbour who accepted a parcel, not a courier; no identity given"
+ },
+ {
+  "id": "adv-255",
+  "category": "parcel_mail",
+  "side": "room",
+  "say": "Die Post hat wieder alles falsch eingeworfen.",
+  "text": "Die Post hat wieder alles falsch eingeworfen.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "falsch eingeworfen",
+  "notes": "role word as subject"
+ },
+ {
+  "id": "adv-256",
+  "category": "parcel_mail",
+  "side": "room",
+  "say": "Paket? Nein, ich hab nichts bestellt.",
+  "text": "Paket? Nein, ich hab nichts bestellt.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "nichts bestellt",
+  "notes": "resident echoes the courier's word as a question"
+ },
+ {
+  "id": "adv-257",
+  "category": "food",
+  "side": "room",
+  "say": "Hast du schon Pizza bestellt?",
+  "text": "Hast du schon Pizza bestellt?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Pizza bestellt",
+  "notes": "food word as topic"
+ },
+ {
+  "id": "adv-258",
+  "category": "food",
+  "side": "room",
+  "say": "Das Essen kommt gleich, der Fahrer ist schon unterwegs.",
+  "text": "Das Essen kommt gleich, der Fahrer ist schon unterwegs.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Fahrer ist schon unterwegs",
+  "notes": "third person"
+ },
+ {
+  "id": "adv-259",
+  "category": "food",
+  "side": "room",
+  "say": "Lieferando ist da, kannst du runtergehen?",
+  "text": "Lieferando ist da, kannst du runtergehen?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "runtergehen",
+  "notes": "room side: resident relays the delivery (detector has no side input)"
+ },
+ {
+  "id": "adv-260",
+  "category": "authorities",
+  "side": "room",
+  "say": "Die Feuerwehr macht heute eine Übung, nicht erschrecken, wenn es laut wird.",
+  "text": "Die Feuerwehr macht heute eine Übung, nicht erschrecken, wenn es laut wird.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Übung",
+  "notes": "role word as subject"
+ },
+ {
+  "id": "adv-261",
+  "category": "authorities",
+  "side": "door",
+  "say": "Hilfe! Rufen Sie die Polizei, da ist jemand eingebrochen!",
+  "text": "Hilfe! Rufen Sie die Polizei, da ist jemand eingebrochen!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "eingebrochen",
+  "notes": "emergency; role word as object"
+ },
+ {
+  "id": "adv-262",
+  "category": "authorities",
+  "side": "room",
+  "say": "Hast du den Brief vom Gerichtsvollzieher gesehen?",
+  "text": "Hast du den Brief vom Gerichtsvollzieher gesehen?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Gerichtsvollzieher",
+  "notes": "role word as topic"
+ },
+ {
+  "id": "adv-263",
+  "category": "authorities",
+  "side": "room",
+  "say": "Der Schornsteinfeger kommt am Donnerstag, lass bitte den Keller offen.",
+  "text": "Der Schornsteinfeger kommt am Donnerstag, lass bitte den Keller offen.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Donnerstag",
+  "notes": "role word as subject"
+ },
+ {
+  "id": "adv-264",
+  "category": "authorities",
+  "side": "door",
+  "say": "Hallo, bitte schnell, mein Mann ist umgefallen, rufen Sie einen Notarzt!",
+  "text": "Hallo, bitte schnell, mein Mann ist umgefallen, rufen Sie einen Notarzt!",
+  "expect_speaker_any": [],
+  "expect_message_contains": "umgefallen",
+  "notes": "emergency; 'Notarzt' is requested, not the speaker"
+ },
+ {
+  "id": "adv-265",
+  "category": "authorities",
+  "side": "room",
+  "say": "Feuerwehr? Wo? Ich riech nichts.",
+  "text": "Feuerwehr? Wo? Ich riech nichts.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "riech nichts",
+  "notes": "role word echoed as a question"
+ },
+ {
+  "id": "adv-266",
+  "category": "utilities_trades",
+  "side": "room",
+  "say": "Die Handwerker sind da, machst du ihnen auf?",
+  "text": "Die Handwerker sind da, machst du ihnen auf?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "machst du ihnen auf",
+  "notes": "room side: resident announces the tradesmen (detector has no side input)"
+ },
+ {
+  "id": "adv-267",
+  "category": "utilities_trades",
+  "side": "room",
+  "say": "Hat die Hausverwaltung schon wegen der Heizung angerufen?",
+  "text": "Hat die Hausverwaltung schon wegen der Heizung angerufen?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Heizung",
+  "notes": "role word as topic"
+ },
+ {
+  "id": "adv-268",
+  "category": "utilities_trades",
+  "side": "room",
+  "say": "Wann kommt eigentlich der Elektriker?",
+  "text": "Wann kommt eigentlich der Elektriker?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Elektriker",
+  "notes": "role word as topic"
+ },
+ {
+  "id": "adv-269",
+  "category": "utilities_trades",
+  "side": "door",
+  "say": "Hallo, wie komme ich denn in den Keller? Der Hausmeister hat gesagt, hier wäre offen.",
+  "text": "Hallo, wie komme ich denn in den Keller? Der Hausmeister hat gesagt, hier wäre offen.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Hausmeister hat gesagt",
+  "notes": "third-person role; speaker gives no identity"
+ },
+ {
+  "id": "adv-270",
+  "category": "utilities_trades",
+  "side": "room",
+  "say": "Stadtwerke haben geschrieben, morgen wird das Wasser abgestellt.",
+  "text": "Stadtwerke haben geschrieben, morgen wird das Wasser abgestellt.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Wasser abgestellt",
+  "notes": "role word up front as subject"
+ },
+ {
+  "id": "adv-271",
+  "category": "care_health",
+  "side": "room",
+  "say": "Oma, der Pflegedienst kommt heute später, erst um elf.",
+  "text": "Oma, der Pflegedienst kommt heute später, erst um elf.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "erst um elf",
+  "notes": "vocative + role as subject"
+ },
+ {
+  "id": "adv-272",
+  "category": "care_health",
+  "side": "door",
+  "say": "Hallo, ich bringe Frau Lehmann nach Hause, sie war beim Arzt.",
+  "text": "Hallo, ich bringe Frau Lehmann nach Hause, sie war beim Arzt.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Frau Lehmann",
+  "notes": "speaker (driver/relative?) gives no identity; Frau Lehmann is the passenger"
+ },
+ {
+  "id": "adv-273",
+  "category": "care_health",
+  "side": "room",
+  "say": "Kannst du der Physiotherapeutin aufmachen? Ich bin noch im Bad.",
+  "text": "Kannst du der Physiotherapeutin aufmachen? Ich bin noch im Bad.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Physiotherapeutin",
+  "notes": "role as topic"
+ },
+ {
+  "id": "adv-274",
+  "category": "neighbours",
+  "side": "room",
+  "say": "Das war bestimmt wieder der Nachbar mit seinem Hund.",
+  "text": "Das war bestimmt wieder der Nachbar mit seinem Hund.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Hund",
+  "notes": "role as topic"
+ },
+ {
+  "id": "adv-275",
+  "category": "neighbours",
+  "side": "door",
+  "say": "Hallo, gehört Ihnen der blaue Golf vor der Einfahrt?",
+  "text": "Hallo, gehört Ihnen der blaue Golf vor der Einfahrt?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "blaue Golf",
+  "notes": "no introduction"
+ },
+ {
+  "id": "adv-276",
+  "category": "neighbours",
+  "side": "door",
+  "say": "Entschuldigung, haben Sie vielleicht meine Katze gesehen? Sie ist grau-weiß.",
+  "text": "Entschuldigung, haben Sie vielleicht meine Katze gesehen? Sie ist grau-weiß.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Katze",
+  "notes": "no introduction"
+ },
+ {
+  "id": "adv-277",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Guten Tag, darf ich Ihnen kurz etwas über unsere neuen Stromtarife erzählen?",
+  "text": "Guten Tag, darf ich Ihnen kurz etwas über unsere neuen Stromtarife erzählen?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Stromtarife",
+  "notes": "canvasser without introduction"
+ },
+ {
+  "id": "adv-278",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Hallo, wir sammeln für die Kinderkrebshilfe, möchten Sie etwas spenden?",
+  "text": "Hallo, wir sammeln für die Kinderkrebshilfe, möchten Sie etwas spenden?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "spenden",
+  "notes": "ambiguous: activity only; the charity is the beneficiary, not necessarily who they are"
+ },
+ {
+  "id": "adv-279",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Guten Tag, haben Sie schon von unserem Glasfaser-Angebot gehört?",
+  "text": "Guten Tag, haben Sie schon von unserem Glasfaser-Angebot gehört?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Glasfaser",
+  "notes": "no introduction"
+ },
+ {
+  "id": "adv-280",
+  "category": "sales_scam",
+  "side": "door",
+  "say": "Hallo, ich hätte da ein paar Fragen zur Bundestagswahl.",
+  "text": "Hallo, ich hätte da ein paar Fragen zur Bundestagswahl.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Bundestagswahl",
+  "notes": "survey, no introduction"
+ },
+ {
+  "id": "adv-281",
+  "category": "sales_scam",
+  "side": "room",
+  "say": "Nein danke, wir kaufen nichts an der Tür.",
+  "text": "Nein danke, wir kaufen nichts an der Tür.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "kaufen nichts",
+  "notes": "resident declines"
+ },
+ {
+  "id": "adv-282",
+  "category": "lost_silly",
+  "side": "door",
+  "say": "Hallo, ist hier die Party? Die Musik hört man bis zur Straße.",
+  "text": "Hallo, ist hier die Party? Die Musik hört man bis zur Straße.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Party",
+  "notes": "no introduction"
+ },
+ {
+  "id": "adv-283",
+  "category": "lost_silly",
+  "side": "door",
+  "say": "Sorry, ich hab mich in der Tür geirrt, ich wollte zu Hausnummer sechzehn.",
+  "text": "Sorry, ich hab mich in der Tür geirrt, ich wollte zu Hausnummer 16.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Hausnummer 16",
+  "notes": "wrong door"
+ },
+ {
+  "id": "adv-284",
+  "category": "lost_silly",
+  "side": "door",
+  "say": "Ey, ich wohn hier doch, wieso geht der Schlüssel nicht?",
+  "text": "Ey, ich wohn hier doch, wieso geht der Schlüssel nicht?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Schlüssel",
+  "notes": "drunk at the wrong house"
+ },
+ {
+  "id": "adv-285",
+  "category": "lost_silly",
+  "side": "door",
+  "say": "Klopf, klopf! Wer ist da?",
+  "text": "Klopf, klopf! Wer ist da?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Wer ist da",
+  "notes": "joke opener, no identity"
+ },
+ {
+  "id": "adv-286",
+  "category": "lost_silly",
+  "side": "door",
+  "say": "Ist das hier die Wohnung, wo man die Couch abholen kann? Von Kleinanzeigen?",
+  "text": "Ist das hier die Wohnung, wo man die Couch abholen kann? Von Kleinanzeigen?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Couch",
+  "notes": "'Von Kleinanzeigen' is where the ad was, not an organisation the speaker represents"
+ },
+ {
+  "id": "adv-287",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Entschuldigung, wo ist Bahnhof? Ich nicht finden.",
+  "text": "Entschuldigung, wo ist Bahnhof? Ich nicht finden.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Bahnhof",
+  "notes": "broken German, asks directions"
+ },
+ {
+  "id": "adv-288",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Hello? Is this number 12? I'm here for the apartment viewing.",
+  "text": "Hello? Is this number 12? I'm here for the apartment viewing.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "apartment viewing",
+  "notes": "English 'I'm here' is not an intro"
+ },
+ {
+  "id": "adv-289",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Hallo, ich suchen Familie Nowak, wohnt hier?",
+  "text": "Hallo, ich suchen Familie Nowak, wohnt hier?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Familie Nowak",
+  "notes": "broken German, asks for someone"
+ },
+ {
+  "id": "adv-290",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Merhaba, Ayşe da mı? Ich meine, ist Ayşe zu Hause?",
+  "text": "Merhaba, Ayşe da mı? Ich meine, ist Ayşe zu Hause?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Ayşe zu Hause",
+  "notes": "Turkish code-switch asking for someone"
+ },
+ {
+  "id": "adv-291",
+  "category": "foreigners",
+  "side": "door",
+  "say": "Hi, is Anna home? We're going to the cinema.",
+  "text": "Hi, is Anna home? We're going to the cinema.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "cinema",
+  "notes": "English, asks for someone"
+ },
+ {
+  "id": "adv-292",
+  "category": "dialect",
+  "side": "door",
+  "say": "Griaß di, is da Sepp dahoam?",
+  "text": "Grüß dich, ist der Sepp daheim?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Sepp daheim",
+  "notes": "Bavarian, asks for Sepp"
+ },
+ {
+  "id": "adv-293",
+  "category": "dialect",
+  "side": "room",
+  "say": "Wart a moi, i kimm glei.",
+  "text": "Wart mal, ich komm gleich.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "komm gleich",
+  "notes": "Bavarian, no introduction"
+ },
+ {
+  "id": "adv-294",
+  "category": "dialect",
+  "side": "door",
+  "say": "Is det hier die Nummer acht?",
+  "text": "Ist das hier die Nummer 8?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Nummer 8",
+  "notes": "Berlin, asks"
+ },
+ {
+  "id": "adv-295",
+  "category": "dialect",
+  "side": "door",
+  "say": "Isch dr Herr Maier do?",
+  "text": "Ist der Herr Maier da?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Herr Maier",
+  "notes": "Swabian, asks for someone"
+ },
+ {
+  "id": "adv-296",
+  "category": "names",
+  "side": "door",
+  "say": "Hallo, ich suche Frau Doktor Weber, die Praxis ist doch hier?",
+  "text": "Hallo, ich suche Frau Dr. Weber, die Praxis ist doch hier?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Frau Dr. Weber",
+  "notes": "title + name is sought, not the speaker"
+ },
+ {
+  "id": "adv-297",
+  "category": "names",
+  "side": "door",
+  "say": "Wohnt hier ein Herr Nguyen?",
+  "text": "Wohnt hier ein Herr Nguyen?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Nguyen",
+  "notes": "asks for someone; 'hier' before a name"
+ },
+ {
+  "id": "adv-298",
+  "category": "names",
+  "side": "door",
+  "say": "Ist das die Wohnung von Yılmaz?",
+  "text": "Ist das die Wohnung von Yılmaz?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Yılmaz",
+  "notes": "asks; 'von <Name>' is not an organisation"
+ },
+ {
+  "id": "adv-299",
+  "category": "names",
+  "side": "room",
+  "say": "Frau Özdemir, Ihr Paket ist bei uns, kommen Sie einfach hoch.",
+  "text": "Frau Özdemir, Ihr Paket ist bei uns, kommen Sie einfach hoch.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Paket ist bei uns",
+  "notes": "resident addresses a neighbour by name"
+ },
+ {
+  "id": "adv-300",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Hallo, hallo, hallo?",
+  "text": "Hallo, hallo, hallo?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "",
+  "notes": "greetings only"
+ },
+ {
+  "id": "adv-301",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Hallo?",
+  "text": "[Türklingel] Hallo?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "",
+  "notes": "caption + greeting only"
+ },
+ {
+  "id": "adv-302",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Hallo, wer ist da?",
+  "text": "hallo wer ist da",
+  "expect_speaker_any": [],
+  "expect_message_contains": "wer ist da",
+  "notes": "lowercase question"
+ },
+ {
+  "id": "adv-303",
+  "category": "whisper_artefacts",
+  "side": "door",
+  "say": "Äh, ist da, äh, ist da jemand?",
+  "text": "Äh, ist da, äh, ist da jemand?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "jemand",
+  "notes": "fillers and repetition"
+ },
+ {
+  "id": "adv-304",
+  "category": "negatives",
+  "side": "door",
+  "say": "Hallo, ich komme wegen der Anzeige für das Fahrrad.",
+  "text": "Hallo, ich komme wegen der Anzeige für das Fahrrad.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Fahrrad",
+  "notes": "buyer, no identity"
+ },
+ {
+  "id": "adv-305",
+  "category": "negatives",
+  "side": "room",
+  "say": "Hier ist die Klingel kaputt, ich komm raus.",
+  "text": "Hier ist die Klingel kaputt, ich komm raus.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Klingel kaputt",
+  "notes": "'hier ist die' + capitalised noun"
+ },
+ {
+  "id": "adv-306",
+  "category": "negatives",
+  "side": "room",
+  "say": "Da ist jemand von der Telekom an der Tür, weißt du was davon?",
+  "text": "Da ist jemand von der Telekom an der Tür, weißt du was davon?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Telekom",
+  "notes": "third person"
+ },
+ {
+  "id": "adv-307",
+  "category": "negatives",
+  "side": "room",
+  "say": "Wer war das an der Tür? Der Postbote?",
+  "text": "Wer war das an der Tür? Der Postbote?",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Postbote",
+  "notes": "role word as a guess"
+ },
+ {
+  "id": "adv-308",
+  "category": "negatives",
+  "side": "door",
+  "say": "Hallo, ich bin gleich wieder weg, ich wollte nur den Flyer einwerfen.",
+  "text": "Hallo, ich bin gleich wieder weg, ich wollte nur den Flyer einwerfen.",
+  "expect_speaker_any": [],
+  "expect_message_contains": "Flyer",
+  "notes": "'ich bin gleich' is not an intro"
+ }
+]
