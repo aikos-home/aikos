@@ -104,8 +104,25 @@ def main():
                **dict(door, text="Hilfe, ein Unfall!", message="Hilfe, ein Unfall!", speaker="",
                       speaker_role="emergency", urgent=True))
     msgs = test_log().get("messages") or []
-    check(len(msgs) == 3 and msgs[-1]["urgent"] is True and msgs[-1]["who"] == "Besucher",
-          "urgent door message without a speaker shows as 'Besucher'")
+    check(len(msgs) == 3 and msgs[-1]["urgent"] is True and msgs[-1]["who"] == "Paketdienst · DHL" and msgs[-1].get("sticky") is True
+          and msgs[-1]["role"] == "emergency",
+          "R25: a later door message without a speaker keeps the visitor's identity (sticky), own role and urgency")
+    t_room2, t_other = stamp(24), stamp(26)
+    transcript("sensor.talk_transcript_test", t_room2, text="Ich komme.", message="Ich komme.", speaker="", speaker_role="",
+               urgent=False, language="de", device="aikos RoomKey Test")
+    transcript("sensor.talk_transcript_test", t_other, text="Wer ist da?", message="Wer ist da?", speaker="", speaker_role="",
+               urgent=False, language="de", device="aikos RoomKey Test 2")
+    msgs = test_log().get("messages") or []
+    check(len(msgs) == 5 and msgs[3]["who"] == "Alex" and msgs[3].get("sticky") is True,
+          "R26: the same room key keeps its resident's name")
+    check(len(msgs) == 5 and msgs[4]["who"] == "aikos RoomKey Test 2" and not msgs[4].get("sticky"),
+          "R26: a second room key does not inherit another key's resident")
+    new_test_call()
+    transcript("sensor.talk_transcript_door_test", stamp(28), **dict(door, text="Hallo?", message="Hallo?", speaker="", speaker_role=""))
+    msgs = test_log().get("messages") or []
+    check(len(msgs) == 1 and msgs[0]["who"] == "Besucher" and not msgs[0].get("sticky"),
+          "a new call inherits nothing: a door message without a speaker is 'Besucher'")
+    call_id = test_log().get("call_id")
 
     # R22: the chat of a call must never show up in the next one, not even for a moment
     test_call(False)

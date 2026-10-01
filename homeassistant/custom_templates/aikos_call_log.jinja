@@ -3,7 +3,10 @@
     me = this (previous state of the log sensor), trigger = the trigger, call_entity = door call sensor ('' for the test log).
     Returns JSON: {messages (≤ 20), call_id, active, last_id, state}.
     R22: the log is emptied when a call ENDS (not only when the next one starts), and a transcript that arrives while no call
-    runs is not added, so a screen can never show the previous call's chat at the start of the next one. -#}
+    runs is not added, so a screen can never show the previous call's chat at the start of the next one.
+    R25: once the visitor identified themselves ("Paketdienst · Amazon"), later door messages of the same call without a
+    speaker keep that identity (marked `sticky`). R26: the same per room key (device): a resident's name sticks to the key
+    that said it, never to another key that joins later. -#}
 {% macro aikos_call_log(me, trigger, call_entity) -%}
 {%- set pa = me.attributes if (me is defined and me is not none and me.attributes is defined) else {} -%}
 {%- set pm = pa.get('messages', []) -%}
@@ -20,11 +23,21 @@
   {%- set a = trigger.to_state.attributes -%}
   {%- set side = 'door' if '_door' in trigger.entity_id else 'room' -%}
   {%- set spk = a.get('speaker') or '' -%}
-  {%- set who = spk if spk else ('Besucher' if side == 'door' else (a.get('device') or 'Bewohner')) -%}
+  {%- set dev = (a.get('device') or '') if side == 'room' else '' -%}
+  {#- the last identity said by this source (door, or this room key) in this call; inherited ones don't count -#}
+  {%- set known = namespace(who='', role='') -%}
+  {%- for m in ns.out -%}
+    {%- if m.side == side and m.get('dev', '') == dev and m.get('spk', '') and m.id != side ~ '-' ~ trigger.to_state.state -%}
+      {%- set known.who = m.who -%}{%- set known.role = m.role -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- set sticky = (not spk) and known.who != '' -%}
+  {%- set who = spk if spk else (known.who if sticky else ('Besucher' if side == 'door' else (dev or 'Bewohner'))) -%}
   {%- set body = (a.get('message') or a.get('text') or '')[:300] -%}
   {%- set lang = (a.get('language_name') or '') if (a.get('language') and a.get('language') != 'de') else '' -%}
   {%- set entry = {'id': side ~ '-' ~ trigger.to_state.state, 't': trigger.to_state.state, 'side': side, 'who': who,
-                   'role': a.get('speaker_role') or '', 'text': body, 'urgent': (a.get('urgent', false) | bool), 'lang': lang} -%}
+                   'role': a.get('speaker_role') or (known.role if sticky else ''), 'text': body,
+                   'urgent': (a.get('urgent', false) | bool), 'lang': lang, 'spk': spk, 'dev': dev, 'sticky': sticky} -%}
   {%- set m2 = namespace(out=[], found=false) -%}
   {%- for m in ns.out -%}
     {%- if m.id == entry.id -%}{%- set m2.out = m2.out + [entry] -%}{%- set m2.found = true -%}
