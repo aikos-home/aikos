@@ -28,6 +28,9 @@
 #include <cstring>
 #include <functional>
 
+#include "dsp.h"    // Biquad, Limiter (v2: own header)
+#include "types.h"  // Addr, Role (v2: own header)
+
 namespace aikos {
 namespace voice {
 
@@ -35,15 +38,6 @@ static constexpr int RATE = 16000;
 static constexpr int FRAME = 320;  // 20 ms
 static constexpr uint8_t PT_L16 = 96;
 static constexpr uint8_t PT_CN = 13;
-
-// IPv4 address and port, both in network byte order (as in sockaddr_in).
-struct Addr {
-  uint32_t ip = 0;
-  uint16_t port = 0;
-  bool valid() const { return ip != 0 && port != 0; }
-  bool operator==(const Addr &o) const { return ip == o.ip && port == o.port; }
-  bool operator!=(const Addr &o) const { return !(*this == o); }
-};
 
 // The network, as seen by the link. The device uses UDP (voice_udp.h); tests use a fake.
 class Transport {
@@ -53,8 +47,6 @@ class Transport {
   // one datagram into buf; returns its length, or <= 0 when nothing is waiting
   virtual int recv(uint8_t *buf, size_t cap, Addr &from) = 0;
 };
-
-enum class Role : uint8_t { DOOR, ROOM };
 
 struct Config {
   Role role = Role::DOOR;
@@ -67,36 +59,6 @@ struct Config {
 
 struct Stats {
   uint32_t tx_packets = 0, rx_packets = 0, held_back = 0, tx_errors = 0, overruns = 0;
-};
-
-// Speech-band filter and limiter for the microphone (from the RoomKey: clipping costs words).
-struct Biquad {
-  float b0 = 1, b1 = 0, b2 = 0, a1 = 0, a2 = 0, z1 = 0, z2 = 0;
-  static Biquad highpass(float fc, float fs, float q = 0.7071f) {
-    const float w = 2.0f * 3.14159265f * fc / fs, cw = cosf(w), alpha = sinf(w) / (2.0f * q), a0 = 1.0f + alpha;
-    Biquad f;
-    f.b0 = (1.0f + cw) / 2.0f / a0;
-    f.b1 = -(1.0f + cw) / a0;
-    f.b2 = (1.0f + cw) / 2.0f / a0;
-    f.a1 = -2.0f * cw / a0;
-    f.a2 = (1.0f - alpha) / a0;
-    return f;
-  }
-  float process(float x) {
-    const float y = b0 * x + z1;
-    z1 = b1 * x - a1 * y + z2;
-    z2 = b2 * x - a2 * y;
-    return y;
-  }
-};
-struct Limiter {
-  float env = 0.0f;
-  float ceiling = 0.8f * 32767.0f;  // about -2 dBFS
-  float process(float v) {
-    const float a = v < 0 ? -v : v;
-    env = a > env ? a : env * 0.9995f + a * 0.0005f;
-    return env > ceiling ? v * (ceiling / env) : v;
-  }
 };
 
 // The edges of a state such as "in conversation", for the start/end triggers of the ESPHome glue (one call per loop).
