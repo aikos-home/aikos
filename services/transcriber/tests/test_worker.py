@@ -16,6 +16,7 @@ HEARD = {
     "door": ("Guten Tag, Paketdienst von DHL, ich habe ein Paket für Sie.", {"text": "x", "language_probabilities": {"de": 0.99}}),
     "help": ("Hilfe! Mein Mann ist gestürzt, bitte rufen Sie einen Krankenwagen!", {"text": "x", "language_probabilities": {"de": 0.99}}),
     "noise": ("[Musik]", {"text": "[Musik]", "language_probabilities": {"de": 0.5}}),
+    "ardtext": ("ARD Text im Auftrag", {"text": "ARD Text im Auftrag", "language_probabilities": {"de": 0.6}}),  # R24
     "english": ("Hello, this is Anna, I have a parcel for you.",
                 {"text": "Hello, this is Anna, I have a parcel for you.", "language_probabilities": {"en": 0.98}}),
     "quiet": ("Haustür-Sprechanlage.", {"text": "", "language_probabilities": {"de": 1.0}}),
@@ -73,6 +74,7 @@ class Worker(unittest.TestCase):
 
     def test_nothing_published_for_noise_or_silence(self):
         self.assertEqual(self.run_worker("noise", "door", "192.0.2.62"), [])
+        self.assertEqual(self.run_worker("ardtext", "door", "192.0.2.62"), [])      # R24: a subtitle credit, never shown
         self.assertEqual(self.run_worker("quiet", "door", "192.0.2.62", quiet=True), [])
 
     def test_foreign_language_is_translated(self):
