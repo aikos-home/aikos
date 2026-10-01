@@ -27,8 +27,9 @@ BUILTIN = {
     "MAC address": re.compile(r"\b[0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5}\b"),
     "e-mail address": re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
     # Not followed by "(": ESPHome code such as `automation.register_action(...)` is a function call, not an entity id.
+    # Object ids starting with "aikos_" are aikos's own entities (the same in every house), not data of a real home.
     "HA entity id": re.compile(r"\b(?:binary_sensor|input_boolean|input_text|input_number|input_select|"
-                               r"automation|device_tracker|person|zone|notify)\.[a-z0-9_]{3,}\b(?!\s*\()"),
+                               r"automation|device_tracker|person|zone|notify)\.(?!aikos_)[a-z0-9_]{3,}\b(?!\s*\()"),
 }
 ALLOWED_EMAILS = {"noreply@anthropic.com"}
 

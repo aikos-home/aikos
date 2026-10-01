@@ -29,6 +29,12 @@ class EntityIdCheck(unittest.TestCase):
             with self.subTest(text=text):
                 self.assertEqual(len(hits("HA entity id", text)), 1)
 
+    def test_ignores_aikos_own_entities(self):
+        for text in ["binary_sensor" + DOT + "aikos_front_door", "input_boolean" + DOT + "aikos_quiet_hours_enabled"]:
+            with self.subTest(text=text):
+                self.assertEqual(hits("HA entity id", text), [])
+        self.assertEqual(len(hits("HA entity id", "binary_sensor" + DOT + "front_door_aikos")), 1)
+
     def test_ignores_function_calls(self):
         samples = [
             "automation" + DOT + "register_action(",

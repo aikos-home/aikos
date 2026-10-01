@@ -1,0 +1,2 @@
+# LF everywhere, also when checked out on Windows: a shell script with CRLF fails on the Mac and on the devices.
+* text=auto eol=lf

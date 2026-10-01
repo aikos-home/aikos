@@ -11,6 +11,8 @@ Home Assistant integration and shared device components of **aikos**, an open-so
 |---|---|---|
 | `custom_components/aikos/` | Home Assistant integration (HACS): where the doorbell rings, quiet hours, presence, "nobody home" notifications, alarm panel with per-key rights, activity log | aikos core |
 | `esphome/components/` | ESPHome components shared by the devices, e.g. `aikos_voice` (intercom audio) | intercom and roomkey maintainers, jointly |
+| `services/transcriber/` | Speech to text for Home Assistant, locally: what residents and visitors say, who is speaking, translation ([README](services/transcriber/README.md)) | aikos core; logic: roomkey maintainers |
+| `homeassistant/` | Home Assistant stand-ins until the integration exists: package, call-log macro, acceptance test | aikos core |
 | `docs/` | System documentation: architecture, installation, building the devices | aikos core |
 | `tools/` | Checks used by all aikos repositories (privacy scan) | aikos core |
 

@@ -1,0 +1,31 @@
+# aikos: house-specific values. Copy to packages/aikos_local.yaml and fill in.
+# No AI host? Use:  aikos_restart_services: "echo no AI host"
+# Owner: aikos core.
+
+shell_command:
+  # Restricted SSH key: on the AI host it can only run ~/aikos/bin/aikos-restart with one word
+  # (whisper | ollama | transcriber | all | dryrun), and only from this host.
+  aikos_restart_services: >-
+    ssh -i /config/.ssh/aikos_ai_host -o UserKnownHostsFile=/config/.ssh/known_hosts_aikos
+    -o BatchMode=yes -o ConnectTimeout=5 <user>@<ai-host> {{ ziel }}
+
+template:
+  - sensor:
+      # Who is behind each key (R17.7, 1c.7) and its address (the door needs it without HA).
+      # keys_json = the same as a JSON string, because ESPHome receives attributes as text.
+      - name: "aikos people"
+        unique_id: aikos_people
+        icon: mdi:account-group
+        state: "2"  # number of keys
+        attributes:
+          keys: >-
+            {{ {
+              'aikos-roomkey-livingroom': {'name': 'Family', 'room': 'Living room', 'host': '192.0.2.21'},
+              'aikos-roomkey-office': {'name': 'Alex', 'room': 'Office', 'host': '192.0.2.22'}
+            } }}
+          keys_json: >-
+            {{ {
+              'aikos-roomkey-livingroom': {'name': 'Family', 'room': 'Living room', 'host': '192.0.2.21'},
+              'aikos-roomkey-office': {'name': 'Alex', 'room': 'Office', 'host': '192.0.2.22'}
+            } | to_json }}
+
