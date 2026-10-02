@@ -179,8 +179,9 @@ template:
           messages: >-
             {% from 'aikos_call_log.jinja' import aikos_call_log %}{{ (aikos_call_log(this, trigger, call_entity | default('')) | from_json).messages }}
           # JSON text for ESPHome (attributes arrive there as text). Empty = [] (HA stores that as a list; it is valid JSON text either way).
+          # R27: devices keep only the newest messages (a small screen draws them fast); the full call goes to the archive (R23).
           messages_json: >-
-            {% from 'aikos_call_log.jinja' import aikos_call_log %}{{ (aikos_call_log(this, trigger, call_entity | default('')) | from_json).messages | to_json }}
+            {% from 'aikos_call_log.jinja' import aikos_call_log %}{{ ((aikos_call_log(this, trigger, call_entity | default('')) | from_json).messages)[-10:] | to_json }}
   - triggers:
       - trigger: state
         entity_id: [sensor.talk_transcript_test, sensor.talk_transcript_door_test]

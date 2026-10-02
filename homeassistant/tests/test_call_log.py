@@ -123,6 +123,14 @@ def main():
     check(len(msgs) == 1 and msgs[0]["who"] == "Besucher" and not msgs[0].get("sticky"),
           "a new call inherits nothing: a door message without a speaker is 'Besucher'")
     call_id = test_log().get("call_id")
+    # R27: the device feed carries only the newest 10 messages; the attribute `messages` keeps up to 20
+    for k in range(11):
+        transcript("sensor.talk_transcript_door_test", stamp(40 + k), **dict(door, text=f"Satz {k}.", message=f"Satz {k}.",
+                                                                            speaker="", speaker_role=""))
+    log = test_log()
+    feed = json.loads(log.get("messages_json") or "[]")
+    check(len(log.get("messages") or []) == 12 and len(feed) == 10 and feed[-1]["text"] == "Satz 10." and feed[0]["text"] == "Satz 1.",
+          "R27: messages_json = the newest 10 messages, oldest first; messages keeps all 12")
 
     # R22: the chat of a call must never show up in the next one, not even for a moment
     test_call(False)
