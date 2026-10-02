@@ -103,19 +103,6 @@ input_boolean:
   aikos_test_front_door:
     name: "TEST aikos Haustür (Prüfstand)"
     icon: mdi:door
-  aikos_quiet_hours_enabled:
-    name: "aikos Ruhezeit an"
-    icon: mdi:sleep
-
-input_datetime:
-  aikos_quiet_hours_start:
-    name: "aikos Ruhezeit Beginn"
-    has_date: false
-    has_time: true
-  aikos_quiet_hours_end:
-    name: "aikos Ruhezeit Ende"
-    has_date: false
-    has_time: true
 
 input_button:
   aikos_test_new_call:
@@ -138,18 +125,7 @@ template:
             {% set src = states('input_text.aikos_front_door_source') %}
             {% set s = (expand(src) | first) if src else none %}
             {{ s is not none and s.state == 'on' and (now() - s.last_changed).total_seconds() > 600 }}
-      # Quiet hours (during quiet hours rooms get text only; emergencies pass). The window may wrap midnight.
-      - name: "aikos quiet hours"
-        unique_id: aikos_quiet_hours
-        icon: mdi:sleep
-        state: >-
-          {% set s = states('input_datetime.aikos_quiet_hours_start') %}
-          {% set e = states('input_datetime.aikos_quiet_hours_end') %}
-          {% set n = now().strftime('%H:%M:%S') %}
-          {{ is_state('input_boolean.aikos_quiet_hours_enabled', 'on') and ((n >= s or n < e) if s > e else (s <= n < e)) }}
-        attributes:
-          start: "{{ states('input_datetime.aikos_quiet_hours_start')[:5] }}"
-          end: "{{ states('input_datetime.aikos_quiet_hours_end')[:5] }}"
+      # Quiet hours moved into the aikos integration (custom_components/aikos, binary_sensor.aikos_quiet_hours).
   # Call log = the only source of the chat on both screens. The same logic twice: live (real transcripts, door call)
   # and test (only *_test transcripts + a test call switch), so tests never touch the live log (tests never write into live entities).
   # R22: emptied at the END of a call; transcripts outside a call are not added.

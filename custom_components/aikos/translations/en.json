@@ -1,0 +1,25 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "aikos",
+        "description": "Set up aikos. Quiet hours and the other settings are then on the \"aikos\" device."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "aikos is already set up."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "quiet_hours_active": { "name": "Quiet hours active" }
+    },
+    "switch": {
+      "quiet_hours": { "name": "Quiet hours" }
+    },
+    "time": {
+      "quiet_hours_start": { "name": "Quiet hours start" },
+      "quiet_hours_end": { "name": "Quiet hours end" }
+    }
+  }
+}

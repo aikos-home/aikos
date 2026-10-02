@@ -1,0 +1,25 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "aikos",
+        "description": "aikos einrichten. Ruhezeit und die übrigen Einstellungen findest du danach am Gerät „aikos“."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "aikos ist schon eingerichtet."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "quiet_hours_active": { "name": "Ruhezeit aktiv" }
+    },
+    "switch": {
+      "quiet_hours": { "name": "Ruhezeit" }
+    },
+    "time": {
+      "quiet_hours_start": { "name": "Ruhezeit Beginn" },
+      "quiet_hours_end": { "name": "Ruhezeit Ende" }
+    }
+  }
+}
