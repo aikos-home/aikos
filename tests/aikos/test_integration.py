@@ -39,7 +39,7 @@ async def test_setup_creates_the_aikos_device_with_fixed_ids_and_defaults(hass: 
     assert hass.states.get(ACTIVE).state == "off"
     assert hass.states.get(ACTIVE).attributes["start"] == "20:00"
     devices = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
-    assert [(d.name, d.manufacturer, d.sw_version) for d in devices] == [("aikos", "aikos-home", "0.1.0")]
+    assert [(d.name, d.manufacturer, d.sw_version) for d in devices] == [("aikos", "aikos-home", "0.2.0")]
 
 
 async def test_only_one_aikos(hass: HomeAssistant):

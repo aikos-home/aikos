@@ -108,8 +108,21 @@ input_button:
   aikos_test_new_call:
     name: "TEST aikos neues Gespräch (Test-Protokoll)"
     icon: mdi:phone-plus
+  aikos_test_doorbell:
+    name: "TEST aikos Klingel (Prüfstand)"
+    icon: mdi:doorbell
 
 template:
+  # Test doorbell for the aikos ring push: pressing the button = one press (on for 1 s). Point aikos' "Doorbell" option here for a
+  # bench test instead of the real bell, so tests never touch the real doorbell entities.
+  - triggers:
+      - trigger: state
+        entity_id: input_button.aikos_test_doorbell
+    binary_sensor:
+      - name: "aikos TEST doorbell"
+        unique_id: aikos_test_doorbell
+        state: "true"
+        auto_off: "00:00:01"
   - binary_sensor:
       # Front door, 2 s debounced. Devices only react to an off→on edge. Open > 10 min → stuck (ends nothing).
       - name: "aikos front door"

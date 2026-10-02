@@ -12,14 +12,40 @@
   },
   "entity": {
     "binary_sensor": {
-      "quiet_hours_active": { "name": "Ruhezeit aktiv" }
+      "quiet_hours_active": {
+        "name": "Ruhezeit aktiv"
+      }
     },
     "switch": {
-      "quiet_hours": { "name": "Ruhezeit" }
+      "quiet_hours": {
+        "name": "Ruhezeit"
+      }
     },
     "time": {
-      "quiet_hours_start": { "name": "Ruhezeit Beginn" },
-      "quiet_hours_end": { "name": "Ruhezeit Ende" }
+      "quiet_hours_start": {
+        "name": "Ruhezeit Beginn"
+      },
+      "quiet_hours_end": {
+        "name": "Ruhezeit Ende"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "aikos: Klingel-Push",
+        "description": "Ein Push „Es hat geklingelt“ geht an diese Handys, wenn Ruhezeit ist oder keiner der Bewohner zu Hause ist. Höchstens einer pro 30 s. Ein leeres Feld schaltet es ab.",
+        "data": {
+          "doorbell": "Klingel",
+          "residents": "Bewohner",
+          "notify_targets": "Handys (Notify-Dienste)"
+        },
+        "data_description": {
+          "doorbell": "Das Event der Klingel (oder ein Binärsensor, der beim Drücken angeht).",
+          "residents": "Niemand zu Hause = keine dieser Personen ist zu Hause.",
+          "notify_targets": "Wohin der Push geht, z. B. der Dienst der Handy-App mobile_app_<handy>."
+        }
+      }
     }
   }
 }
