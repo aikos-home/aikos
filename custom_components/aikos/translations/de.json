@@ -41,17 +41,19 @@
   "options": {
     "step": {
       "init": {
-        "title": "aikos: Klingel-Push",
-        "description": "Ein Push „Es hat geklingelt“ geht an diese Handys, wenn Ruhezeit ist oder keiner der Bewohner zu Hause ist. Höchstens einer pro 30 s. Ein leeres Feld schaltet es ab.",
+        "title": "aikos: Einstellungen",
+        "description": "Klingel-Push: Ein Push „Es hat geklingelt“ geht an diese Handys, wenn Ruhezeit ist oder keiner der Bewohner zu Hause ist (höchstens einer pro 30 s). Ein leeres Feld schaltet es ab. Gesprächsarchiv: für Entwickler, jedes Gespräch als JSON-Zeilen.",
         "data": {
           "doorbell": "Klingel",
           "residents": "Bewohner",
-          "notify_targets": "Handys (Notify-Dienste)"
+          "notify_targets": "Handys (Notify-Dienste)",
+          "call_archive": "Gesprächsarchiv (Entwicklung)"
         },
         "data_description": {
           "doorbell": "Das Event der Klingel (oder ein Binärsensor, der beim Drücken angeht).",
           "residents": "Niemand zu Hause = keine dieser Personen ist zu Hause.",
-          "notify_targets": "Wohin der Push geht, z. B. der Dienst der Handy-App mobile_app_<handy>."
+          "notify_targets": "Wohin der Push geht, z. B. der Dienst der Handy-App mobile_app_<handy>.",
+          "call_archive": "Jedes Gespräch (Beginn mit Firmware-Versionen, jede Nachricht, Ende) als JSON-Zeilen in aikos_archive/calls.jsonl im Konfigurationsordner. Bleibt, bis du es löschst."
         }
       }
     }

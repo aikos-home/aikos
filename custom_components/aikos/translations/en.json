@@ -41,17 +41,19 @@
   "options": {
     "step": {
       "init": {
-        "title": "aikos: ring push",
-        "description": "A push \"Someone rang the doorbell\" goes to these phones when quiet hours are active or none of the residents is home. At most one per 30 s. Leave a field empty to turn it off.",
+        "title": "aikos: settings",
+        "description": "Ring push: a push \"Someone rang the doorbell\" goes to these phones when quiet hours are active or none of the residents is home (at most one per 30 s). Leave a field empty to turn it off. Call archive: for developers, every call as JSON lines.",
         "data": {
           "doorbell": "Doorbell",
           "residents": "Residents",
-          "notify_targets": "Phones (notify services)"
+          "notify_targets": "Phones (notify services)",
+          "call_archive": "Call archive (developers)"
         },
         "data_description": {
           "doorbell": "The doorbell's event (or a binary sensor that turns on when pressed).",
           "residents": "Nobody home = none of these persons is home.",
-          "notify_targets": "Where the push goes, e.g. the mobile app service mobile_app_<phone>."
+          "notify_targets": "Where the push goes, e.g. the mobile app service mobile_app_<phone>.",
+          "call_archive": "Every call (start with firmware versions, every message, end) as JSON lines in aikos_archive/calls.jsonl in the configuration folder. Stays until you delete it."
         }
       }
     }
