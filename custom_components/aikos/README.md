@@ -1,6 +1,6 @@
 # aikos integration for Home Assistant
 
-The household logic of aikos, installed via HACS. Version **0.4.1**: quiet hours (0.1.0), the ring push (0.2.0, tag `aikos-v0.2.0`), the call log (0.3.0) and the call archive. More blocks follow (where the bell
+The household logic of aikos, installed via HACS. Version **0.4.1** (tag `aikos-v0.4.1`): quiet hours (0.1.0), the ring push (0.2.0, tag `aikos-v0.2.0`), the call log (0.3.0) and the call archive. More blocks follow (where the bell
 rings, presence, alarm, pairing of devices); each comes as a new version.
 
 ## Install
