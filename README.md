@@ -3,7 +3,8 @@
 Home Assistant integration and shared device components of **aikos**, an open-source home system made of a door station
 ([intercom](https://github.com/aikos-home/intercom)) and room keys ([roomkey](https://github.com/aikos-home/roomkey)).
 
-> **Status: skeleton.** Nothing here is installable yet. The integration will be published via HACS.
+> **Status: early.** The integration ([`custom_components/aikos`](custom_components/aikos/README.md), 0.1.0: quiet hours) installs
+> via HACS as a custom repository; more blocks follow.
 
 ## What lives here
 

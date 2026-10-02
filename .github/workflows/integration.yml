@@ -1,0 +1,19 @@
+name: integration unit checks
+on:
+  push:
+    paths:
+      - "custom_components/**"
+      - "tests/aikos/**"
+      - ".github/workflows/integration.yml"
+  pull_request:
+jobs:
+  integration-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      # A real Home Assistant test instance (2026.9.4, as on ha-dev); pinned so a new Home Assistant release can't turn a PR red by itself.
+      - run: pip install pytest-homeassistant-custom-component==0.13.367
+      - run: python -m pytest tests/aikos -q
