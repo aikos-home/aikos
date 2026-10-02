@@ -13,6 +13,8 @@ OPT_QUIET_END = "quiet_hours_end"
 OPT_DOORBELL = "doorbell"
 OPT_RESIDENTS = "residents"
 OPT_NOTIFY = "notify_targets"
+# Call archive (R23, developer use): every call as JSON lines in <config>/aikos_archive/calls.jsonl. Default off.
+OPT_ARCHIVE = "call_archive"
 
 # Call log sources. Live: the transcriber's sensors and the talk computer's call sensor (ids as the devices and the
 # transcriber create them). Test: the bench stand-ins from the homeassistant/ package, so tests never touch the live log.

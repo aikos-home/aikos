@@ -1,4 +1,4 @@
-"""Setting up aikos (one click) and its options: doorbell, residents and their phones for the ring push.
+"""Setting up aikos (one click) and its options: doorbell, residents and their phones for the ring push; the call archive.
 
 Daily settings such as quiet hours are entities of the "aikos" device, not options.
 """
@@ -11,7 +11,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResu
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 
-from .const import DOMAIN, OPT_DOORBELL, OPT_NOTIFY, OPT_RESIDENTS
+from .const import DOMAIN, OPT_ARCHIVE, OPT_DOORBELL, OPT_NOTIFY, OPT_RESIDENTS
 
 RING_OPTIONS = (OPT_DOORBELL, OPT_RESIDENTS, OPT_NOTIFY)
 
@@ -39,6 +39,7 @@ class AikosOptionsFlow(OptionsFlow):
                     options[key] = user_input[key]
                 else:
                     options.pop(key, None)
+            options[OPT_ARCHIVE] = bool(user_input.get(OPT_ARCHIVE, False))
             return self.async_create_entry(data=options)
 
         notify = sorted(f"notify.{s}" for s in self.hass.services.async_services_for_domain("notify") if s != "send_message")
@@ -50,5 +51,6 @@ class AikosOptionsFlow(OptionsFlow):
             vol.Optional(OPT_NOTIFY, description={"suggested_value": options.get(OPT_NOTIFY)}): selector.SelectSelector(
                 selector.SelectSelectorConfig(options=notify, multiple=True, custom_value=True,
                                               mode=selector.SelectSelectorMode.DROPDOWN)),
+            vol.Optional(OPT_ARCHIVE, default=bool(options.get(OPT_ARCHIVE, False))): selector.BooleanSelector(),
         })
         return self.async_show_form(step_id="init", data_schema=schema)

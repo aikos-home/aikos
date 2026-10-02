@@ -1,6 +1,6 @@
 # aikos integration for Home Assistant
 
-The household logic of aikos, installed via HACS. Version **0.3.0**: quiet hours (0.1.0), the ring push (0.2.0, tag `aikos-v0.2.0`) and the call log. More blocks follow (where the bell
+The household logic of aikos, installed via HACS. Version **0.4.0**: quiet hours (0.1.0), the ring push (0.2.0, tag `aikos-v0.2.0`), the call log (0.3.0) and the call archive. More blocks follow (where the bell
 rings, presence, alarm, pairing of devices); each comes as a new version.
 
 ## Install
@@ -72,6 +72,7 @@ what the devices read.
 | A stored time can't be read | The default is used (20:00 or 07:00) |
 | A configured phone's notify service doesn't exist (any more) | Warning in the log; the other phones still get the push |
 | A notify service fails | Logged; the others still get it, the integration keeps running |
+| The archive file can't be written | Logged; calls and everything else go on |
 | Second "Add integration" | Refused: aikos is set up once |
 | Integration removed | Its entities go away; nothing else in Home Assistant changes |
 
@@ -87,6 +88,8 @@ what the devices read.
 | `ring_notifier.py` | Watches the doorbell and sends the push |
 | `call_log.py` | The call-log rules (R22, R25–R27), no Home Assistant code |
 | `sensor.py` | The call log sensors, event and logbook |
+| `call_archive.py` | The archive's lines (no Home Assistant code) |
+| `archive_writer.py` | Listens to calls and transcripts, appends the lines |
 | `config_flow.py`, `__init__.py` | Setting up and removing aikos |
 
 ## Tests
@@ -96,6 +99,8 @@ what the devices read.
 
 ## History
 
+- 0.4.0: the call archive moves here from the package (an option instead of File integration + allowlist; same file and lines,
+  plus the integration's own version in `call_start`).
 - 0.3.0: the call log moves here from the `homeassistant/` package (same entity ids and attributes; the Jinja macro is gone).
 - 0.2.0: ring push to the residents' phones during quiet hours or when nobody is home (requirements 1 and 3,
   `features/klingelregeln.md` KR-R3, KR-R12); options flow for doorbell, residents, phones. Quiet hours unchanged.
