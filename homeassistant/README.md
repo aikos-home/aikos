@@ -1,18 +1,18 @@
 # Home Assistant stand-ins
 
-Until the `aikos` integration exists, this folder holds what aikos adds to Home Assistant, as plain HA configuration.
+What aikos adds to Home Assistant and the [integration](../custom_components/aikos/README.md) doesn't do yet, as plain HA
+configuration. Parts move into the integration step by step (quiet hours 0.1.0, call log 0.3.0).
 It is the source of truth: deploy from here, don't edit the copies in Home Assistant.
 
 | File | Goes to (HA config dir) | What |
 |---|---|---|
 | `packages/aikos.yaml` | `packages/aikos.yaml` | Generic part, the same for every house |
 | `packages/aikos_local.example.yaml` | `packages/aikos_local.yaml` | House-specific values; copy, then fill in |
-| `custom_templates/aikos_call_log.jinja` | `custom_templates/aikos_call_log.jinja` | The call-log logic (one macro, used by the live and the test log) |
-| `tests/test_call_log.py` | stays here | Acceptance test against a running HA, test entities only |
+| `tests/test_call_log.py` | stays here | Acceptance test of the call log (now in the integration) against a running HA, test entities only |
 
 Needs `homeassistant: packages: !include_dir_named packages` in `configuration.yaml`.
-After changes: reload `template`, `script`, `automation`, `shell_command`, the `input_*` helpers and custom templates
-(`homeassistant.reload_custom_templates`); no restart needed except for the very first `shell_command`.
+After changes: reload `template`, `script`, `automation`, `shell_command` and the `input_*` helpers; no restart needed except
+for the very first `shell_command`.
 
 ## What the devices can read
 
@@ -22,7 +22,7 @@ After changes: reload `template`, `script`, `automation`, `shell_command`, the `
 | `binary_sensor.aikos_test_doorbell` | **Test only:** on for 1 s when `input_button.aikos_test_doorbell` is pressed. A stand-in doorbell for bench tests of the aikos ring push. |
 | `binary_sensor.aikos_quiet_hours` | Quiet hours active. **Moved into the aikos integration** (0.1.0, [README](../custom_components/aikos/README.md)); same entity id. |
 | `sensor.aikos_people` | From `aikos_local.yaml`. Attribute `keys` (and `keys_json` as text for ESPHome): room key node name → `{name, room, host}`. |
-| `sensor.aikos_call_log` | The only source of the chat on both screens. State = time of the last message. Attributes `call_id`, `active`, `last_id`, `messages` (≤ 20: `id, t, side, who, role, text, urgent, lang`, plus `spk` (the speaker the transcript named), `dev` (room key) and `sticky` (true when `who` was carried over: a visitor's identity holds for the whole call, R25; a resident's name holds per room key, never for another key, R26)) and `messages_json` (text for ESPHome: **only the newest 10 messages**, oldest first, R27; devices keep the chat only for the running call, the full call goes to the archive, R23; an empty log may arrive as `[]`). A call's chat is emptied when the call **ends** (door call sensor on → off), and a transcript that arrives while no call runs is not added (R22: a screen must never show the previous call's chat, not even for a moment). A new call starts empty. A later update of the same transcript (e.g. the language) replaces the message instead of adding one. Every new message also fires the event `aikos_call_message` and writes a logbook entry. |
+| `sensor.aikos_call_log` | The only source of the chat on both screens. **Now provided by the aikos integration** (0.3.0), same entity id and attributes; the rules (R22, R25–R27) and the contract are in the [integration README](../custom_components/aikos/README.md). `sensor.aikos_call_log_test` is its bench twin, fed only by the `*_test` transcripts and `input_boolean.aikos_test_in_call`. |
 
 **Stable for devices (contract):** the door screen and the talk computer read `messages_json` (per message `id`, `side`
 `door`/`room`, `who`, `text`; for a visitor `who` is the recognised role, empty shows as "Besucher") and `keys_json`
@@ -52,7 +52,7 @@ The archive is written by the File integration, never by a shell, so text a visi
 
 ## Tests never touch live entities
 
-`sensor.aikos_call_log_test` runs exactly the same macro, fed only by `sensor.talk_transcript_test` /
+`sensor.aikos_call_log_test` (aikos integration) runs exactly the same rules, fed only by `sensor.talk_transcript_test` /
 `sensor.talk_transcript_door_test`; `input_button.aikos_test_new_call` starts a new test call. The transcriber sends
 utterances from its test sources there. `tests/test_call_log.py` uses only these:
 

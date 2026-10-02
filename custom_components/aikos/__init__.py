@@ -1,4 +1,4 @@
-"""aikos: the house system's Home Assistant integration (quiet hours, ring push; more blocks follow)."""
+"""aikos: the house system's Home Assistant integration (quiet hours, ring push, call log; more blocks follow)."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -12,7 +12,7 @@ from .const import DOMAIN
 from .ring_notifier import RingNotifier
 from .settings import QuietHoursSettings
 
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.SWITCH, Platform.TIME]
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH, Platform.TIME]
 
 
 @dataclass

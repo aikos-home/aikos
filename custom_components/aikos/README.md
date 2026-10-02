@@ -1,6 +1,6 @@
 # aikos integration for Home Assistant
 
-The household logic of aikos, installed via HACS. Version **0.2.0** (tag `aikos-v0.2.0`): quiet hours (since 0.1.0) and the ring push. More blocks follow (where the bell
+The household logic of aikos, installed via HACS. Version **0.3.0**: quiet hours (0.1.0), the ring push (0.2.0, tag `aikos-v0.2.0`) and the call log. More blocks follow (where the bell
 rings, presence, alarm, pairing of devices); each comes as a new version.
 
 ## Install
@@ -44,7 +44,28 @@ when quiet hours are active, or **"… · niemand zu Hause"** when nobody is hom
 - A device coming back online (unavailable → its last press) is no press.
 - Without a doorbell or phones there is no push (default).
 
-## Errors
+### Call log (0.3.0)
+
+The only source of the chat on the door screen and the room keys. Moved here from the `homeassistant/` package without changing
+what the devices read.
+
+| Entity | What |
+|---|---|
+| `sensor.aikos_call_log` | State = time of the newest message. Attributes `call_id`, `active`, `last_id`, `messages` (≤ 20), `messages_json` |
+| `sensor.aikos_call_log_test` | The same for bench tests, fed only by `sensor.talk_transcript_test` / `_door_test`, `input_boolean.aikos_test_in_call` and `input_button.aikos_test_new_call` |
+
+- **Sources (live):** `sensor.talk_transcript` (room), `sensor.talk_transcript_door` (door), `binary_sensor.aikos_intercom_talk_in_call`.
+- **Per message:** `id` (side + transcript time), `t`, `side` (`door`/`room`), `who`, `role`, `text` (≤ 300 characters), `urgent`, `lang`
+  (language name if not German), `spk` (the speaker the transcript named), `dev` (room key), `sticky`.
+- **Contract for the devices:** `messages_json` = the newest 10 messages, oldest first, compact JSON text; every message has `id`,
+  `side`, `who`, `text`. Changes only through the change path; new fields may be added.
+- **R22:** emptied when a call starts and when it ends; a transcript outside a call is not added. **R25:** a visitor's identity
+  holds for the call (`sticky`). **R26:** a resident's name holds per room key, never for another key. **R27:** devices get 10.
+- A later update of the same transcript replaces the message. Every new message fires the event `aikos_call_message` and writes
+  a logbook entry (live log only).
+- Survives a restart (the last state is restored).
+
+
 
 | Case | What happens |
 |---|---|
@@ -64,6 +85,8 @@ when quiet hours are active, or **"… · niemand zu Hause"** when nobody is hom
 | `switch.py`, `time.py`, `binary_sensor.py` | The entities |
 | `ring_push.py` | When a press becomes a push, and its text (no Home Assistant code) |
 | `ring_notifier.py` | Watches the doorbell and sends the push |
+| `call_log.py` | The call-log rules (R22, R25–R27), no Home Assistant code |
+| `sensor.py` | The call log sensors, event and logbook |
 | `config_flow.py`, `__init__.py` | Setting up and removing aikos |
 
 ## Tests
@@ -73,6 +96,7 @@ when quiet hours are active, or **"… · niemand zu Hause"** when nobody is hom
 
 ## History
 
+- 0.3.0: the call log moves here from the `homeassistant/` package (same entity ids and attributes; the Jinja macro is gone).
 - 0.2.0: ring push to the residents' phones during quiet hours or when nobody is home (requirements 1 and 3,
   `features/klingelregeln.md` KR-R3, KR-R12); options flow for doorbell, residents, phones. Quiet hours unchanged.
 - 0.1.0: first version; quiet hours (moved here from the `homeassistant/` package, same `binary_sensor.aikos_quiet_hours`).

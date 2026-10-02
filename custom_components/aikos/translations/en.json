@@ -28,6 +28,14 @@
       "quiet_hours_end": {
         "name": "Quiet hours end"
       }
+    },
+    "sensor": {
+      "call_log": {
+        "name": "Call log"
+      },
+      "call_log_test": {
+        "name": "Call log test"
+      }
     }
   },
   "options": {

@@ -1,5 +1,7 @@
 """The aikos integration in a real Home Assistant test instance (KR1, KR2, KR-R8)."""
+import json
 from datetime import datetime
+from pathlib import Path
 
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
@@ -9,6 +11,7 @@ from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
 DOMAIN = "aikos"
+MANIFEST_VERSION = json.loads((Path(__file__).parents[2] / "custom_components/aikos/manifest.json").read_text())["version"]
 SWITCH, START, END, ACTIVE = ("switch.aikos_quiet_hours", "time.aikos_quiet_hours_start", "time.aikos_quiet_hours_end",
                               "binary_sensor.aikos_quiet_hours")
 
@@ -39,7 +42,7 @@ async def test_setup_creates_the_aikos_device_with_fixed_ids_and_defaults(hass: 
     assert hass.states.get(ACTIVE).state == "off"
     assert hass.states.get(ACTIVE).attributes["start"] == "20:00"
     devices = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
-    assert [(d.name, d.manufacturer, d.sw_version) for d in devices] == [("aikos", "aikos-home", "0.2.0")]
+    assert [(d.name, d.manufacturer, d.sw_version) for d in devices] == [("aikos", "aikos-home", MANIFEST_VERSION)]
 
 
 async def test_only_one_aikos(hass: HomeAssistant):

@@ -28,6 +28,14 @@
       "quiet_hours_end": {
         "name": "Ruhezeit Ende"
       }
+    },
+    "sensor": {
+      "call_log": {
+        "name": "Gesprächsverlauf"
+      },
+      "call_log_test": {
+        "name": "Gesprächsverlauf Test"
+      }
     }
   },
   "options": {
