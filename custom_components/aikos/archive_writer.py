@@ -78,7 +78,7 @@ class ArchiveWriter:
 
     def _devices(self) -> list[dict[str, str | None]]:
         return [{"name": d.name_by_user or d.name, "model": d.model, "sw": d.sw_version}
-                for d in dr.async_get(self._hass).devices.values() if d.manufacturer == MANUFACTURER]
+                for d in dr.async_get(self._hass).devices if d.manufacturer == MANUFACTURER]  # iterate, no mapping use (HA 2026.9)
 
     @callback
     def _on_call(self, event: Event[EventStateChangedData]) -> None:
