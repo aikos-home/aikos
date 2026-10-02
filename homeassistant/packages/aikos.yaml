@@ -233,7 +233,7 @@ automation:
           message: "{{ m.who }}{{ (' (' ~ m.lang ~ ')') if m.lang else '' }}: {{ m.text }}"
           entity_id: sensor.aikos_call_log
 
-  # R23 (Martin, 01.10.): a full dev archive of all calls, one JSON line per event, in /config/aikos_archive/calls.jsonl.
+  # R23 (01.10.): a full dev archive of all calls, one JSON line per event, in /config/aikos_archive/calls.jsonl.
   # Written by the core File integration (notify.aikos_call_archive; set up once, see homeassistant/README.md), never by a
   # shell, so visitor text can never become a command. Devices are found by manufacturer "aikos-home", not by name.
   # Without the notify entity (a house that doesn't want an archive) the action fails quietly.

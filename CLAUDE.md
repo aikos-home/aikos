@@ -41,8 +41,9 @@ Everything listed in [`FROZEN.md`](FROZEN.md) is frozen at its version. Before y
 
 ## Privacy and secrets
 
-- Run `tools/privacy_scan.py` with the private denylist before every push. The denylist is never committed; CI runs the
-  built-in checks only.
+- Run `tools/privacy_scan.py --commits origin/main..HEAD` with the private denylist before every push, and push only when
+  it says `clean`. The denylist is never committed; CI runs the built-in checks only.
+- Commit messages, pull request titles and bodies are public too: no names of residents there either.
 - Never commit secrets (keys, tokens, passwords, Wi-Fi data), private IP or MAC addresses, e-mail addresses, names or
   addresses of residents, or Home Assistant entity ids of a real home.
 - Commit with your GitHub noreply address.
