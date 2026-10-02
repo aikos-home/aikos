@@ -1,14 +1,30 @@
 {
   "entity": {
     "binary_sensor": {
-      "quiet_hours_active": { "default": "mdi:sleep" }
+      "quiet_hours_active": {
+        "default": "mdi:sleep"
+      }
     },
     "switch": {
-      "quiet_hours": { "default": "mdi:sleep" }
+      "quiet_hours": {
+        "default": "mdi:sleep"
+      }
     },
     "time": {
-      "quiet_hours_start": { "default": "mdi:weather-night" },
-      "quiet_hours_end": { "default": "mdi:weather-sunset-up" }
+      "quiet_hours_start": {
+        "default": "mdi:weather-night"
+      },
+      "quiet_hours_end": {
+        "default": "mdi:weather-sunset-up"
+      }
+    },
+    "sensor": {
+      "call_log": {
+        "default": "mdi:message-text-clock"
+      },
+      "call_log_test": {
+        "default": "mdi:message-text-clock"
+      }
     }
   }
 }

@@ -14,6 +14,16 @@ OPT_DOORBELL = "doorbell"
 OPT_RESIDENTS = "residents"
 OPT_NOTIFY = "notify_targets"
 
+# Call log sources. Live: the transcriber's sensors and the talk computer's call sensor (ids as the devices and the
+# transcriber create them). Test: the bench stand-ins from the homeassistant/ package, so tests never touch the live log.
+LIVE_TRANSCRIPT_ROOM = "sensor.talk_transcript"
+LIVE_TRANSCRIPT_DOOR = "sensor.talk_transcript_door"
+LIVE_CALL = "binary_sensor.aikos_intercom_talk_in_call"
+TEST_TRANSCRIPT_ROOM = "sensor.talk_transcript_test"
+TEST_TRANSCRIPT_DOOR = "sensor.talk_transcript_door_test"
+TEST_CALL = "input_boolean.aikos_test_in_call"
+TEST_NEW_CALL = "input_button.aikos_test_new_call"
+
 # Requirement 1: the bell doesn't ring after about 8 pm.
 DEFAULT_QUIET_ENABLED = True
 DEFAULT_QUIET_START = time(20, 0)

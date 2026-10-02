@@ -87,7 +87,7 @@ script:
             **Ohne Neustart-Knopf:** {{ ohne_knopf | join(', ') if ohne_knopf else 'keine' }}
 
 # ─────────────────────────────────────────────────────────────────────────────────────────────────────
-# voice v2, part A: what aikos tells the devices (front door, quiet hours, call log). Stand-ins until the integration exists.
+# voice v2, part A: what aikos tells the devices (front door) and the bench test helpers. Stand-ins until the integration has them.
 # ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
 input_text:
@@ -139,88 +139,10 @@ template:
             {% set s = (expand(src) | first) if src else none %}
             {{ s is not none and s.state == 'on' and (now() - s.last_changed).total_seconds() > 600 }}
       # Quiet hours moved into the aikos integration (custom_components/aikos, binary_sensor.aikos_quiet_hours).
-  # Call log = the only source of the chat on both screens. The same logic twice: live (real transcripts, door call)
-  # and test (only *_test transcripts + a test call switch), so tests never touch the live log (tests never write into live entities).
-  # R22: emptied at the END of a call; transcripts outside a call are not added.
-  - triggers:
-      - trigger: state
-        entity_id: [sensor.talk_transcript, sensor.talk_transcript_door]
-        id: msg
-        variables: {call_entity: binary_sensor.aikos_intercom_talk_in_call}
-      - trigger: state
-        entity_id: binary_sensor.aikos_intercom_talk_in_call
-        id: call
-        variables: {call_entity: binary_sensor.aikos_intercom_talk_in_call}
-    # The logic lives in one macro (custom_templates/aikos_call_log.jinja), used by the live and the test log alike.
-    sensor:
-      - name: "aikos call log"
-        unique_id: aikos_call_log
-        icon: mdi:message-text-clock
-        state: &aikos_call_log_state >-
-          {% from 'aikos_call_log.jinja' import aikos_call_log %}{{ (aikos_call_log(this, trigger, call_entity | default('')) | from_json).state }}
-        attributes: &aikos_call_log_attributes
-          call_id: >-
-            {% from 'aikos_call_log.jinja' import aikos_call_log %}{{ (aikos_call_log(this, trigger, call_entity | default('')) | from_json).call_id }}
-          active: >-
-            {% from 'aikos_call_log.jinja' import aikos_call_log %}{{ (aikos_call_log(this, trigger, call_entity | default('')) | from_json).active }}
-          last_id: >-
-            {% from 'aikos_call_log.jinja' import aikos_call_log %}{{ (aikos_call_log(this, trigger, call_entity | default('')) | from_json).last_id }}
-          messages: >-
-            {% from 'aikos_call_log.jinja' import aikos_call_log %}{{ (aikos_call_log(this, trigger, call_entity | default('')) | from_json).messages }}
-          # JSON text for ESPHome (attributes arrive there as text). Empty = [] (HA stores that as a list; it is valid JSON text either way).
-          # R27: devices keep only the newest messages (a small screen draws them fast); the full call goes to the archive (R23).
-          messages_json: >-
-            {% from 'aikos_call_log.jinja' import aikos_call_log %}{{ ((aikos_call_log(this, trigger, call_entity | default('')) | from_json).messages)[-10:] | to_json }}
-  - triggers:
-      - trigger: state
-        entity_id: [sensor.talk_transcript_test, sensor.talk_transcript_door_test]
-        id: msg
-        variables: {call_entity: input_boolean.aikos_test_in_call}
-      - trigger: state
-        entity_id: input_boolean.aikos_test_in_call
-        id: call
-        variables: {call_entity: input_boolean.aikos_test_in_call}
-      - trigger: state
-        entity_id: input_button.aikos_test_new_call
-        id: testcall
-        variables: {call_entity: input_boolean.aikos_test_in_call}
-    sensor:
-      - name: "aikos call log test"
-        unique_id: aikos_call_log_test
-        icon: mdi:message-text-clock
-        state: *aikos_call_log_state
-        attributes: *aikos_call_log_attributes
+  # The call log (sensor.aikos_call_log, sensor.aikos_call_log_test) moved into the aikos integration (0.3.0).
 
 automation:
-  - id: aikos_call_message_logbook
-    alias: "aikos: Gesprächsnachricht ins Logbuch und als Event"
-    description: "Jede neue Nachricht im Gesprächsprotokoll → Event aikos_call_message + Logbuch (see homeassistant/README.md)."
-    mode: queued
-    triggers:
-      - trigger: state
-        entity_id: sensor.aikos_call_log
-        attribute: last_id
-    conditions:
-      - condition: template
-        value_template: "{{ trigger.to_state.attributes.last_id not in ['', none] }}"
-    actions:
-      - variables:
-          m: "{{ trigger.to_state.attributes.messages | last }}"
-      - event: aikos_call_message
-        event_data:
-          call_id: "{{ trigger.to_state.attributes.call_id }}"
-          id: "{{ m.id }}"
-          side: "{{ m.side }}"
-          who: "{{ m.who }}"
-          role: "{{ m.role }}"
-          text: "{{ m.text }}"
-          urgent: "{{ m.urgent }}"
-          lang: "{{ m.lang }}"
-      - action: logbook.log
-        data:
-          name: "aikos Gespräch"
-          message: "{{ m.who }}{{ (' (' ~ m.lang ~ ')') if m.lang else '' }}: {{ m.text }}"
-          entity_id: sensor.aikos_call_log
+  # aikos_call_message event + logbook entry: now done by the aikos integration's call log (0.3.0).
 
   # R23 (01.10.): a full dev archive of all calls, one JSON line per event, in /config/aikos_archive/calls.jsonl.
   # Written by the core File integration (notify.aikos_call_archive; set up once, see homeassistant/README.md), never by a
