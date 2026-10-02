@@ -232,3 +232,74 @@ automation:
           name: "aikos Gespräch"
           message: "{{ m.who }}{{ (' (' ~ m.lang ~ ')') if m.lang else '' }}: {{ m.text }}"
           entity_id: sensor.aikos_call_log
+
+  # R23 (01.10.): a full dev archive of all calls, one JSON line per event, in /config/aikos_archive/calls.jsonl.
+  # Written by the core File integration (notify.aikos_call_archive; set up once, see homeassistant/README.md), never by a
+  # shell, so visitor text can never become a command. Devices are found by manufacturer "aikos-home", not by name.
+  # Without the notify entity (a house that doesn't want an archive) the action fails quietly.
+  - id: aikos_call_archive
+    alias: "aikos: Gesprächsarchiv (R23)"
+    description: "Beginn (mit Firmware-Versionen), jede Transkription und Ende jedes Gesprächs als JSON-Zeile ins Archiv; Test-Verkehr markiert."
+    mode: queued
+    max: 100
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.aikos_intercom_talk_in_call
+        from: "off"
+        to: "on"
+        id: start
+      - trigger: state
+        entity_id: binary_sensor.aikos_intercom_talk_in_call
+        from: "on"
+        to: "off"
+        id: end
+      - trigger: state
+        entity_id: input_boolean.aikos_test_in_call
+        from: "off"
+        to: "on"
+        id: start_test
+      - trigger: state
+        entity_id: input_boolean.aikos_test_in_call
+        from: "on"
+        to: "off"
+        id: end_test
+      - trigger: event
+        event_type: aikos_talk_transcript
+        id: msg
+      - trigger: event
+        event_type: aikos_talk_transcript_test
+        id: msg_test
+    actions:
+      - action: notify.send_message
+        continue_on_error: true
+        target:
+          entity_id: notify.aikos_call_archive
+        data:
+          message: >-
+            {%- set test = trigger.id.endswith('_test') -%}
+            {%- set call_ent = 'input_boolean.aikos_test_in_call' if test else 'binary_sensor.aikos_intercom_talk_in_call' -%}
+            {%- if trigger.id in ['start', 'start_test'] -%}
+              {%- set ns = namespace(d=[]) -%}
+              {%- for did in integration_entities('esphome') | map('device_id') | reject('none') | unique -%}
+                {%- if device_attr(did, 'manufacturer') == 'aikos-home' -%}
+                  {%- set ns.d = ns.d + [{'name': device_attr(did, 'name'), 'model': device_attr(did, 'model'),
+                                          'sw': device_attr(did, 'sw_version')}] -%}
+                {%- endif -%}
+              {%- endfor -%}
+              {{ {'type': 'call_start', 't': now().isoformat(timespec='seconds'), 'test': test,
+                  'call_id': trigger.to_state.last_changed.isoformat(timespec='seconds'), 'devices': ns.d} | to_json }}
+            {%- elif trigger.id in ['end', 'end_test'] -%}
+              {{ {'type': 'call_end', 't': now().isoformat(timespec='seconds'), 'test': test,
+                  'call_id': trigger.from_state.last_changed.isoformat(timespec='seconds'),
+                  'duration_s': ((trigger.to_state.last_changed - trigger.from_state.last_changed).total_seconds() | round(1))} | to_json }}
+            {%- else -%}
+              {%- set d = trigger.event.data -%}
+              {%- set running = is_state(call_ent, 'on') -%}
+              {{ {'type': 'message', 't': d.get('created', now().isoformat(timespec='seconds')), 'test': test,
+                  'call_id': (states[call_ent].last_changed.isoformat(timespec='seconds') if running else ''),
+                  'in_call': running, 'side': d.get('side', ''), 'speaker': d.get('speaker', ''),
+                  'role': d.get('speaker_role', ''), 'urgent': d.get('urgent', false), 'message': d.get('message', ''),
+                  'text': d.get('text', ''), 'text_original': d.get('text_original', ''), 'language': d.get('language', ''),
+                  'device': d.get('device', ''), 'duration_s': d.get('duration_s'), 'transcribe_s': d.get('transcribe_s'),
+                  'model': d.get('model', ''), 'transcriber': d.get('version', '')} | to_json }}
+            {%- endif -%}

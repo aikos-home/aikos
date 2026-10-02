@@ -31,6 +31,24 @@ After changes: reload `template`, `script`, `automation`, `shell_command`, the `
 The log reads the transcript sensors `sensor.talk_transcript` (room side) and `sensor.talk_transcript_door` (door side)
 written by the transcriber service, and the door call sensor `binary_sensor.aikos_intercom_talk_in_call`.
 
+## Call archive (optional, R23)
+
+A full archive of every call for development: one JSON line per event in `/config/aikos_archive/calls.jsonl`:
+`call_start` (with name, model and firmware version of every device whose manufacturer is `aikos-home`), every transcript
+(`message`: time, side, speaker, role, urgency, message, text, original language, device, latency, transcriber version if the
+transcriber sends one) and `call_end` (with duration). Test traffic is in the same file, marked `"test": true`. Devices keep
+only the newest messages (R27); the archive keeps everything until you delete it. It holds what visitors said: keep it local.
+
+**Off unless you set it up** (the automation fails quietly without the notify entity):
+1. `configuration.yaml`: `homeassistant: allowlist_external_dirs: [/config/aikos_archive]` and create that folder (never
+   `/config/www`: Home Assistant serves it without login). Restart.
+2. Settings → Devices & services → Add integration → **File** → Notification service → file path
+   `/config/aikos_archive/calls.jsonl`, no timestamp.
+3. Rename the new entity to `notify.aikos_call_archive`.
+
+The archive is written by the File integration, never by a shell, so text a visitor said can never become a command
+(`tests/test_call_archive.py` sends quotes and shell syntax and checks they are stored verbatim).
+
 ## Tests never touch live entities
 
 `sensor.aikos_call_log_test` runs exactly the same macro, fed only by `sensor.talk_transcript_test` /

@@ -45,6 +45,15 @@ class EntityIdCheck(unittest.TestCase):
             with self.subTest(text=text):
                 self.assertEqual(hits("HA entity id", text), [])
 
+    def test_ignores_home_assistant_core_actions(self):
+        for text in ["action: notify" + DOT + "send_message", "service: input_boolean" + DOT + "turn_on",
+                     "automation" + DOT + "reload", "input_text" + DOT + "set_value"]:
+            with self.subTest(text=text):
+                self.assertEqual(hits("HA entity id", text), [])
+        # an entity whose object id only starts like an action is still flagged
+        self.assertEqual(len(hits("HA entity id", "input_boolean" + DOT + "turn_on_lights")), 1)
+        self.assertEqual(len(hits("HA entity id", "notify" + DOT + "send_message_phone")), 1)
+
 
 class AddressChecks(unittest.TestCase):
     def test_private_ipv4(self):
