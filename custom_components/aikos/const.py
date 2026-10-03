@@ -15,6 +15,8 @@ OPT_RESIDENTS = "residents"
 OPT_NOTIFY = "notify_targets"
 # Call archive (R23, developer use): every call as JSON lines in <config>/aikos_archive/calls.jsonl. Default off.
 OPT_ARCHIVE = "call_archive"
+# The front door contact the devices follow (binary_sensor.aikos_front_door, debounced).
+OPT_FRONT_DOOR = "front_door"
 
 # Call log sources. Live: the transcriber's sensors and the talk computer's call sensor (ids as the devices and the
 # transcriber create them). Test: the bench stand-ins from the homeassistant/ package, so tests never touch the live log.

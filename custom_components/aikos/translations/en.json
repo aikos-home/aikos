@@ -14,6 +14,9 @@
     "binary_sensor": {
       "quiet_hours_active": {
         "name": "Quiet hours active"
+      },
+      "front_door": {
+        "name": "Front door"
       }
     },
     "switch": {
@@ -47,13 +50,15 @@
           "doorbell": "Doorbell",
           "residents": "Residents",
           "notify_targets": "Phones (notify services)",
-          "call_archive": "Call archive (developers)"
+          "call_archive": "Call archive (developers)",
+          "front_door": "Front door sensor"
         },
         "data_description": {
           "doorbell": "The doorbell's event (or a binary sensor that turns on when pressed).",
           "residents": "Nobody home = none of these persons is home.",
           "notify_targets": "Where the push goes, e.g. the mobile app service mobile_app_<phone>.",
-          "call_archive": "Every call (start with firmware versions, every message, end) as JSON lines in aikos_archive/calls.jsonl in the configuration folder. Stays until you delete it."
+          "call_archive": "Every call (start with firmware versions, every message, end) as JSON lines in aikos_archive/calls.jsonl in the configuration folder. Stays until you delete it.",
+          "front_door": "The door contact the devices follow (opening the front door ends a call). aikos debounces it by 2 s."
         }
       }
     }

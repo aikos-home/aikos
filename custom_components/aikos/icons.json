@@ -3,6 +3,9 @@
     "binary_sensor": {
       "quiet_hours_active": {
         "default": "mdi:sleep"
+      },
+      "front_door": {
+        "default": "mdi:door"
       }
     },
     "switch": {

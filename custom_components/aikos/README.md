@@ -1,6 +1,7 @@
 # aikos integration for Home Assistant
 
-The household logic of aikos, installed via HACS. Version **0.4.1** (tag `aikos-v0.4.1`): quiet hours (0.1.0), the ring push (0.2.0, tag `aikos-v0.2.0`), the call log (0.3.0) and the call archive. More blocks follow (where the bell
+The household logic of aikos, installed via HACS. Version **0.5.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0), the call archive (0.4.x, tag `aikos-v0.4.1`) and the
+front door. More blocks follow (where the bell
 rings, presence, alarm, pairing of devices); each comes as a new version.
 
 ## Install
@@ -90,6 +91,7 @@ what the devices read.
 | `sensor.py` | The call log sensors, event and logbook |
 | `call_archive.py` | The archive's lines (no Home Assistant code) |
 | `archive_writer.py` | Listens to calls and transcripts, appends the lines |
+| `front_door.py` | The debounced front door |
 | `config_flow.py`, `__init__.py` | Setting up and removing aikos |
 
 ## Tests
@@ -99,6 +101,8 @@ what the devices read.
 
 ## History
 
+- 0.5.0: the front door moves here from the package (option "Front door sensor" instead of `input_text.aikos_front_door_source`).
+  The archive option no longer turns off when the options are saved without it.
 - 0.4.1: the archive reads the device registry the supported way (no deprecation warning; would have stopped working in HA 2027.9).
 - 0.4.0: the call archive moves here from the package (an option instead of File integration + allowlist; same file and lines,
   plus the integration's own version in `call_start`).
