@@ -59,6 +59,14 @@ class VisitorTranslation(unittest.TestCase):
         self.assertEqual(self.translations(fake), [])
         self.assertEqual(len(posts), 2)
 
+    def test_llm_returning_the_german_sends_no_update(self):
+        fake = FakeServers(HEARD, translation="Ich komme gleich runter!", visitor_language="en")
+        self.addCleanup(fake.close)
+        posts = self.run_worker(fake)
+        self.assertEqual(len(self.translations(fake)), 1)
+        self.assertTrue(all("text_visitor" not in a for _, a in posts))
+        self.assertEqual(len(posts), 2)
+
     def test_llm_down_keeps_the_german_answer(self):
         fake = FakeServers(HEARD, visitor_language="en")
         self.addCleanup(fake.close)

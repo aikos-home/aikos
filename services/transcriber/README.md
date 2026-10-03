@@ -52,6 +52,9 @@ text first, exactly as before. Then it reads the call's `visitor_language` from 
 does it translate the answer (the `message`, else the text) with the local LLM and send an update with `text_visitor` and
 `visitor_language`. German calls get no extra step (one state read after publishing). The language comes from the transcription
 itself: the aikos integration sets it from a door sentence Whisper is sure of. Who is speaking is still found on the German text.
+If the LLM gives the German back unchanged, no update is sent. In a foreign call the translation runs before the language
+pass (pass 2), so the event `aikos_talk_transcript` comes about one translation (~1–3 s) later than in a German call; the
+German text on the screens is not delayed.
 
 Needs: a whisper.cpp server with the OpenAI-compatible `/v1/audio/transcriptions` (large-v3 recommended) and, optional,
 Ollama with `qwen3:8b` (fallback for "who is speaking", and translation).

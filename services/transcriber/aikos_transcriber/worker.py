@@ -142,7 +142,11 @@ def main():
         # R28: only after the German text is out, and only in a call whose visitor speaks another language
         to_lang = visitor_language(a.ha_url, token, call_log)
         if to_lang:
-            translated = from_german(who.message or text, LANGUAGES.get(to_lang, (to_lang,))[0], a.llm_url, a.llm_model)
+            source = who.message or text
+            translated = from_german(source, LANGUAGES.get(to_lang, (to_lang,))[0], a.llm_url, a.llm_model)
+            if translated and same_words(translated, source):            # the LLM gave the German back: nothing to send
+                print(f"  for the visitor ({to_lang}): the LLM returned the German unchanged, no update", flush=True)
+                translated = ""
             if translated:
                 data.update({"text_visitor": translated, "visitor_language": to_lang})
                 ha(a.ha_url, token, "POST", f"/api/states/{entity}", {"state": created, "attributes": {**data, **extra}})
@@ -165,6 +169,12 @@ def main():
     ha(a.ha_url, token, "POST", f"/api/events/{event}", data)
     print(f"  language {lang} ({lang_p:.2f}) after {time.time() - t0:.1f} s"
           + (f": “{data['text_original']}”" if lang != "de" else ""), flush=True)
+
+def same_words(a: str, b: str) -> bool:
+    """True if two sentences have the same words (case, punctuation and spacing aside)."""
+    norm = lambda x: " ".join("".join(ch for ch in x.lower() if ch.isalnum() or ch.isspace()).split())
+    return norm(a) == norm(b)
+
 
 def visitor_language(url: str, token: str, call_log: str) -> str:
     """The call's visitor language from the aikos call log ("" = German, unknown, or no call log)."""
