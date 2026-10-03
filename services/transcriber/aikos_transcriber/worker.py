@@ -10,6 +10,8 @@ attributes text, message, speaker, speaker_kind, speaker_role, speaker_org, spea
 key_id, duration_s, language, language_name(_en), language_probability, text_original, model, created, source,
 transcribe_s; plus the event aikos_talk_transcript. Test senders go to *_test entities and aikos_talk_transcript_test.
 Utterances without words are not published. Local only: audio goes to the Whisper server, never to a cloud.
+R28 (--translate-to-visitor, room side): when the call log says the visitor speaks another language, the German answer goes out
+first as always; its translation into the visitor's language follows as an update (attributes text_visitor, visitor_language).
 
 Part of the aikos transcriber (split from roomkey tools/transcribe_publish.py at d0d52b9, code unchanged)."""
 from __future__ import annotations
@@ -25,7 +27,7 @@ from .audio import has_speech, voiced_frames
 from .echo import drop_echo, is_household, resident_overlap_s, resident_talk, speech_outside_s
 from .ha import ha, key_for_ip
 from .identity import WHISPER_PROMPT, identify, is_noise, prompt_echo, strip_captions
-from .translate import to_german
+from .translate import from_german, to_german
 from .whisper import LANGUAGES, looks_german, spoken_language, whisper
 
 
@@ -48,12 +50,16 @@ def main():
     ap.add_argument("--echo-ref", default="sensor.talk_transcript", help="door side: the room transcript to filter echoes against")
     ap.add_argument("--activity-file", default="", help="door side: touched by the room receiver while a resident talks")
     ap.add_argument("--test-sources", default="", help="comma-separated IPs of test senders → *_test entities and event")
+    ap.add_argument("--translate-to-visitor", action="store_true",
+                    help="room side, R28: translate the answer into the visitor's language (from the call log), after the German text")
+    ap.add_argument("--call-log", default="sensor.aikos_call_log", help="where the visitor's language is (visitor_language)")
     a = ap.parse_args()
     entity = a.entity or ("sensor.talk_transcript" if a.side == "room" else "sensor.talk_transcript_door")
     test = a.source_ip in {s.strip() for s in a.test_sources.split(",") if s.strip()}
     sfx = "_test" if test else ""                      # tests never write into live entities (qualitaet.md §3.8)
     entity, event = entity + sfx, "aikos_talk_transcript" + sfx
     echo_ref, activity_file = a.echo_ref + sfx, a.activity_file + sfx if a.activity_file else ""
+    call_log = a.call_log + sfx
     token = a.token_file.expanduser().read_text().strip()
 
     with wave.open(str(a.wav)) as w:
@@ -132,6 +138,15 @@ def main():
     shown = time.time() - t0
     print(f"✎ {a.side} {device or '?'}: “{text}”  → speaker “{who.speaker or '–'}” ({who.method or 'none'}), "
           f"message “{who.message}”  ({duration:.1f} s audio, in HA after {shown:.1f} s) → {entity}", flush=True)
+    if a.translate_to_visitor and a.side == "room" and detected is None and not a.no_llm:
+        # R28: only after the German text is out, and only in a call whose visitor speaks another language
+        to_lang = visitor_language(a.ha_url, token, call_log)
+        if to_lang:
+            translated = from_german(who.message or text, LANGUAGES.get(to_lang, (to_lang,))[0], a.llm_url, a.llm_model)
+            if translated:
+                data.update({"text_visitor": translated, "visitor_language": to_lang})
+                ha(a.ha_url, token, "POST", f"/api/states/{entity}", {"state": created, "attributes": {**data, **extra}})
+                print(f"  for the visitor ({to_lang}) after {time.time() - t0:.1f} s: “{translated}”", flush=True)
     if detected is not None:                               # foreign: everything went out together already
         ha(a.ha_url, token, "POST", f"/api/events/{event}", data)
         print(f"  language {lang} ({lang_p:.2f}), translated: “{original}”", flush=True)
@@ -150,6 +165,15 @@ def main():
     ha(a.ha_url, token, "POST", f"/api/events/{event}", data)
     print(f"  language {lang} ({lang_p:.2f}) after {time.time() - t0:.1f} s"
           + (f": “{data['text_original']}”" if lang != "de" else ""), flush=True)
+
+def visitor_language(url: str, token: str, call_log: str) -> str:
+    """The call's visitor language from the aikos call log ("" = German, unknown, or no call log)."""
+    try:
+        lang = (ha(url, token, "GET", f"/api/states/{call_log}") or {}).get("attributes", {}).get("visitor_language") or ""
+    except Exception:
+        return ""
+    return "" if lang == "de" else str(lang)
+
 
 if __name__ == "__main__":
     try:

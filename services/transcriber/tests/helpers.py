@@ -38,8 +38,9 @@ class FakeServers:
     """Whisper (/whisper), Ollama (/api/chat) and Home Assistant (/api/...) in one local HTTP server.
     heard: recording-name prefix → (German text, verbose result); every HA POST is recorded in .calls."""
 
-    def __init__(self, heard: dict, translation: str = ""):
+    def __init__(self, heard: dict, translation: str = "", visitor_language: str = ""):
         self.heard, self.translation, self.calls = heard, translation, []
+        self.visitor_language, self.gets, self.chats = visitor_language, [], []   # R28: the call log's language; what was asked
         outer = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -52,7 +53,10 @@ class FakeServers:
                 self.send_header("Content-Length", str(len(raw))); self.end_headers(); self.wfile.write(raw)
 
             def do_GET(self):
-                if self.path == "/api/states":
+                outer.gets.append(self.path)
+                if self.path.startswith("/api/states/sensor.aikos_call_log"):
+                    self.send({"state": "x", "attributes": {"visitor_language": outer.visitor_language}})
+                elif self.path == "/api/states":
                     self.send([{"entity_id": "sensor.aikos_roomkey_test_ip_address", "state": "192.0.2.44",
                                 "attributes": {"friendly_name": "aikos RoomKey Test IP address"}}])
                 else:
@@ -66,6 +70,7 @@ class FakeServers:
                     text, verbose = outer.heard[key]
                     self.send(verbose if b"verbose_json" in body else {"text": text})
                 elif self.path == "/api/chat":
+                    outer.chats.append(json.loads(body))
                     if json.loads(body).get("format") == "json":
                         self.send({"message": {"content": json.dumps({"speaker": "", "kind": "none", "role": ""})}})
                     else:
