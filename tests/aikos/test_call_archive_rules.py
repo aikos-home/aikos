@@ -28,3 +28,9 @@ def test_message_keeps_hostile_text_verbatim_and_names_the_transcriber():
 def test_message_outside_a_call_has_no_call_id():
     d = json.loads(call_archive.message(NOW, False, "c1", False, {"side": "room"}))
     assert (d["call_id"], d["in_call"], d["t"]) == ("", False, "2026-10-02T18:30:05+00:00")
+
+
+def test_message_keeps_the_translation_for_the_visitor():
+    d = json.loads(call_archive.message(NOW, False, "c1", True, {"side": "room", "text": "Ich komme.", "text_visitor": "I'm coming.",
+                                                                 "visitor_language": "en"}))
+    assert (d["text_visitor"], d["visitor_language"]) == ("I'm coming.", "en")

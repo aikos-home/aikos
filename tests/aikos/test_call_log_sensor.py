@@ -71,3 +71,17 @@ async def test_restore_keeps_the_running_chat(hass: HomeAssistant):
     await setup(hass)
     a = attrs(hass, LIVE)
     assert a["call_id"] == "c1" and [m["id"] for m in a["messages"]] == ["door-t1"] and hass.states.get(LIVE).state == "t1"
+
+
+async def test_visitor_language_and_translation_reach_the_sensor(hass: HomeAssistant):
+    await setup(hass)
+    await set_state(hass, CALL, "on")
+    await set_state(hass, DOOR, "2026-10-02T12:00:05+02:00", text="Hallo, hier ist Anna.", text_original="Hello, this is Anna.",
+                    language="en", language_name="Englisch", language_probability=0.97, speaker="Anna")
+    assert (attrs(hass, LIVE)["visitor_language"], attrs(hass, LIVE)["visitor_language_name"]) == ("en", "Englisch")
+    await set_state(hass, ROOM, "2026-10-02T12:00:09+02:00", text="Ich komme.", speaker="", device="Key A",
+                    text_visitor="I'm coming.", visitor_language="en")
+    shown = json.loads(attrs(hass, LIVE)["messages_json"])
+    assert (shown[-1]["tr"], shown[-1]["tr_lang"]) == ("I'm coming.", "en")
+    await set_state(hass, CALL, "off")
+    assert attrs(hass, LIVE)["visitor_language"] == ""

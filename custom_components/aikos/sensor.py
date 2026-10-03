@@ -1,7 +1,8 @@
 """The call log sensors: `sensor.aikos_call_log` (live) and `sensor.aikos_call_log_test` (bench, test entities only).
 
 Contract for the devices (unchanged from the former package): attributes `call_id`, `active`, `last_id`, `messages`,
-`messages_json` (newest 10, JSON text; per message `id`, `side` door/room, `who`, `text`).
+`messages_json` (newest 10, JSON text; per message `id`, `side` door/room, `who`, `text`; new since 0.6.0: `tr`, `tr_lang`),
+`visitor_language`, `visitor_language_name` (R28).
 """
 from __future__ import annotations
 
@@ -61,6 +62,8 @@ class CallLogSensor(AikosEntity, RestoreEntity, SensorEntity):
             "last_id": self._log.last_id,
             "messages": [dict(m) for m in self._log.messages],
             "messages_json": self._log.feed_json(),
+            "visitor_language": self._log.visitor_language,
+            "visitor_language_name": self._log.visitor_language_name,
         }
 
     def _in_call(self) -> bool:
@@ -75,6 +78,8 @@ class CallLogSensor(AikosEntity, RestoreEntity, SensorEntity):
             if isinstance(messages, list) and all(isinstance(m, dict) and "id" in m for m in messages):
                 self._log.messages = [dict(m) for m in messages]
             self._log.call_id = str(last.attributes.get("call_id") or "")
+            self._log.visitor_language = str(last.attributes.get("visitor_language") or "")
+            self._log.visitor_language_name = str(last.attributes.get("visitor_language_name") or "")
         watched = [self._room, self._door, self._call] + ([self._button] if self._button else [])
         self.async_on_remove(async_track_state_change_event(self.hass, watched, self._on_change))
 

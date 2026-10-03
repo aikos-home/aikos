@@ -31,4 +31,5 @@ def message(now: datetime, test: bool, call_id: str, in_call: bool, d: Mapping[s
                   "speaker": d.get("speaker", ""), "role": d.get("speaker_role", ""), "urgent": d.get("urgent", False),
                   "message": d.get("message", ""), "text": d.get("text", ""), "text_original": d.get("text_original", ""),
                   "language": d.get("language", ""), "device": d.get("device", ""), "duration_s": d.get("duration_s"),
-                  "transcribe_s": d.get("transcribe_s"), "model": d.get("model", ""), "transcriber": d.get("version", "")})
+                  "transcribe_s": d.get("transcribe_s"), "model": d.get("model", ""), "transcriber": d.get("version", ""),
+                  "text_visitor": d.get("text_visitor", ""), "visitor_language": d.get("visitor_language", "")})
