@@ -1,7 +1,7 @@
 # aikos integration for Home Assistant
 
-The household logic of aikos, installed via HACS. Version **0.5.0** (tag `aikos-v0.5.0`): quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0), the call archive (0.4.x, tag `aikos-v0.4.1`) and the
-front door. More blocks follow (where the bell
+The household logic of aikos, installed via HACS. Version **0.6.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x) and the
+front door (0.5.0, tag `aikos-v0.5.0`). More blocks follow (where the bell
 rings, presence, alarm, pairing of devices); each comes as a new version.
 
 ## Install
@@ -65,6 +65,10 @@ what the devices read.
 - A later update of the same transcript replaces the message. Every new message fires the event `aikos_call_message` and writes
   a logbook entry (live log only).
 - Survives a restart (the last state is restored).
+- **R28, visitor language (0.6.0):** attributes `visitor_language` (code, `""` = German) and `visitor_language_name`. Set by a door
+  sentence Whisper is sure of (probability ≥ 0.8, at least 3 words); holds for the call; a sure German sentence sets it back; reset
+  at call start and end. When the transcriber sends a resident's answer translated into that language (`text_visitor`,
+  `visitor_language`), the message gets `tr` and `tr_lang`: the door screen shows `tr` to the visitor.
 
 
 
@@ -101,6 +105,7 @@ what the devices read.
 
 ## History
 
+- 0.6.0: R28 visitor language in the call log; translations for the visitor in the log (`tr`, `tr_lang`) and the archive.
 - 0.5.0: the front door moves here from the package (option "Front door sensor" instead of `input_text.aikos_front_door_source`).
   The archive option no longer turns off when the options are saved without it.
 - 0.4.1: the archive reads the device registry the supported way (no deprecation warning; would have stopped working in HA 2027.9).
