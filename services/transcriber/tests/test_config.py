@@ -67,6 +67,14 @@ class ReceiverArgs(unittest.TestCase):
         self.assertIn("--activity-file", kv["--exec"])
         self.assertIn('"keep_alive":-1', kv["--on-start"])
 
+    def test_visitor_translation_room_only_and_off_by_default(self):
+        _, off = self.args(AIKOS_SIDE="room")
+        _, on = self.args(AIKOS_SIDE="room", AIKOS_VISITOR_TRANSLATION="1")
+        _, door = self.args(AIKOS_SIDE="door", AIKOS_VISITOR_TRANSLATION="1")
+        self.assertNotIn("--translate-to-visitor", off["--exec"])          # R28 off: the worker call is exactly as before
+        self.assertTrue(on["--exec"].endswith("--translate-to-visitor"))
+        self.assertNotIn("--translate-to-visitor", door["--exec"])         # the door side never translates for the visitor
+
 
 if __name__ == "__main__":
     unittest.main()

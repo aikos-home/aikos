@@ -5,7 +5,7 @@ at the door (door side). It also tells who is speaking ("Paketdienst · DHL", "A
 foreign languages into German. Everything runs locally: audio goes to a Whisper server on your own network, never to a
 cloud. Python 3.9+ standard library only.
 
-Version **1.1.1** (component tag `transcriber-v1.1.1`).
+Version **1.2.0** (component tag `transcriber-v1.1.1` until 1.2.0 is tagged).
 
 ## Interface
 
@@ -21,13 +21,15 @@ crash there never stops the receiver.
 | `sensor.talk_transcript` | room | state = ISO time of the utterance; attributes `text`, `message`, `speaker`, `speaker_kind`, `speaker_role`, `speaker_org`, `speaker_method`, `urgent`, `side`, `device`, `key_id`, `duration_s`, `language`, `language_name`, `language_name_en`, `language_probability`, `text_original`, `model`, `created`, `source`, `transcribe_s` |
 | `sensor.talk_transcript_door` | door | the same |
 | `sensor.talk_live_door` | door | partial text while the visitor is still talking (`sensor.talk_live` on the room side with `AIKOS_LIVE=1`) |
+| `text_visitor`, `visitor_language` | room | **R28, with `AIKOS_VISITOR_TRANSLATION=1`:** the resident's answer translated into the visitor's language; sent as an update after the German text, only in a call whose visitor speaks another language |
 | event `aikos_talk_transcript` | both | the same data as the sensor attributes |
 
 **Test senders** (`AIKOS_TEST_SOURCES`): their text goes to the same names with `_test` appended
 (`sensor.talk_transcript_door_test`, event `aikos_talk_transcript_test`, ...), never into the live entities.
 
 **Reads from Home Assistant:** the `sensor.*_ip_address` entities, to name the sending device; on the door side
-`sensor.talk_transcript`, to drop door sentences that only repeat the resident (the door mic hears the door speaker).
+`sensor.talk_transcript`, to drop door sentences that only repeat the resident (the door mic hears the door speaker); on the
+room side with R28 on, `sensor.aikos_call_log` (`visitor_language`, set by the aikos integration 0.6.0), after the German text is out.
 
 **Between the two sides:** the activity file `<AIKOS_STATE_DIR>/room_active` (`room_active_test` for test senders).
 Content = when the resident started talking (Unix time), modification time = the last audio. The door side reads it:
@@ -44,6 +46,15 @@ the speaker while a resident talked for at least 0.5 s during it, it is not publ
 the door mic hearing the resident when no room transcript can filter it, e.g. a key whose mic sends silence (system test
 01.10., W1). **Known trade-off:** a household member at the door who introduces themselves while someone inside is
 talking is dropped too; without that overlap ("Hier ist Jonas, ich habe meinen Schlüssel vergessen") it is shown.
+
+**R28, translation to the visitor (option, off by default):** with `AIKOS_VISITOR_TRANSLATION=1` the room side publishes the German
+text first, exactly as before. Then it reads the call's `visitor_language` from the aikos call log. Only if that is another language
+does it translate the answer (the `message`, else the text) with the local LLM and send an update with `text_visitor` and
+`visitor_language`. German calls get no extra step (one state read after publishing). The language comes from the transcription
+itself: the aikos integration sets it from a door sentence Whisper is sure of. Who is speaking is still found on the German text.
+If the LLM gives the German back unchanged, no update is sent. In a foreign call the translation runs before the language
+pass (pass 2), so the event `aikos_talk_transcript` comes about one translation (~1–3 s) later than in a German call; the
+German text on the screens is not delayed.
 
 Needs: a whisper.cpp server with the OpenAI-compatible `/v1/audio/transcriptions` (large-v3 recommended) and, optional,
 Ollama with `qwen3:8b` (fallback for "who is speaking", and translation).
@@ -63,6 +74,7 @@ Environment variables (on a Mac: the settings file of the LaunchAgents, see belo
 | `AIKOS_LLM_URL` | `http://127.0.0.1:11434` | Ollama |
 | `AIKOS_LIVE` | 1 door, 0 room | publish partial text while talking |
 | `AIKOS_SPLIT` | 0 | door side: cut the audio into utterances at pauses (door mic on for the whole call, voice v2) |
+| `AIKOS_VISITOR_TRANSLATION` | 0 | room side, R28: translate the resident's answer into the visitor's language (needs the aikos integration ≥ 0.6.0 and Ollama) |
 | `AIKOS_TEST_SOURCES` | `127.0.0.1` | comma-separated sender IPs that are tests; set but empty = none |
 | `AIKOS_RECORDINGS` | `~/Library/Application Support/aikos/transcriber/recordings` | recordings are deleted when handled |
 | `AIKOS_STATE_DIR` | `~/Library/Application Support/aikos/transcriber` | the activity file |
@@ -77,7 +89,8 @@ Run one side: `cd services/transcriber && AIKOS_SIDE=door ... python3 -m aikos_t
 | a required setting is missing, the token file is unreadable | exit 2 with the reason, before anything listens |
 | the port is taken | the receiver exits; launchd starts it again after 10 s |
 | Whisper or Home Assistant does not answer | this utterance is not published; the worker logs the error, the recording is deleted, the receiver keeps running |
-| Ollama does not answer | published anyway: "who is speaking" from the rules only, foreign speech untranslated |
+| Ollama does not answer | published anyway: "who is speaking" from the rules only, foreign speech untranslated; R28: the German answer only |
+| R28: no call log, or it can't be read | the German answer only, as without R28 |
 | silence, a click, music, Whisper's typical hallucinations (subtitle credits like "ARD Text im Auftrag") | nothing is published; such a credit is never taken as the speaker either |
 | a second utterance in the same second | its recording gets `_2`, `_3`, ...; nothing is overwritten |
 
@@ -129,6 +142,8 @@ Changes go through a pull request. Once tagged, this block is listed in [`FROZEN
 
 ## History
 
+- 1.2.0 (not tagged yet): R28 translation to the visitor, behind `AIKOS_VISITOR_TRANSLATION` (default off). Written by aikos core
+  for the roomkey maintainers' review (hardware phase, 02.10.); German calls unchanged.
 - 1.1.1: noise is never shown as text (R24, live 01.10. 23:06–23:10): a noise at the door came out of Whisper as the
   subtitle credit "ARD Text im Auftrag", was published 3 times (live text too), and the LLM even took it for the speaker.
   Subtitle credits with a broadcaster ("… im Auftrag des ZDF", "ZDF für funk", "ARD Text", "Videotext") or a bare "im

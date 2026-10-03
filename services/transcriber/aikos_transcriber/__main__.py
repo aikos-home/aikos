@@ -25,17 +25,19 @@ def receiver_args(c: Config, python: str) -> list[str]:
     if c.live:
         extra += ["--live", c.live_entity, "--live-side", c.side, "--ha-url", c.ha_url, "--token-file", str(c.token_file),
                   "--whisper-url", c.whisper_url, "--known-names", c.known_names]
-    echo_args = ""
+    worker_extra = ""                                                     # side-specific worker arguments
     if c.side == "room":
         extra += ["--activity-file", str(c.activity_file)]                # "a resident talks" (for the door side's echo guard)
+        if c.visitor_translation:                                         # R28, off unless AIKOS_VISITOR_TRANSLATION=1
+            worker_extra = "--translate-to-visitor"
     else:
         if c.split:                                                       # voice v2: door mic on for the whole call
             extra += ["--split-on-silence"]
         extra += ["--live-quiet-file", str(c.activity_file)]
-        echo_args = f"--activity-file {q(str(c.activity_file))}"
+        worker_extra = f"--activity-file {q(str(c.activity_file))}"
     worker = (f"{q(python)} -u -m aikos_transcriber.worker {{wav}} --side {c.side} --source-ip {{src}} --ha-url {q(c.ha_url)} "
               f"--token-file {q(str(c.token_file))} --whisper-url {q(c.whisper_url)} --llm-url {q(c.llm_url)} "
-              f"--known-names {q(c.known_names)} --delete-wav --test-sources {q(c.test_sources)} {echo_args}").rstrip()
+              f"--known-names {q(c.known_names)} --delete-wav --test-sources {q(c.test_sources)} {worker_extra}").rstrip()
     warm_llm = f"curl -s -m 30 {q(c.llm_url)}/api/generate -d '{{\"model\":\"qwen3:8b\",\"keep_alive\":-1}}' >/dev/null"
     return (["--port", str(c.port), "--out", str(c.recordings), "--test-sources", c.test_sources] + extra
             + ["--on-start", warm_llm, "--exec", worker])
