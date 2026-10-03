@@ -14,6 +14,9 @@
     "binary_sensor": {
       "quiet_hours_active": {
         "name": "Ruhezeit aktiv"
+      },
+      "front_door": {
+        "name": "Haustür"
       }
     },
     "switch": {
@@ -47,13 +50,15 @@
           "doorbell": "Klingel",
           "residents": "Bewohner",
           "notify_targets": "Handys (Notify-Dienste)",
-          "call_archive": "Gesprächsarchiv (Entwicklung)"
+          "call_archive": "Gesprächsarchiv (Entwicklung)",
+          "front_door": "Haustürsensor"
         },
         "data_description": {
           "doorbell": "Das Event der Klingel (oder ein Binärsensor, der beim Drücken angeht).",
           "residents": "Niemand zu Hause = keine dieser Personen ist zu Hause.",
           "notify_targets": "Wohin der Push geht, z. B. der Dienst der Handy-App mobile_app_<handy>.",
-          "call_archive": "Jedes Gespräch (Beginn mit Firmware-Versionen, jede Nachricht, Ende) als JSON-Zeilen in aikos_archive/calls.jsonl im Konfigurationsordner. Bleibt, bis du es löschst."
+          "call_archive": "Jedes Gespräch (Beginn mit Firmware-Versionen, jede Nachricht, Ende) als JSON-Zeilen in aikos_archive/calls.jsonl im Konfigurationsordner. Bleibt, bis du es löschst.",
+          "front_door": "Der Türkontakt, dem die Geräte folgen (Haustür öffnen beendet ein Gespräch). aikos entprellt ihn um 2 s."
         }
       }
     }

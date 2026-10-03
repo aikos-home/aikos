@@ -1,7 +1,7 @@
 # Home Assistant stand-ins
 
 What aikos adds to Home Assistant and the [integration](../custom_components/aikos/README.md) doesn't do yet, as plain HA
-configuration. Parts move into the integration step by step (quiet hours 0.1.0, call log 0.3.0, call archive 0.4.0).
+configuration. Parts move into the integration step by step (quiet hours 0.1.0, call log 0.3.0, call archive 0.4.0, front door 0.5.0).
 It is the source of truth: deploy from here, don't edit the copies in Home Assistant.
 
 | File | Goes to (HA config dir) | What |
@@ -18,7 +18,7 @@ for the very first `shell_command`.
 
 | Entity | Meaning |
 |---|---|
-| `binary_sensor.aikos_front_door` | Front door open, 2 s debounced. Source = the entity named in `input_text.aikos_front_door_source`. Attribute `stuck`: open for more than 10 min (then it ends nothing). Devices only react to an off → on edge. |
+| `binary_sensor.aikos_front_door` | Front door, 2 s debounced. **Now provided by the aikos integration** (0.5.0): pick the door contact in aikos → Configure → "Front door sensor" (was `input_text.aikos_front_door_source`). Attribute `stuck`: open for more than 10 min. Devices only react to an off → on edge. |
 | `binary_sensor.aikos_test_doorbell` | **Test only:** on for 1 s when `input_button.aikos_test_doorbell` is pressed. A stand-in doorbell for bench tests of the aikos ring push. |
 | `binary_sensor.aikos_quiet_hours` | Quiet hours active. **Moved into the aikos integration** (0.1.0, [README](../custom_components/aikos/README.md)); same entity id. |
 | `sensor.aikos_people` | From `aikos_local.yaml`. Attribute `keys` (and `keys_json` as text for ESPHome): room key node name → `{name, room, host}`. |
