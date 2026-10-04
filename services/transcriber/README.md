@@ -5,7 +5,7 @@ at the door (door side). It also tells who is speaking ("Paketdienst · DHL", "A
 foreign languages into German. Everything runs locally: audio goes to a Whisper server on your own network, never to a
 cloud. Python 3.9+ standard library only.
 
-Version **1.2.2** (component tag `transcriber-v1.1.1` until 1.2.x is tagged).
+Version **1.2.3** (component tag `transcriber-v1.1.1` until 1.2.x is tagged).
 
 ## Interface
 
@@ -78,7 +78,7 @@ Environment variables (on a Mac: the settings file of the LaunchAgents, see belo
 | `AIKOS_TEST_SOURCES` | `127.0.0.1` | comma-separated sender IPs that are tests; set but empty = none |
 | `AIKOS_RECORDINGS` | `~/Library/Application Support/aikos/transcriber/recordings` | recordings are deleted when handled |
 | `AIKOS_STATE_DIR` | `~/Library/Application Support/aikos/transcriber` | the activity file |
-| `AIKOS_PYTHON` | the running Python | Python for the worker processes |
+| `AIKOS_PYTHON` | the running Python | Python for the worker processes; on a Mac also the agents' and `deploy.sh`'s Python: set an absolute path to a pinned interpreter (e.g. uv-managed CPython 3.12) so macOS or Command Line Tools updates can't swap it |
 
 Run one side: `cd services/transcriber && AIKOS_SIDE=door ... python3 -m aikos_transcriber`.
 
@@ -142,6 +142,9 @@ Changes go through a pull request. Once tagged, this block is listed in [`FROZEN
 
 ## History
 
+- 1.2.3 (not tagged yet): deployment only, the service is unchanged. `deploy.sh` uses `AIKOS_PYTHON` from the settings file (absolute
+  path, checked) for the tests, both LaunchAgents and the smoke test; without it `/usr/bin/python3` as before. Reason: the agents ran on
+  Apple's Command Line Tools Python 3.9, which a pending CLT update could replace underneath a frozen block (Aikos-hub, 04.10.).
 - 1.2.2 (not tagged yet): door side with `AIKOS_SPLIT=1`: where an utterance starts and ends is decided by the door's own speech
   detector (aikos_voice VoiceGate, ported: 11 dB over a 1.5 s floor, sustained for a third of 120 ms) instead of a per-packet
   threshold. In a room with music the old threshold took every beat for speech, so the 1.5 s pause after a visitor never came

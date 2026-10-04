@@ -81,10 +81,28 @@ class Agents(unittest.TestCase):
         with self.assertRaises(ValueError):
             launchd.agent("hall", SHARED, Path("/srv/aikos"), Path("/logs"))
 
+    def test_pinned_interpreter(self):
+        a = launchd.agent("door", SHARED, Path("/srv/aikos"), Path("/logs"), "/opt/py/bin/python3.12")
+        self.assertIn("exec /opt/py/bin/python3.12 -u -m aikos_transcriber >> ", a["ProgramArguments"][2])
+
 
 @unittest.skipUnless(os.name == "posix" and shutil.which("bash"), "needs bash (macOS, Linux)")
 class DeployScript(unittest.TestCase):
     """Regression 1.0.1: deploy.sh runs with set -eu -o pipefail; lsof exits 1 on mere warnings (a Time Machine SMB mount)."""
+
+    def test_interpreter_from_the_settings_file(self):
+        """1.2.3: AIKOS_PYTHON in transcriber.env pins the agents' Python; without it deploy.sh keeps /usr/bin/python3."""
+        script = (Path(__file__).resolve().parent.parent / "deploy" / "deploy.sh").read_text(encoding="utf-8")
+        fn = re.search(r"^interpreter\(\) \{.*\}$", script, re.M).group(0)
+        tmp = Path(tempfile.mkdtemp())
+        pinned, plain = tmp / "pinned.env", tmp / "plain.env"
+        pinned.write_text("AIKOS_KNOWN_NAMES=Anna\nAIKOS_PYTHON=/opt/uv/python3.12\n")
+        plain.write_text("AIKOS_KNOWN_NAMES=Anna\n")
+        run = lambda f: subprocess.run(["bash", "-c", f"set -eu -o pipefail; {fn}; interpreter {f}"],
+                                       capture_output=True, text=True).stdout.strip()
+        self.assertEqual(run(pinned), "/opt/uv/python3.12")
+        self.assertEqual(run(plain), "")
+        self.assertEqual(run(tmp / "missing.env"), "")
 
     def test_receiver_count_survives_lsof_warnings(self):
         script = (Path(__file__).resolve().parent.parent / "deploy" / "deploy.sh").read_text(encoding="utf-8")
