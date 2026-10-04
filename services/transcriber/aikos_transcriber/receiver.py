@@ -18,6 +18,32 @@ from pathlib import Path
 RATE, PT_L16, PT_CN = 16000, 96, 13   # PT 13 = comfort noise (RFC 3389): the sender stopped talking
 
 
+class VoiceGate:
+    """Speech from levels alone, as the door's own detector does it (aikos_voice level.h VoiceGate, same constants): a
+    20 ms packet counts when its smoothed level is 11 dB above the floor (5th percentile of the last 1.5 s, not the
+    quietest packet) for at least a third of the last 120 ms. Music beats and clicks of a few packets don't count; the
+    plain per-packet threshold took them for speech, so a pause in a noisy room never came and the door segment ran
+    to --max-s (04.10. 20:10: speech ended 08.6, text at 22.1)."""
+    VOICE_DB, MIN_DB, WINDOW_MS, PERCENTILE, SKIP, SUSTAIN_MS, N = 11.0, -75.0, 1500, 0.05, 2, 120, 96
+
+    def __init__(self):
+        self.hist = collections.deque(maxlen=self.N)                     # (ms, dB, loud)
+        self.smooth = -120.0
+
+    def note(self, db: float, now_ms: float) -> bool:
+        if db < -100.0:                                                  # muted / digital silence: no information
+            return False
+        win = [d for m, d, _ in self.hist if now_ms - m < self.WINDOW_MS] + [db]
+        n = len(win)
+        k = max(int(self.PERCENTILE * (n - 1)), self.SKIP if n > 8 else 0)
+        floor = sorted(win)[k]
+        self.smooth = db if self.smooth < -100.0 else self.smooth * 0.7 + db * 0.3
+        loud = self.smooth > floor + self.VOICE_DB and db > self.MIN_DB
+        self.hist.append((now_ms, db, loud))
+        recent = [l for m, _, l in self.hist if now_ms - m < self.SUSTAIN_MS]
+        return loud and n > 8 and len(recent) >= 3 and 3 * sum(recent) >= len(recent)
+
+
 class Recording:
     def __init__(self, out: Path, src):
         out.mkdir(parents=True, exist_ok=True)
@@ -29,6 +55,7 @@ class Recording:
         self.wav.setnchannels(1); self.wav.setsampwidth(2); self.wav.setframerate(RATE)
         self.src, self.t0, self.last = src, time.time(), time.time()
         self.voiced_at = 0          # sample count at the last loud packet (RTP time, not wall-clock)
+        self.speech_at = 0          # sample count at the last sustained speech (VoiceGate, --split-on-silence)
         self.voiced_pkts = 0
         self.pkts = self.lost = self.samples = 0
         self.pcm = bytearray()      # the utterance so far (16-bit LE), for --live
@@ -69,6 +96,9 @@ class Recording:
 
     def quiet_s(self) -> float:
         return (self.samples - self.voiced_at) / RATE
+
+    def speech_quiet_s(self) -> float:
+        return (self.samples - self.speech_at) / RATE
 
     def close(self, exec_tpl=None, min_voiced=0):
         self.wav.close()
@@ -158,6 +188,8 @@ def main(argv=None):
     recs: dict = {}                                                      # sender → Recording
     preroll = collections.defaultdict(lambda: collections.deque(maxlen=15))   # 0.3 s before speech starts
     levels = collections.defaultdict(lambda: collections.deque(maxlen=250))   # last 5 s of packet levels
+    gates = collections.defaultdict(VoiceGate)                          # sender → speech detector (cut decision)
+    gate_ms = collections.defaultdict(float)                            # sender → its stream time (RTP, 20 ms/packet)
     while True:
         try:
             data, src = sock.recvfrom(2048)
@@ -177,16 +209,18 @@ def main(argv=None):
         hdr = 12 + 4 * (data[0] & 0x0F)
         seq = struct.unpack(">H", data[2:4])[0]
         payload = data[hdr:]
-        voiced = True
+        voiced = speech = True
         if a.split_on_silence:
             db = Recording.level_db(payload)
             lv = levels[src]
             lv.append(db)
             floor = sorted(lv)[len(lv) // 10]
-            voiced = db > max(a.vad_db, floor + 10.0) and len(lv) > 5
+            voiced = db > max(a.vad_db, floor + 10.0) and len(lv) > 5   # starts a recording (with its pre-roll)
+            gate_ms[src] += (len(payload) // 2) / 16.0
+            speech = gates[src].note(db, gate_ms[src])                  # decides where it ends
         rec = recs.get(src)
         if rec is None:
-            if not voiced:
+            if not (voiced and speech):                                  # split: only sustained speech starts one
                 preroll[src].append((seq, payload))
                 continue
             rec = recs[src] = Recording(a.out, src)
@@ -198,8 +232,11 @@ def main(argv=None):
                 subprocess.Popen(a.on_start, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             for pseq, pp in preroll.pop(src, ()):
                 rec.add(pseq, pp, voiced=False)
+            rec.speech_at = rec.samples                                  # the quiet is counted from the start
         rec.add(seq, payload, voiced)
-        if a.split_on_silence and (rec.quiet_s() > a.silence_s or rec.samples / RATE >= a.max_s):
+        if speech:
+            rec.speech_at = rec.samples
+        if a.split_on_silence and (rec.speech_quiet_s() > a.silence_s or rec.samples / RATE >= a.max_s):
             finish(recs.pop(src), min_voiced=15)                      # ≥ 0.3 s of speech
             continue
         if a.split_on_silence:
