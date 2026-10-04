@@ -5,7 +5,7 @@ at the door (door side). It also tells who is speaking ("Paketdienst · DHL", "A
 foreign languages into German. Everything runs locally: audio goes to a Whisper server on your own network, never to a
 cloud. Python 3.9+ standard library only.
 
-Version **1.2.3** (component tag `transcriber-v1.1.1` until 1.2.x is tagged).
+Version **1.2.3** (component tag `transcriber-v1.2.3`).
 
 ## Interface
 
@@ -106,6 +106,11 @@ sends one spoken test sentence per side (`deploy/smoke.py`, macOS `say`, test se
 If anything after the tests fails, the previous LaunchAgents and checkout come back by themselves. Log:
 `~/Library/Logs/aikos/deploy.log`.
 
+**macOS Local Network permission:** a LaunchAgent may reach Home Assistant on the LAN only with that permission. Apple's
+`/usr/bin/python3` is exempt. Any other interpreter (uv, Homebrew) must first be allowed in System Settings → Privacy & Security
+→ Local Network, else every publish fails with `[Errno 65] No route to host`. The smoke test catches it and `deploy.sh` rolls back
+(04.10.).
+
 The house settings live in `~/.aikos/transcriber.env`, never in the repository; start from
 [`deploy/transcriber.env.example`](deploy/transcriber.env.example). Without it, `deploy.sh` takes them over once from
 the existing transcriber LaunchAgents.
@@ -142,19 +147,19 @@ Changes go through a pull request. Once tagged, this block is listed in [`FROZEN
 
 ## History
 
-- 1.2.3 (not tagged yet): deployment only, the service is unchanged. `deploy.sh` uses `AIKOS_PYTHON` from the settings file (absolute
+- 1.2.3: deployment only, the service is unchanged. `deploy.sh` uses `AIKOS_PYTHON` from the settings file (absolute
   path, checked) for the tests, both LaunchAgents and the smoke test; without it `/usr/bin/python3` as before. Reason: the agents ran on
   Apple's Command Line Tools Python 3.9, which a pending CLT update could replace underneath a frozen block (Aikos-hub, 04.10.).
-- 1.2.2 (not tagged yet): door side with `AIKOS_SPLIT=1`: where an utterance starts and ends is decided by the door's own speech
+- 1.2.2 (in tag 1.2.3): door side with `AIKOS_SPLIT=1`: where an utterance starts and ends is decided by the door's own speech
   detector (aikos_voice VoiceGate, ported: 11 dB over a 1.5 s floor, sustained for a third of 120 ms) instead of a per-packet
   threshold. In a room with music the old threshold took every beat for speech, so the 1.5 s pause after a visitor never came
   and the segment ran to 15 s: the text came 13.5 s after the speech ended (bench 04.10. 20:10). Beats and clicks alone no
   longer start a recording either. Logic by the roomkey maintainers.
-- 1.2.1 (not tagged yet): door side with `AIKOS_SPLIT=1`: a resident who starts talking ends the visitor's utterance at once
+- 1.2.1 (in tag 1.2.3): door side with `AIKOS_SPLIT=1`: a resident who starts talking ends the visitor's utterance at once
   (from the room side's activity file). Before, a turn gap shorter than 1.5 s plus the resident's voice from the door speaker
   kept the segment running to 15 s: the visitor's words reached HA 21 s after they began, with the resident's echo in them
   (bench 04.10. 19:54). The echo segment that follows is dropped by the timing rule as before. Logic by the roomkey maintainers.
-- 1.2.0 (not tagged yet): R28 translation to the visitor, behind `AIKOS_VISITOR_TRANSLATION` (default off). Written by aikos core
+- 1.2.0 (in tag 1.2.3, off by default): R28 translation to the visitor, behind `AIKOS_VISITOR_TRANSLATION` (default off). Written by aikos core
   for the roomkey maintainers' review (hardware phase, 02.10.); German calls unchanged.
 - 1.1.1: noise is never shown as text (R24, live 01.10. 23:06–23:10): a noise at the door came out of Whisper as the
   subtitle credit "ARD Text im Auftrag", was published 3 times (live text too), and the LLM even took it for the speaker.
