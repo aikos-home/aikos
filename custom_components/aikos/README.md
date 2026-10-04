@@ -70,7 +70,26 @@ what the devices read.
   at call start and end. When the transcriber sends a resident's answer translated into that language (`text_visitor`,
   `visitor_language`), the message gets `tr` and `tr_lang`: the door screen shows `tr` to the visitor.
 
+### Call archive (0.4.0, for developers)
 
+aikos → Configure → **Call archive** (default off). Every call as JSON lines in `<config>/aikos_archive/calls.jsonl`, kept until you
+delete it:
+- `call_start` with all `aikos-home` devices (name, model, firmware), including the integration itself;
+- `message` for every transcript (`aikos_talk_transcript`), with time, side, speaker, role, text, original, language, device,
+  durations, model and transcriber version; since 0.6.0 also `text_visitor` and `visitor_language` (R28);
+- `call_end` with the duration.
+
+Bench traffic (`aikos_talk_transcript_test`, `input_boolean.aikos_test_in_call`) is marked `"test": true`. Python writes the file
+itself, in order; no shell is involved, so visitor text is stored as data and can never become a command.
+
+### Front door (0.5.0)
+
+aikos → Configure → **Front door sensor**: the door contact (`binary_sensor` or `input_boolean`). `binary_sensor.aikos_front_door`
+follows it with 2 s debounce each way (a blip shorter than that is ignored); unavailable while the contact is, or when none is chosen.
+Attribute `source`; attribute `stuck` = open for more than 10 min (then it ends nothing more). The devices react to its off → on edge:
+opening the front door ends a call (R17.8).
+
+## Errors
 
 | Case | What happens |
 |---|---|
@@ -91,7 +110,7 @@ what the devices read.
 | `switch.py`, `time.py`, `binary_sensor.py` | The entities |
 | `ring_push.py` | When a press becomes a push, and its text (no Home Assistant code) |
 | `ring_notifier.py` | Watches the doorbell and sends the push |
-| `call_log.py` | The call-log rules (R22, R25–R27), no Home Assistant code |
+| `call_log.py` | The call-log rules (R22, R25–R28), no Home Assistant code |
 | `sensor.py` | The call log sensors, event and logbook |
 | `call_archive.py` | The archive's lines (no Home Assistant code) |
 | `archive_writer.py` | Listens to calls and transcripts, appends the lines |
@@ -105,6 +124,8 @@ what the devices read.
 
 ## History
 
+- Docs (after 0.6.0): the Call archive and Front door sections and the Errors heading were lost from this README in 0.3.0–0.5.0
+  (an edit replaced the heading the later inserts looked for); restored.
 - 0.6.0: R28 visitor language in the call log; translations for the visitor in the log (`tr`, `tr_lang`) and the archive.
 - 0.5.0: the front door moves here from the package (option "Front door sensor" instead of `input_text.aikos_front_door_source`).
   The archive option no longer turns off when the options are saved without it.
