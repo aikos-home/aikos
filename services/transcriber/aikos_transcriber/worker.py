@@ -10,6 +10,8 @@ attributes text, message, speaker, speaker_kind, speaker_role, speaker_org, spea
 key_id, duration_s, language, language_name(_en), language_probability, text_original, model, created, source,
 transcribe_s; plus the event aikos_talk_transcript. Test senders go to *_test entities and aikos_talk_transcript_test.
 Utterances without words are not published. Local only: audio goes to the Whisper server, never to a cloud.
+W3 (--mic-check): after each recording of at least 0.5 s the event aikos_mic_check (verdict ok | silent | clipping and the
+numbers) goes to Home Assistant, after the text, also when nothing was said: a dead or overdriven mic is seen at once.
 R28 (--translate-to-visitor, room side): when the call log says the visitor speaks another language, the German answer goes out
 first as always; its translation into the visitor's language follows as an update (attributes text_visitor, visitor_language).
 
@@ -17,6 +19,7 @@ Part of the aikos transcriber (split from roomkey tools/transcribe_publish.py at
 from __future__ import annotations
 
 import argparse
+import atexit
 import datetime as dt
 import sys
 import time
@@ -26,6 +29,7 @@ from pathlib import Path
 from .audio import has_speech, voiced_frames
 from .echo import drop_echo, is_household, resident_overlap_s, resident_talk, speech_outside_s
 from .ha import ha, key_for_ip
+from .mic import stats as mic_stats
 from .identity import WHISPER_PROMPT, identify, is_noise, prompt_echo, strip_captions
 from .translate import from_german, to_german
 from .whisper import LANGUAGES, looks_german, spoken_language, whisper
@@ -53,6 +57,7 @@ def main():
     ap.add_argument("--translate-to-visitor", action="store_true",
                     help="room side, R28: translate the answer into the visitor's language (from the call log), after the German text")
     ap.add_argument("--call-log", default="sensor.aikos_call_log", help="where the visitor's language is (visitor_language)")
+    ap.add_argument("--mic-check", action="store_true", help="W3: report the mic's health of every recording (event aikos_mic_check)")
     a = ap.parse_args()
     entity = a.entity or ("sensor.talk_transcript" if a.side == "room" else "sensor.talk_transcript_door")
     test = a.source_ip in {s.strip() for s in a.test_sources.split(",") if s.strip()}
@@ -64,6 +69,11 @@ def main():
 
     with wave.open(str(a.wav)) as w:
         duration = w.getnframes() / w.getframerate()
+        pcm = w.readframes(w.getnframes()) if a.mic_check else b""
+    if a.mic_check:
+        mic = mic_stats(pcm)
+        if mic is not None:                       # reported at exit: after the text, and also when nothing is published
+            atexit.register(report_mic, a.ha_url, token, "aikos_mic_check" + sfx, a.side, a.source_ip, mic)
     t0 = time.time()
     names = [n.strip() for n in a.known_names.split(",") if n.strip()]
     # household names as a plain list (not "Hier ist Anna." — on silence Whisper answers with such a sentence)
@@ -169,6 +179,19 @@ def main():
     ha(a.ha_url, token, "POST", f"/api/events/{event}", data)
     print(f"  language {lang} ({lang_p:.2f}) after {time.time() - t0:.1f} s"
           + (f": “{data['text_original']}”" if lang != "de" else ""), flush=True)
+
+def report_mic(url: str, token: str, event: str, side: str, source_ip: str, mic) -> None:
+    """W3: one event per recording with the mic's verdict; never fails the worker."""
+    try:
+        device, key_id = key_for_ip(url, token, source_ip) if source_ip else (None, None)
+        data = {"side": side, "device": device or "unknown", "key_id": key_id or "unknown", "source": source_ip,
+                "created": dt.datetime.now().astimezone().isoformat(timespec="seconds"), **mic.as_dict()}
+        ha(url, token, "POST", f"/api/events/{event}", data)
+        if mic.verdict != "ok":
+            print(f"⚠ mic {device or source_ip}: {mic.verdict} ({mic.as_dict()})", flush=True)
+    except Exception as exc:
+        print(f"mic report failed: {exc}", file=sys.stderr, flush=True)
+
 
 def same_words(a: str, b: str) -> bool:
     """True if two sentences have the same words (case, punctuation and spacing aside)."""

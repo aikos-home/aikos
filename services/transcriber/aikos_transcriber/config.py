@@ -14,6 +14,7 @@
     AIKOS_TEST_SOURCES  comma-separated IPs of test senders; unset = 127.0.0.1, empty = none. Their text goes to *_test entities.
     AIKOS_SPLIT         door side: 1 = cut the door audio into utterances at pauses (voice v2, mic on for the whole call); default 0
     AIKOS_VISITOR_TRANSLATION  room side: 1 = translate the resident's answer into the visitor's language (R28); default 0
+    AIKOS_MIC_CHECK     1 = report every recording's mic health to HA (W3, event aikos_mic_check); default 0
 
 Same names and defaults as roomkey tools/transcriber_service.sh at d0d52b9.
 """
@@ -45,6 +46,7 @@ class Config:
     test_sources: str = "127.0.0.1"
     split: bool = False
     visitor_translation: bool = False
+    mic_check: bool = False
 
     @property
     def activity_file(self) -> Path:
@@ -86,4 +88,5 @@ class Config:
             test_sources=env.get("AIKOS_TEST_SOURCES", "127.0.0.1"),
             split=env.get("AIKOS_SPLIT", "0") == "1",
             visitor_translation=env.get("AIKOS_VISITOR_TRANSLATION", "0") == "1",
+            mic_check=env.get("AIKOS_MIC_CHECK", "0") == "1",
         )
