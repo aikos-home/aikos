@@ -4,7 +4,7 @@
 #   bash ~/aikos/repo/services/transcriber/deploy/deploy.sh transcriber-v1.0.0
 #
 #   1. check out the version in ~/aikos/repo (a tag: tags never move; the first run clones the repository)
-#   2. unit tests with the Mac's Python; red = nothing is changed
+#   2. unit tests with the agents' Python (AIKOS_PYTHON, else /usr/bin/python3); red = nothing is changed
 #   3. back up both LaunchAgents to ~/.aikos/backup and write new ones (deploy/launchd.py)
 #   4. restart both; both receivers must listen within 15 s
 #   5. one spoken test utterance per side must reach Home Assistant (deploy/smoke.py, *_test entities only)
@@ -12,6 +12,7 @@
 #
 # Settings: ~/.aikos/transcriber.env (see transcriber.env.example). Without it, the settings are taken over once from
 # the existing transcriber LaunchAgents. Environment: AIKOS_REPO (default ~/aikos/repo), AIKOS_ENV.
+# AIKOS_PYTHON in the settings file pins the interpreter (absolute path).
 # Written for macOS /bin/bash 3.2 with set -u: no arrays.
 set -eu -o pipefail
 if [ -z "${AIKOS_DEPLOY_COPY:-}" ]; then                 # the checkout below may replace this file: run from a copy
@@ -27,11 +28,19 @@ envf="${AIKOS_ENV:-$HOME/.aikos/transcriber.env}"
 agents="$HOME/Library/LaunchAgents"
 logs="$HOME/Library/Logs/aikos"
 backup="$HOME/.aikos/backup"
-py=/usr/bin/python3
 uid=$(id -u)
 stamp=$(date +%Y%m%d%H%M%S)
 mkdir -p "$logs" "$backup"
 note() { echo "$(date '+%F %T') deploy: $*" | tee -a "$logs/deploy.log"; }
+# The Python of both agents and of this script: AIKOS_PYTHON from the settings file, a pinned interpreter (absolute path, e.g.
+# uv-managed) that no macOS or Command Line Tools update swaps underneath; without it Apple's /usr/bin/python3 as before.
+interpreter() { { grep -E '^AIKOS_PYTHON=' "$1" 2>/dev/null || true; } | tail -n 1 | cut -d= -f2- | tr -d '"'; }
+py=$(interpreter "$envf")
+py="${py:-/usr/bin/python3}"
+if [ ! -x "$py" ]; then
+  note "AIKOS_PYTHON=$py is not an executable file (it must be an absolute path); nothing changed"
+  exit 1
+fi
 plist() { echo "$agents/home.aikos.transcriber.$1.plist"; }
 # lsof exits non-zero on mere warnings (e.g. an unreachable network mount): under pipefail that must not end the script
 listening() { { lsof -nP -iUDP:5006 -iUDP:5008 2>/dev/null || true; } | awk 'NR>1' | wc -l | tr -d ' '; }
@@ -86,7 +95,7 @@ fi
 for side in room door; do
   if [ -f "$(plist "$side")" ]; then cp "$(plist "$side")" "$backup/home.aikos.transcriber.$side.plist.$stamp"; fi
 done
-"$py" "$svc/deploy/launchd.py" --env "$envf" --checkout "$repo" --agents "$agents" --logs "$logs" >/dev/null \
+"$py" "$svc/deploy/launchd.py" --env "$envf" --checkout "$repo" --agents "$agents" --logs "$logs" --python "$py" >/dev/null \
   || rollback "could not write the LaunchAgents"
 
 # 4. restart
