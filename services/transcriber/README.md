@@ -5,7 +5,7 @@ at the door (door side). It also tells who is speaking ("Paketdienst · DHL", "A
 foreign languages into German. Everything runs locally: audio goes to a Whisper server on your own network, never to a
 cloud. Python 3.9+ standard library only.
 
-Version **1.2.0** (component tag `transcriber-v1.1.1` until 1.2.0 is tagged).
+Version **1.2.1** (component tag `transcriber-v1.1.1` until 1.2.x is tagged).
 
 ## Interface
 
@@ -73,7 +73,7 @@ Environment variables (on a Mac: the settings file of the LaunchAgents, see belo
 | `AIKOS_WHISPER_URL` | `http://127.0.0.1:6667/v1/audio/transcriptions` | |
 | `AIKOS_LLM_URL` | `http://127.0.0.1:11434` | Ollama |
 | `AIKOS_LIVE` | 1 door, 0 room | publish partial text while talking |
-| `AIKOS_SPLIT` | 0 | door side: cut the audio into utterances at pauses (door mic on for the whole call, voice v2) |
+| `AIKOS_SPLIT` | 0 | door side: cut the audio into utterances at pauses (door mic on for the whole call, voice v2); a resident who starts talking ends the visitor's utterance at once |
 | `AIKOS_VISITOR_TRANSLATION` | 0 | room side, R28: translate the resident's answer into the visitor's language (needs the aikos integration ≥ 0.6.0 and Ollama) |
 | `AIKOS_TEST_SOURCES` | `127.0.0.1` | comma-separated sender IPs that are tests; set but empty = none |
 | `AIKOS_RECORDINGS` | `~/Library/Application Support/aikos/transcriber/recordings` | recordings are deleted when handled |
@@ -142,6 +142,10 @@ Changes go through a pull request. Once tagged, this block is listed in [`FROZEN
 
 ## History
 
+- 1.2.1 (not tagged yet): door side with `AIKOS_SPLIT=1`: a resident who starts talking ends the visitor's utterance at once
+  (from the room side's activity file). Before, a turn gap shorter than 1.5 s plus the resident's voice from the door speaker
+  kept the segment running to 15 s: the visitor's words reached HA 21 s after they began, with the resident's echo in them
+  (bench 04.10. 19:54). The echo segment that follows is dropped by the timing rule as before. Logic by the roomkey maintainers.
 - 1.2.0 (not tagged yet): R28 translation to the visitor, behind `AIKOS_VISITOR_TRANSLATION` (default off). Written by aikos core
   for the roomkey maintainers' review (hardware phase, 02.10.); German calls unchanged.
 - 1.1.1: noise is never shown as text (R24, live 01.10. 23:06–23:10): a noise at the door came out of Whisper as the

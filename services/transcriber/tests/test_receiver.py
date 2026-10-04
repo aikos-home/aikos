@@ -75,6 +75,57 @@ class Receiver(unittest.TestCase):
         self.assertTrue(Path(str(self.activity) + "_test").exists())
 
 
+class DoorTurn(unittest.TestCase):
+    """Door side (--split-on-silence): a resident who starts talking ends the visitor's utterance at once (04.10.: the turn gap
+    was shorter than --silence-s, the resident's echo kept the segment running to --max-s, the visitor's text came 21 s late)."""
+
+    def start(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.port = free_port()
+        self.quiet = self.tmp / "room_active"
+        args = ["--port", str(self.port), "--out", str(self.tmp / "rec"), "--split-on-silence", "--test-sources", "",
+                "--live-quiet-file", str(self.quiet)]
+        threading.Thread(target=receiver.main, args=(args,), daemon=True).start()
+        time.sleep(0.3)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.addCleanup(self.sock.close)
+        self.seq = 0
+
+    def stream(self, x):                                                  # the door's continuous stream, real time
+        for k in range(len(x) // 320):
+            self.seq += 1
+            self.sock.sendto(rtp(self.seq, x[k * 320:(k + 1) * 320]), ("127.0.0.1", self.port))
+            time.sleep(0.02)
+
+    def recordings(self):
+        out = []
+        for p in sorted((self.tmp / "rec").glob("*.wav"), key=lambda p: p.stat().st_mtime):
+            with wave.open(str(p)) as w:
+                out.append(round(w.getnframes() / 16000, 1))
+        return out
+
+    def test_a_resident_taking_the_turn_ends_the_visitors_utterance(self):
+        self.start()
+        self.stream(silence(0.6))
+        self.stream(tone(1.0))                                            # the visitor
+        self.quiet.write_text(f"{time.time():.3f}\n")                    # a resident starts talking (room side)
+        self.stream(tone(1.0))                                            # the resident's echo from the door speaker
+        self.stream(silence(2.0))
+        time.sleep(0.5)
+        lengths = self.recordings()
+        self.assertEqual(len(lengths), 2, lengths)                        # cut at the turn, not one 15 s block
+        self.assertLessEqual(lengths[0], 1.6)                             # the visitor (+ pre-roll), sent at once
+
+    def test_an_older_resident_turn_does_not_cut(self):
+        self.start()
+        self.quiet.write_text(f"{time.time() - 5:.3f}\n")                # the resident talked before the visitor began
+        self.stream(silence(0.6))
+        self.stream(tone(1.5))
+        self.stream(silence(2.0))
+        time.sleep(0.5)
+        self.assertEqual(len(self.recordings()), 1)
+
+
 class RecordingNames(unittest.TestCase):
     def test_same_second_same_sender_gets_a_new_name(self):
         out = Path(tempfile.mkdtemp())

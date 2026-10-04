@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import collections
 import math
+import os
 import shlex
 import socket
 import subprocess
@@ -129,6 +130,31 @@ def main(argv=None):
             live.stop(rec)
         rec.close(a.exec_tpl, **kw)
 
+    # Door side (voice v2, --split-on-silence): a resident taking the turn ends the visitor's utterance at once. Turn gaps at
+    # a door are often shorter than --silence-s, and what follows is the resident's voice from the door speaker, which kept
+    # the segment running to --max-s: the visitor's words came 15 s late and with the resident's echo in them (04.10.).
+    # The room side writes the resident's start time into the activity file (= this side's --live-quiet-file).
+    turn_file: dict = {}                                                 # quiet file → (mtime, start time)
+    cut_for: dict = {}                                                   # sender → the resident start that already cut it
+
+    def resident_began(src) -> float:
+        if not a.live_quiet_file:
+            return 0.0
+        qf = a.live_quiet_file + ("_test" if src[0] in test_ips else "")
+        try:
+            mtime = os.stat(qf).st_mtime
+        except OSError:
+            return 0.0
+        cached = turn_file.get(qf)
+        if cached and cached[0] == mtime:
+            return cached[1]
+        try:
+            began = float(Path(qf).read_text().split()[0])
+        except (OSError, ValueError, IndexError):
+            began = 0.0
+        turn_file[qf] = (mtime, began)
+        return began
+
     recs: dict = {}                                                      # sender → Recording
     preroll = collections.defaultdict(lambda: collections.deque(maxlen=15))   # 0.3 s before speech starts
     levels = collections.defaultdict(lambda: collections.deque(maxlen=250))   # last 5 s of packet levels
@@ -175,6 +201,13 @@ def main(argv=None):
         rec.add(seq, payload, voiced)
         if a.split_on_silence and (rec.quiet_s() > a.silence_s or rec.samples / RATE >= a.max_s):
             finish(recs.pop(src), min_voiced=15)                      # ≥ 0.3 s of speech
+            continue
+        if a.split_on_silence:
+            began = resident_began(src)
+            if began > rec.t0 and began != cut_for.get(src):          # a resident began after this utterance did
+                cut_for[src] = began
+                print(f"· resident took the turn: {rec.path.name} ends here", flush=True)
+                finish(recs.pop(src), min_voiced=15)
 
 
 if __name__ == "__main__":
