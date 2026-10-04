@@ -132,6 +132,7 @@ def main():
         print(f"· door: \"{who.name}\" while a resident talked: the resident's own words, not published", flush=True)
         return
     device, key_id = key_for_ip(a.ha_url, token, a.source_ip) if a.source_ip else (None, None)
+    KNOWN_DEVICE[a.source_ip] = (device, key_id)                    # W3's report needs no second /api/states fetch
     created = dt.datetime.now().astimezone().isoformat(timespec="seconds")
     data = {"text": text, "message": who.message, "speaker": who.speaker, "speaker_kind": who.kind,
             "speaker_role": who.vtype, "speaker_org": who.org, "speaker_method": who.method, "urgent": who.urgent,
@@ -180,10 +181,16 @@ def main():
     print(f"  language {lang} ({lang_p:.2f}) after {time.time() - t0:.1f} s"
           + (f": “{data['text_original']}”" if lang != "de" else ""), flush=True)
 
+KNOWN_DEVICE: dict = {}                                                 # source IP → (device, key_id), set by the main path
+
+
 def report_mic(url: str, token: str, event: str, side: str, source_ip: str, mic) -> None:
     """W3: one event per recording with the mic's verdict; never fails the worker."""
     try:
-        device, key_id = key_for_ip(url, token, source_ip) if source_ip else (None, None)
+        if source_ip in KNOWN_DEVICE:
+            device, key_id = KNOWN_DEVICE[source_ip]
+        else:
+            device, key_id = key_for_ip(url, token, source_ip) if source_ip else (None, None)
         data = {"side": side, "device": device or "unknown", "key_id": key_id or "unknown", "source": source_ip,
                 "created": dt.datetime.now().astimezone().isoformat(timespec="seconds"), **mic.as_dict()}
         ha(url, token, "POST", f"/api/events/{event}", data)

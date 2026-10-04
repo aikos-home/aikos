@@ -91,3 +91,28 @@ class WorkerEvent(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ReviewFollowUps(unittest.TestCase):
+    """RoomKey's review of #49: garbage behind the ~-2 dBFS limiter, and the door's dead mic (no recording at all)."""
+
+    def test_limited_garbage_is_noise(self):
+        import random
+        rnd = random.Random(3)
+        x = array.array("h", [int(rnd.uniform(-0.79, 0.79) * 32767) for _ in range(16000)])
+        self.assertEqual(stats(x.tobytes()).verdict, "noise")
+
+    def test_silence_watch_reports_once_per_episode(self):
+        from aikos_transcriber.mic import SilenceWatch
+        w = SilenceWatch(after_s=1.0, gap_s=2.0)
+        got = [w.note("door", -180.0, t / 50) for t in range(0, 100)]       # 2 s of zeros, 20 ms packets
+        self.assertEqual(sum(1 for g in got if g), 1)
+        self.assertIsNone(w.note("door", -40.0, 2.1))                       # a real packet ends the episode
+        self.assertIsNone(w.note("door", -180.0, 2.2, excused=True))        # a resident talks: not counted
+
+    def test_silence_watch_gap_starts_a_new_episode(self):
+        from aikos_transcriber.mic import SilenceWatch
+        w = SilenceWatch(after_s=1.0, gap_s=2.0)
+        for t in range(0, 60):
+            w.note("door", -180.0, t / 50)
+        self.assertTrue(any(w.note("door", -180.0, 10.0 + t / 50) for t in range(0, 60)))   # the next call reports again
