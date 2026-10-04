@@ -1,5 +1,6 @@
 """Receiver over real UDP on localhost: one recording per utterance, and the activity-file contract between the two sides
 (content = start time, mtime = last audio, `_test` suffix for test senders), which the door side's echo guard reads."""
+import math
 import os
 import socket
 import tempfile
@@ -75,6 +76,26 @@ class Receiver(unittest.TestCase):
         self.assertTrue(Path(str(self.activity) + "_test").exists())
 
 
+def room_noise(seconds: float, seed: int = 7):
+    """The door mic in a room: −45 dBFS noise with a 60 ms beat (+14 dB) every 300 ms, like music in the background."""
+    import array
+    import random
+    rnd, x = random.Random(seed), array.array("h")
+    for i in range(int(seconds * 16000)):
+        x.append(max(-32768, min(32767, int(rnd.gauss(0, 184 * (5.0 if (i % 4800) < 960 else 1.0))))))
+    return x
+
+
+def speech_on_room(seconds: float, seed: int = 8):
+    """Syllables at about −22 dBFS (200 ms on, 80 ms off) on the same room."""
+    import array
+    x, bg = array.array("h"), room_noise(seconds, seed)
+    for i in range(len(bg)):
+        v = bg[i] + (int(2600 * math.sin(2 * math.pi * 220 * i / 16000)) if (i % 4480) < 3200 else 0)
+        x.append(max(-32768, min(32767, v)))
+    return x
+
+
 class DoorTurn(unittest.TestCase):
     """Door side (--split-on-silence): a resident who starts talking ends the visitor's utterance at once (04.10.: the turn gap
     was shorter than --silence-s, the resident's echo kept the segment running to --max-s, the visitor's text came 21 s late)."""
@@ -106,22 +127,35 @@ class DoorTurn(unittest.TestCase):
 
     def test_a_resident_taking_the_turn_ends_the_visitors_utterance(self):
         self.start()
-        self.stream(silence(0.6))
-        self.stream(tone(1.0))                                            # the visitor
+        self.stream(room_noise(1.0))
+        self.stream(speech_on_room(1.0))                                  # the visitor
         self.quiet.write_text(f"{time.time():.3f}\n")                    # a resident starts talking (room side)
-        self.stream(tone(1.0))                                            # the resident's echo from the door speaker
-        self.stream(silence(2.0))
+        self.stream(speech_on_room(1.0, seed=9))                          # the resident's echo from the door speaker
+        self.stream(room_noise(2.5, seed=10))
         time.sleep(0.5)
         lengths = self.recordings()
         self.assertEqual(len(lengths), 2, lengths)                        # cut at the turn, not one 15 s block
         self.assertLessEqual(lengths[0], 1.6)                             # the visitor (+ pre-roll), sent at once
 
+    def test_a_pause_in_a_noisy_room_still_ends_the_utterance(self):
+        """Background with short loud beats (music at the open door mic): the old per-packet threshold took every beat for
+        speech, so the pause after the visitor never came and the segment ran to 15 s (04.10. 20:10). Beats alone start
+        no recording either (no Whisper work for noise)."""
+        self.start()
+        self.stream(room_noise(2.0))
+        self.stream(speech_on_room(1.5))
+        self.stream(room_noise(6.0, seed=10))
+        time.sleep(0.5)
+        lengths = self.recordings()
+        self.assertEqual(len(lengths), 1, lengths)                       # the visitor only
+        self.assertLessEqual(lengths[0], 4.0, lengths)                   # pre-roll + 1.5 s speech + 1.5 s pause, not 15 s
+
     def test_an_older_resident_turn_does_not_cut(self):
         self.start()
         self.quiet.write_text(f"{time.time() - 5:.3f}\n")                # the resident talked before the visitor began
-        self.stream(silence(0.6))
-        self.stream(tone(1.5))
-        self.stream(silence(2.0))
+        self.stream(room_noise(1.0))
+        self.stream(speech_on_room(1.5))
+        self.stream(room_noise(2.5, seed=10))
         time.sleep(0.5)
         self.assertEqual(len(self.recordings()), 1)
 
