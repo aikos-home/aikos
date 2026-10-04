@@ -1,4 +1,5 @@
-"""Quiet hours active right now (switches exactly at start and end, without polling); the front door (front_door.py)."""
+"""Quiet hours active right now (switches exactly at start and end, without polling); the front door (front_door.py); mic
+problems (mic_problem.py, W3)."""
 from __future__ import annotations
 
 from datetime import datetime
@@ -13,12 +14,16 @@ from homeassistant.util import dt as dt_util
 from . import AikosConfigEntry
 from .entity import AikosEntity
 from .front_door import FrontDoor
+from .mic_problem import MicProblem
 from .quiet_hours import is_quiet, next_change
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: AikosConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     async_add_entities([QuietHoursActive(entry, "quiet_hours_active", "binary_sensor.aikos_quiet_hours"),
-                        FrontDoor(entry, "front_door", "binary_sensor.aikos_front_door")])
+                        FrontDoor(entry, "front_door", "binary_sensor.aikos_front_door"),
+                        MicProblem(entry, "mic_problem", "binary_sensor.aikos_mic_problem", "aikos_mic_check", announce=True),
+                        MicProblem(entry, "mic_problem_test", "binary_sensor.aikos_mic_problem_test", "aikos_mic_check_test",
+                                   announce=False)])
 
 
 class QuietHoursActive(AikosEntity, BinarySensorEntity):

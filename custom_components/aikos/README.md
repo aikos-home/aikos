@@ -1,7 +1,7 @@
 # aikos integration for Home Assistant
 
-The household logic of aikos, installed via HACS. Version **0.6.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x) and the
-front door (0.5.0, tag `aikos-v0.5.0`). More blocks follow (where the bell
+The household logic of aikos, installed via HACS. Version **0.7.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
+front door (0.5.0, tag `aikos-v0.5.0`) and the mic health warning (0.7.0). More blocks follow (where the bell
 rings, presence, alarm, pairing of devices); each comes as a new version.
 
 ## Install
@@ -89,6 +89,19 @@ follows it with 2 s debounce each way (a blip shorter than that is ignored); una
 Attribute `source`; attribute `stuck` = open for more than 10 min (then it ends nothing more). The devices react to its off → on edge:
 opening the front door ends a call (R17.8).
 
+### Mic health warning (0.7.0, W3)
+
+`binary_sensor.aikos_mic_problem` (device class problem) is on while a device's mic is broken. The source is the transcriber's
+event `aikos_mic_check` (option `AIKOS_MIC_CHECK=1` there) after every recording:
+- **Two bad verdicts in a row** from the same device (`silent`: a dead mic; `clipping`: a floating data line) → on.
+  - A persistent notification "Mikro an … sendet nur Stille – Kabel prüfen" appears.
+  - A push goes to the phones configured for the ring push.
+  - No repeats while it stays broken.
+- **The first `ok`** clears it and dismisses the notification.
+- Attributes: `problem_devices`, and per device `verdict`, `bad_in_a_row`, `since`, `peak_db`, `rms_db`, `zero_ratio`, `clip_ratio`.
+- `binary_sensor.aikos_mic_problem_test` takes only `aikos_mic_check_test` (bench); it never notifies.
+- In memory: after a restart it starts clean and finds a broken mic again within two recordings.
+
 ## Errors
 
 | Case | What happens |
@@ -115,6 +128,8 @@ opening the front door ends a call (R17.8).
 | `call_archive.py` | The archive's lines (no Home Assistant code) |
 | `archive_writer.py` | Listens to calls and transcripts, appends the lines |
 | `front_door.py` | The debounced front door |
+| `mic_health.py` | When mic verdicts become a warning (no Home Assistant code) |
+| `mic_problem.py` | The mic problem sensors, notification and push |
 | `config_flow.py`, `__init__.py` | Setting up and removing aikos |
 
 ## Tests
@@ -124,6 +139,7 @@ opening the front door ends a call (R17.8).
 
 ## History
 
+- 0.7.0: W3 mic health warning (`binary_sensor.aikos_mic_problem`, notification, push) from the transcriber's `aikos_mic_check`.
 - Docs (after 0.6.0): the Call archive and Front door sections and the Errors heading were lost from this README in 0.3.0–0.5.0
   (an edit replaced the heading the later inserts looked for); restored.
 - 0.6.0: R28 visitor language in the call log; translations for the visitor in the log (`tr`, `tr_lang`) and the archive.
