@@ -6,6 +6,12 @@
       },
       "front_door": {
         "default": "mdi:door"
+      },
+      "mic_problem": {
+        "default": "mdi:microphone-off"
+      },
+      "mic_problem_test": {
+        "default": "mdi:microphone-off"
       }
     },
     "switch": {

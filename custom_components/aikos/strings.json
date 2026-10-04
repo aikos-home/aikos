@@ -17,6 +17,12 @@
       },
       "front_door": {
         "name": "Front door"
+      },
+      "mic_problem": {
+        "name": "Mic problem"
+      },
+      "mic_problem_test": {
+        "name": "Mic problem test"
       }
     },
     "switch": {
