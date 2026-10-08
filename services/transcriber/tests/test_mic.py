@@ -89,9 +89,6 @@ class WorkerEvent(unittest.TestCase):
         self.assertEqual([p for p, _ in events], ["/api/events/aikos_mic_check_test"])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class ReviewFollowUps(unittest.TestCase):
     """RoomKey's review of #49: garbage behind the ~-2 dBFS limiter, and the door's dead mic (no recording at all)."""
@@ -108,7 +105,8 @@ class ReviewFollowUps(unittest.TestCase):
         got = [w.note("door", -180.0, t / 50) for t in range(0, 100)]       # 2 s of zeros, 20 ms packets
         self.assertEqual(sum(1 for g in got if g), 1)
         self.assertIsNone(w.note("door", -40.0, 2.1))                       # a real packet ends the episode
-        self.assertIsNone(w.note("door", -180.0, 2.2, excused=True))        # a resident talks: not counted
+        # a resident talking excuses nothing: the door's copy is never muted, so zeros through a whole turn are still a fault
+        self.assertTrue(any(w.note("door", -180.0, 2.2 + t / 50) for t in range(0, 60)))
 
     def test_silence_watch_gap_starts_a_new_episode(self):
         from aikos_transcriber.mic import SilenceWatch
@@ -116,3 +114,6 @@ class ReviewFollowUps(unittest.TestCase):
         for t in range(0, 60):
             w.note("door", -180.0, t / 50)
         self.assertTrue(any(w.note("door", -180.0, 10.0 + t / 50) for t in range(0, 60)))   # the next call reports again
+
+if __name__ == "__main__":
+    unittest.main()

@@ -47,6 +47,9 @@ def _db(value: float) -> float:
     return 20 * math.log10(value / 32768 + 1e-9)
 
 
+ZERO_DB = round(_db(0), 1)  # the level of exact zeros (≈ -180 dBFS), the same value wherever digital silence is reported
+
+
 def stats(pcm: bytes) -> MicStats | None:
     """Stats of 16-bit mono PCM at 16 kHz; None when it is too short to judge."""
     x = array.array("h", pcm)
@@ -72,8 +75,8 @@ class SilenceWatch:
     """Door side: a mic sending only digital silence (data line on GND) starts no recording, so the receiver watches the stream.
 
     note() returns the silent seconds once per episode, when an unbroken run of digital-silence packets from one sender reaches
-    after_s. A real packet, a gap in the stream (> gap_s, e.g. the next call) or an excused moment (a resident talks: the door may
-    mute its mic while its speaker plays) ends the episode.
+    after_s. A real packet or a gap in the stream (> gap_s, e.g. the next call) ends the episode. A resident talking does not:
+    the door's copy to the transcriber is never muted (call.h R17.16, voice_core.h deliver_()), so zeros are always a fault.
     """
 
     def __init__(self, after_s: float = 10.0, gap_s: float = 2.0):
@@ -82,13 +85,13 @@ class SilenceWatch:
         self.last: dict = {}
         self.reported: set = set()
 
-    def note(self, src, db: float, now: float, excused: bool = False):
+    def note(self, src, db: float, now: float):
         last = self.last.get(src)
         self.last[src] = now
-        if (last is not None and now - last > self.gap_s) or excused or db > DIGITAL_SILENCE_DB:
+        if (last is not None and now - last > self.gap_s) or db > DIGITAL_SILENCE_DB:
             self.since.pop(src, None)
             self.reported.discard(src)
-            if excused or db > DIGITAL_SILENCE_DB:
+            if db > DIGITAL_SILENCE_DB:
                 return None
         start = self.since.setdefault(src, now)
         if src not in self.reported and now - start >= self.after_s:

@@ -151,8 +151,11 @@ Changes go through a pull request. Once tagged, this block is listed in [`FROZEN
 ## History
 
 - 1.3.0 (not tagged yet): W3 mic health behind `AIKOS_MIC_CHECK` (default off): every recording's verdict as the event
-  `aikos_mic_check` (new module `mic.py`). Limit: on the door side a recording only starts with speech, so a dead door mic is not
-  seen this way. Written by aikos core for the roomkey maintainers' review.
+  `aikos_mic_check` (new module `mic.py`). On the door side, where a recording only starts with speech, the receiver itself reports
+  ≥ 10 s of unbroken digital silence (zeros) on the stream (`SilenceWatch`, once per episode). Verdict `noise` for garbage behind the
+  devices' ~−2 dBFS limiter (RMS > −10 dBFS). **Limit:** a mic whose driver does not start sends no packets at all, so neither
+  check sees it (touch key 07.10., shared I²S bus); that is caught on the device. Written by aikos core, reviewed by the roomkey
+  maintainers.
 - 1.2.3: deployment only, the service is unchanged. `deploy.sh` uses `AIKOS_PYTHON` from the settings file (absolute
   path, checked) for the tests, both LaunchAgents and the smoke test; without it `/usr/bin/python3` as before. Reason: the agents ran on
   Apple's Command Line Tools Python 3.9, which a pending CLT update could replace underneath a frozen block (Aikos-hub, 04.10.).

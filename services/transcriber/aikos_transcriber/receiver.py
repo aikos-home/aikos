@@ -18,7 +18,7 @@ import wave
 from pathlib import Path
 
 from .ha import ha, key_for_ip
-from .mic import SILENT, SilenceWatch
+from .mic import SILENT, ZERO_DB, SilenceWatch
 
 RATE, PT_L16, PT_CN = 16000, 96, 13   # PT 13 = comfort noise (RFC 3389): the sender stopped talking
 
@@ -129,7 +129,7 @@ def report_silence(url: str, token: str, event: str, source_ip: str, seconds: fl
         ha(url, token, "POST", f"/api/events/{event}", {
             "side": "door", "device": device or "unknown", "key_id": key_id or "unknown", "source": source_ip,
             "created": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "verdict": SILENT, "duration_s": round(seconds, 1), "zero_ratio": 1.0,
-            "clip_ratio": 0.0, "peak_db": -120.0, "rms_db": -120.0, "origin": "receiver"})
+            "clip_ratio": 0.0, "peak_db": ZERO_DB, "rms_db": ZERO_DB, "origin": "receiver"})
     except Exception as exc:
         print(f"mic report failed: {exc}", file=sys.stderr, flush=True)
 
@@ -172,14 +172,6 @@ def main(argv=None):
     test_ips = {s.strip() for s in a.test_sources.split(",") if s.strip()}
     watch = SilenceWatch(a.mic_silence_s) if a.mic_check and a.split_on_silence and a.ha_url and a.token_file else None
     ha_token = a.token_file.expanduser().read_text().strip() if watch else ""
-
-    def resident_talking(src) -> bool:                                  # the door may mute its mic while its speaker plays
-        if not a.live_quiet_file:
-            return False
-        try:
-            return time.time() - os.stat(a.live_quiet_file + ("_test" if src[0] in test_ips else "")).st_mtime < 1.0
-        except OSError:
-            return False
     last_touch: dict = {}
 
     def activity(src) -> str:                                            # a test sender never marks a real resident
@@ -249,7 +241,7 @@ def main(argv=None):
             gate_ms[src] += (len(payload) // 2) / 16.0
             speech = gates[src].note(db, gate_ms[src])                  # decides where it ends
             if watch is not None:
-                silent_s = watch.note(src, db, time.time(), excused=resident_talking(src))
+                silent_s = watch.note(src, db, time.time())
                 if silent_s:
                     event = "aikos_mic_check" + ("_test" if src[0] in test_ips else "")
                     print(f"⚠ mic {src[0]}: {silent_s:.0f} s of digital silence on the door stream", flush=True)
