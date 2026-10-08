@@ -75,6 +75,14 @@ class ReceiverArgs(unittest.TestCase):
         self.assertTrue(on["--exec"].endswith("--translate-to-visitor"))
         self.assertNotIn("--translate-to-visitor", door["--exec"])         # the door side never translates for the visitor
 
+    def test_mic_check_off_by_default_both_sides(self):
+        _, off = self.args(AIKOS_SIDE="room")
+        _, room = self.args(AIKOS_SIDE="room", AIKOS_MIC_CHECK="1")
+        _, door = self.args(AIKOS_SIDE="door", AIKOS_MIC_CHECK="1")
+        self.assertNotIn("--mic-check", off["--exec"])
+        self.assertIn("--mic-check", room["--exec"])
+        self.assertIn("--mic-check", door["--exec"])
+
 
 if __name__ == "__main__":
     unittest.main()

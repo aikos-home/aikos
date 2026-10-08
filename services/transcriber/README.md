@@ -5,7 +5,7 @@ at the door (door side). It also tells who is speaking ("Paketdienst · DHL", "A
 foreign languages into German. Everything runs locally: audio goes to a Whisper server on your own network, never to a
 cloud. Python 3.9+ standard library only.
 
-Version **1.2.3** (component tag `transcriber-v1.2.3`).
+Version **1.3.1** (component tag `transcriber-v1.3.1`).
 
 ## Interface
 
@@ -23,6 +23,7 @@ crash there never stops the receiver.
 | `sensor.talk_live_door` | door | partial text while the visitor is still talking (`sensor.talk_live` on the room side with `AIKOS_LIVE=1`) |
 | `text_visitor`, `visitor_language` | room | **R28, with `AIKOS_VISITOR_TRANSLATION=1`:** the resident's answer translated into the visitor's language; sent as an update after the German text, only in a call whose visitor speaks another language |
 | event `aikos_talk_transcript` | both | the same data as the sensor attributes |
+| event `aikos_mic_check` | both | **W3, with `AIKOS_MIC_CHECK=1`:** after every recording of ≥ 0.5 s, also when nothing was said: `verdict` (`ok`, `silent` = peaks below −90 dBFS, a dead mic; `clipping` = ≥ 1 % of samples at full scale, a floating data line), `zero_ratio`, `clip_ratio`, `peak_db`, `rms_db`, `duration_s`, `device`, `key_id`, `side`. Sent after the text, so it never delays it |
 
 **Test senders** (`AIKOS_TEST_SOURCES`): their text goes to the same names with `_test` appended
 (`sensor.talk_transcript_door_test`, event `aikos_talk_transcript_test`, ...), never into the live entities.
@@ -74,6 +75,7 @@ Environment variables (on a Mac: the settings file of the LaunchAgents, see belo
 | `AIKOS_LLM_URL` | `http://127.0.0.1:11434` | Ollama |
 | `AIKOS_LIVE` | 1 door, 0 room | publish partial text while talking |
 | `AIKOS_SPLIT` | 0 | door side: cut the audio into utterances at pauses (door mic on for the whole call, voice v2); a resident who starts talking ends the visitor's utterance at once |
+| `AIKOS_MIC_CHECK` | 0 | both sides, W3: report every recording's mic health (event `aikos_mic_check`) |
 | `AIKOS_VISITOR_TRANSLATION` | 0 | room side, R28: translate the resident's answer into the visitor's language (needs the aikos integration ≥ 0.6.0 and Ollama) |
 | `AIKOS_TEST_SOURCES` | `127.0.0.1` | comma-separated sender IPs that are tests; set but empty = none |
 | `AIKOS_RECORDINGS` | `~/Library/Application Support/aikos/transcriber/recordings` | recordings are deleted when handled |
@@ -91,6 +93,7 @@ Run one side: `cd services/transcriber && AIKOS_SIDE=door ... python3 -m aikos_t
 | Whisper or Home Assistant does not answer | this utterance is not published; the worker logs the error, the recording is deleted, the receiver keeps running |
 | Ollama does not answer | published anyway: "who is speaking" from the rules only, foreign speech untranslated; R28: the German answer only |
 | R28: no call log, or it can't be read | the German answer only, as without R28 |
+| W3: Home Assistant can't take the mic event | logged; the transcript is not affected |
 | silence, a click, music, Whisper's typical hallucinations (subtitle credits like "ARD Text im Auftrag") | nothing is published; such a credit is never taken as the speaker either |
 | a second utterance in the same second | its recording gets `_2`, `_3`, ...; nothing is overwritten |
 
@@ -147,6 +150,14 @@ Changes go through a pull request. Once tagged, this block is listed in [`FROZEN
 
 ## History
 
+- 1.3.1: the W3 release (below). **`transcriber-v1.3.0` is void:** it was set by mistake on `d22b26a`, which holds the 1.2.3
+  code without W3 (the merge had failed); tags are immutable, so W3 ships as 1.3.1. Never deploy `transcriber-v1.3.0`.
+- 1.3.0 (content shipped as 1.3.1): W3 mic health behind `AIKOS_MIC_CHECK` (default off): every recording's verdict as the event
+  `aikos_mic_check` (new module `mic.py`). On the door side, where a recording only starts with speech, the receiver itself reports
+  ≥ 10 s of unbroken digital silence (zeros) on the stream (`SilenceWatch`, once per episode). Verdict `noise` for garbage behind the
+  devices' ~−2 dBFS limiter (RMS > −10 dBFS). **Limit:** a mic whose driver does not start sends no packets at all, so neither
+  check sees it (touch key 07.10., shared I²S bus); that is caught on the device. Written by aikos core, reviewed by the roomkey
+  maintainers.
 - 1.2.3: deployment only, the service is unchanged. `deploy.sh` uses `AIKOS_PYTHON` from the settings file (absolute
   path, checked) for the tests, both LaunchAgents and the smoke test; without it `/usr/bin/python3` as before. Reason: the agents ran on
   Apple's Command Line Tools Python 3.9, which a pending CLT update could replace underneath a frozen block (Aikos-hub, 04.10.).

@@ -11,9 +11,14 @@ import shlex
 import socket
 import subprocess
 import struct
+import sys
+import threading
 import time
 import wave
 from pathlib import Path
+
+from .ha import ha, key_for_ip
+from .mic import SILENT, ZERO_DB, SilenceWatch
 
 RATE, PT_L16, PT_CN = 16000, 96, 13   # PT 13 = comfort noise (RFC 3389): the sender stopped talking
 
@@ -117,6 +122,18 @@ class Recording:
             subprocess.Popen(cmd, shell=True)
 
 
+def report_silence(url: str, token: str, event: str, source_ip: str, seconds: float) -> None:
+    """W3: the door stream carried only zeros (a dead mic). Same event as the worker's per-recording check; never raises."""
+    try:
+        device, key_id = key_for_ip(url, token, source_ip)
+        ha(url, token, "POST", f"/api/events/{event}", {
+            "side": "door", "device": device or "unknown", "key_id": key_id or "unknown", "source": source_ip,
+            "created": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "verdict": SILENT, "duration_s": round(seconds, 1), "zero_ratio": 1.0,
+            "clip_ratio": 0.0, "peak_db": ZERO_DB, "rms_db": ZERO_DB, "origin": "receiver"})
+    except Exception as exc:
+        print(f"mic report failed: {exc}", file=sys.stderr, flush=True)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--port", type=int, default=5006)
@@ -139,6 +156,9 @@ def main(argv=None):
     ap.add_argument("--live-quiet-file", default="", help="no live partials while this file was touched < 0.8 s ago")
     ap.add_argument("--test-sources", default="", help="comma-separated IPs of test senders: their activity and live text "
                                                         "go to *_test files/entities, never into live ones")
+    ap.add_argument("--mic-check", action="store_true",
+                    help="W3, door side (--split-on-silence): report a mic that sends only digital silence (event aikos_mic_check)")
+    ap.add_argument("--mic-silence-s", type=float, default=10.0, help="W3: seconds of unbroken digital silence before reporting")
     a = ap.parse_args(argv)
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(("0.0.0.0", a.port))
@@ -150,6 +170,8 @@ def main(argv=None):
         live = Live(a.ha_url, a.token_file.expanduser().read_text().strip(), a.live, a.live_side, a.whisper_url,
                     [n.strip() for n in a.known_names.split(",") if n.strip()], quiet_file=a.live_quiet_file)
     test_ips = {s.strip() for s in a.test_sources.split(",") if s.strip()}
+    watch = SilenceWatch(a.mic_silence_s) if a.mic_check and a.split_on_silence and a.ha_url and a.token_file else None
+    ha_token = a.token_file.expanduser().read_text().strip() if watch else ""
     last_touch: dict = {}
 
     def activity(src) -> str:                                            # a test sender never marks a real resident
@@ -218,6 +240,12 @@ def main(argv=None):
             voiced = db > max(a.vad_db, floor + 10.0) and len(lv) > 5   # starts a recording (with its pre-roll)
             gate_ms[src] += (len(payload) // 2) / 16.0
             speech = gates[src].note(db, gate_ms[src])                  # decides where it ends
+            if watch is not None:
+                silent_s = watch.note(src, db, time.time())
+                if silent_s:
+                    event = "aikos_mic_check" + ("_test" if src[0] in test_ips else "")
+                    print(f"⚠ mic {src[0]}: {silent_s:.0f} s of digital silence on the door stream", flush=True)
+                    threading.Thread(target=report_silence, args=(a.ha_url, ha_token, event, src[0], silent_s), daemon=True).start()
         rec = recs.get(src)
         if rec is None:
             if not (voiced and speech):                                  # split: only sustained speech starts one

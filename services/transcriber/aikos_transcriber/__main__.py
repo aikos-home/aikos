@@ -34,10 +34,13 @@ def receiver_args(c: Config, python: str) -> list[str]:
         if c.split:                                                       # voice v2: door mic on for the whole call
             extra += ["--split-on-silence"]
         extra += ["--live-quiet-file", str(c.activity_file)]
+        if c.mic_check and c.split:                                       # W3: a dead door mic starts no recording
+            extra += ["--mic-check"] + ([] if c.live else ["--ha-url", c.ha_url, "--token-file", str(c.token_file)])
         worker_extra = f"--activity-file {q(str(c.activity_file))}"
     worker = (f"{q(python)} -u -m aikos_transcriber.worker {{wav}} --side {c.side} --source-ip {{src}} --ha-url {q(c.ha_url)} "
               f"--token-file {q(str(c.token_file))} --whisper-url {q(c.whisper_url)} --llm-url {q(c.llm_url)} "
-              f"--known-names {q(c.known_names)} --delete-wav --test-sources {q(c.test_sources)} {worker_extra}").rstrip()
+              f"--known-names {q(c.known_names)} --delete-wav --test-sources {q(c.test_sources)} {worker_extra}"
+              + (" --mic-check" if c.mic_check else "")).rstrip()                # W3, off unless AIKOS_MIC_CHECK=1
     warm_llm = f"curl -s -m 30 {q(c.llm_url)}/api/generate -d '{{\"model\":\"qwen3:8b\",\"keep_alive\":-1}}' >/dev/null"
     return (["--port", str(c.port), "--out", str(c.recordings), "--test-sources", c.test_sources] + extra
             + ["--on-start", warm_llm, "--exec", worker])
