@@ -5,7 +5,7 @@ at the door (door side). It also tells who is speaking ("Paketdienst · DHL", "A
 foreign languages into German. Everything runs locally: audio goes to a Whisper server on your own network, never to a
 cloud. Python 3.9+ standard library only.
 
-Version **1.3.0** (component tag `transcriber-v1.2.3` until 1.3.0 is tagged).
+Version **1.3.1** (component tag `transcriber-v1.3.1`).
 
 ## Interface
 
@@ -150,7 +150,9 @@ Changes go through a pull request. Once tagged, this block is listed in [`FROZEN
 
 ## History
 
-- 1.3.0 (not tagged yet): W3 mic health behind `AIKOS_MIC_CHECK` (default off): every recording's verdict as the event
+- 1.3.1: the W3 release (below). **`transcriber-v1.3.0` is void:** it was set by mistake on `d22b26a`, which holds the 1.2.3
+  code without W3 (the merge had failed); tags are immutable, so W3 ships as 1.3.1. Never deploy `transcriber-v1.3.0`.
+- 1.3.0 (content shipped as 1.3.1): W3 mic health behind `AIKOS_MIC_CHECK` (default off): every recording's verdict as the event
   `aikos_mic_check` (new module `mic.py`). On the door side, where a recording only starts with speech, the receiver itself reports
   ≥ 10 s of unbroken digital silence (zeros) on the stream (`SilenceWatch`, once per episode). Verdict `noise` for garbage behind the
   devices' ~−2 dBFS limiter (RMS > −10 dBFS). **Limit:** a mic whose driver does not start sends no packets at all, so neither
