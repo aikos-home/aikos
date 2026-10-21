@@ -75,14 +75,16 @@
           "residents": "Bewohner",
           "notify_targets": "Handys (Notify-Dienste)",
           "call_archive": "Gesprächsarchiv (Entwicklung)",
-          "front_door": "Haustürsensor"
+          "front_door": "Haustürsensor",
+          "tts_engine": "Sprachdienst (TTS)"
         },
         "data_description": {
           "doorbell": "Das Event der Klingel (oder ein Binärsensor, der beim Drücken angeht).",
           "residents": "Niemand zu Hause = keine dieser Personen ist zu Hause.",
           "notify_targets": "Wohin der Push geht, z. B. der Dienst der Handy-App mobile_app_<handy>.",
           "call_archive": "Jedes Gespräch (Beginn mit Firmware-Versionen, jede Nachricht, Ende) als JSON-Zeilen in aikos_archive/calls.jsonl im Konfigurationsordner. Bleibt, bis du es löschst.",
-          "front_door": "Der Türkontakt, dem die Geräte folgen (Haustür öffnen beendet ein Gespräch). aikos entprellt ihn um 2 s."
+          "front_door": "Der Türkontakt, dem die Geräte folgen (Haustür öffnen beendet ein Gespräch). aikos entprellt ihn um 2 s.",
+          "tts_engine": "Liest Notizen und die Begrüßung an der Tür in der eigenen Stimme der Bewohner. Nur einen lokalen Dienst wählen (z. B. aikos TTS über Wyoming). Leer = Text wird nur angezeigt."
         }
       }
     }
@@ -171,6 +173,10 @@
         "sender": {
           "name": "Von",
           "description": "Wer es schickt (steht an der Tür)."
+        },
+        "voice": {
+          "name": "Stimme",
+          "description": "Die Stimme des Absenders beim Sprachdienst; leer = nur anzeigen."
         }
       }
     },
@@ -223,6 +229,10 @@
         "clear_audio": {
           "name": "Ton entfernen",
           "description": "Kein Ton, nur Text."
+        },
+        "voice": {
+          "name": "Stimme",
+          "description": "Die Stimme des Absenders beim Sprachdienst; leer = nur anzeigen."
         }
       }
     }

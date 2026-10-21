@@ -21,7 +21,7 @@ from homeassistant.helpers.network import NoURLAvailableError, get_url
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
-from . import door_speaker
+from . import door_speaker, door_voice
 from .const import (
     DOOR_GREETING_TEXT,
     DOOR_MESSAGE_RECORDING,
@@ -29,6 +29,7 @@ from .const import (
     DOOR_SHOW_REPLY,
     DOOR_SOMEONE,
     LIVE_CALL,
+    OPT_TTS,
 )
 from .door_picture import panel_png
 from .door_rules import DoorState, Greeting, Mute, Note, check_window, clean_note, mute_until
@@ -37,6 +38,7 @@ _LOGGER = logging.getLogger(__name__)
 STORE_KEY = "aikos.door_actions"
 PICTURE_DIR = ("www", "aikos_door")             # served as /local/aikos_door without login: the picture is public anyway
 GREETING_DIR = "aikos"                          # in Home Assistant's local media (not public)
+SPEECH_PREFIX = "speech-"                        # speech made in advance, next to the greeting sound
 AUDIO_MAX = 3 * 1024 * 1024
 AUDIO_KINDS = {b"\x1aE\xdf\xa3": ".webm", b"OggS": ".ogg", b"RIFF": ".wav", b"ID3": ".mp3", b"\xff\xfb": ".mp3",
                b"\xff\xf3": ".mp3"}
@@ -159,23 +161,84 @@ class DoorActions:
         st = self._hass.states.get(DOOR_SOMEONE)
         return st is not None and st.state == "on"
 
-    async def async_say(self, message: str, sender: str) -> str:
-        """'now' (shown at the door) or 'waiting' (for the next visitor)."""
+    async def async_say(self, message: str, sender: str, voice: str = "") -> str:
+        """'now' (shown at the door, read aloud in `voice` if given) or 'waiting' (for the next visitor; its speech is
+        made now, so it plays at once when someone comes)."""
         text, who = clean_note(message, sender)
+        await self._drop_note_audio()
         if self._someone_there() and await self._show(text, who):
             self.state.note = None
             self._changed()
+            if voice:
+                self._background(self._speak_now(text, voice))
             return "now"
-        self.state.note = Note(message=text, sender=who, since=dt_util.now().isoformat(timespec="seconds"))
+        note = Note(message=text, sender=who, since=dt_util.now().isoformat(timespec="seconds"), voice=voice)
+        self.state.note = note
         self._changed()
+        if voice:
+            self._background(self._prepare_note(note))
         return "waiting"
 
-    @callback
-    def cancel_note(self) -> bool:
+    async def async_cancel_note(self) -> bool:
         had = self.state.note is not None
+        await self._drop_note_audio()
         self.state.note = None
         self._changed()
         return had
+
+    # speech in a resident's own voice (A42-A45)
+    @callback
+    def _background(self, coro) -> None:
+        self._entry.async_create_background_task(self._hass, coro, "aikos door speech")
+
+    def _engine(self) -> str:
+        return str(self._entry.options.get(OPT_TTS) or "")
+
+    async def _speech_file(self, text: str, voice: str, kind: str) -> str:
+        """The text in that voice as a file in the greeting folder; "" if there is no voice service or it fails."""
+        engine, folder = self._engine(), self._greeting_folder()
+        if not (engine and voice and text and folder is not None):
+            return ""
+        try:
+            ext, data = await door_voice.synthesize(self._hass, engine, text, voice)
+        except Exception as e:  # the voice service being away must never break the door: the text is shown anyway
+            _LOGGER.warning("aikos: no speech for the door: %s", e)
+            return ""
+        name = f"{SPEECH_PREFIX}{kind}-{secrets.token_hex(6)}.{ext.lstrip('.') or 'mp3'}"
+        await self._hass.async_add_executor_job(_write, folder / name, data, f"{SPEECH_PREFIX}{kind}-")
+        return name
+
+    async def _play_file(self, name: str) -> bool:
+        folder = self._greeting_folder()
+        if not name or folder is None:
+            return False
+        try:
+            await door_speaker.play(self._hass, folder / name)
+            return True
+        except (door_speaker.DoorSpeakerError, OSError) as e:
+            _LOGGER.warning("aikos: not played at the door: %s", e)
+            return False
+
+    async def _remove_speech(self, kind: str) -> None:
+        folder = self._greeting_folder()
+        if folder is not None:
+            await self._hass.async_add_executor_job(_remove, folder, f"{SPEECH_PREFIX}{kind}-")
+
+    async def _speak_now(self, text: str, voice: str) -> None:
+        name = await self._speech_file(text, voice, "now")
+        if name:
+            await self._play_file(name)
+            await self._remove_speech("now")
+
+    async def _prepare_note(self, note: Note) -> None:
+        name = await self._speech_file(note.message, note.voice, "note")
+        if self.state.note is note and name:   # still the same waiting note
+            note.audio = name
+            self._changed()
+
+    async def _drop_note_audio(self) -> None:
+        if self.state.note is not None and self.state.note.audio:
+            await self._remove_speech("note")
 
     async def _show(self, text: str, who: str) -> bool:
         if not self._hass.services.has_service("esphome", DOOR_SHOW_REPLY):
@@ -201,19 +264,18 @@ class DoorActions:
             if await self._show(note.message, note.sender):
                 self.state.note = None
                 self._changed()
+                if note.audio:
+                    await self._play_file(note.audio)
+                    await self._remove_speech("note")
+                elif note.voice:
+                    await self._speak_now(note.message, note.voice)
             return  # the note is this visit's message; no greeting sound on top of it
         g = self.state.greeting
         busy = any((s := self._hass.states.get(e)) is not None and s.state == "on" for e in (LIVE_CALL, DOOR_MESSAGE_RECORDING))
         now = dt_util.now()
         if not g.may_play(now, busy):
             return
-        folder = self._greeting_folder()
-        if folder is None:
-            return
-        try:
-            await door_speaker.play(self._hass, folder / g.audio)
-        except (door_speaker.DoorSpeakerError, OSError) as e:
-            _LOGGER.warning("aikos: greeting not played: %s", e)
+        if not await self._play_file(g.sound):
             return
         g.last_played = now.isoformat(timespec="seconds")
         self._changed()
@@ -253,10 +315,12 @@ class DoorActions:
 
     async def async_set_greeting(self, *, enabled: bool | None = None, text: str | None = None,
                                  start: datetime | None = None, end: datetime | None = None, clear_window: bool = False,
-                                 audio: bytes | None = None, clear_audio: bool = False) -> Greeting:
+                                 audio: bytes | None = None, clear_audio: bool = False, voice: str | None = None) -> Greeting:
         g = self.state.greeting
         new = Greeting(**vars(g))
         new.managed = True
+        if voice is not None:
+            new.voice = voice
         if enabled is not None:
             new.enabled = enabled
         if text is not None:
@@ -282,10 +346,21 @@ class DoorActions:
             if folder is not None:
                 await self._hass.async_add_executor_job(_remove, folder, "greeting-")
             new.audio = ""
+        if (new.text, new.voice) != (g.text, g.voice) or not new.voice:
+            new.tts_audio = ""   # the read-aloud text no longer fits: made again below
+            await self._remove_speech("greeting")
         self.state.greeting = new
         self._changed()
         await self._sync_greeting_text()
+        if new.text and new.voice and not new.tts_audio:
+            self._background(self._prepare_greeting(new))
         return new
+
+    async def _prepare_greeting(self, g: Greeting) -> None:
+        name = await self._speech_file(g.text, g.voice, "greeting")
+        if self.state.greeting is g and name:   # nobody changed the greeting meanwhile
+            g.tts_audio = name
+            self._changed()
 
     @callback
     def _on_screen_text(self, event: Event[EventStateChangedData]) -> None:

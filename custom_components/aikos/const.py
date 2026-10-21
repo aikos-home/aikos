@@ -17,6 +17,9 @@ OPT_NOTIFY = "notify_targets"
 OPT_ARCHIVE = "call_archive"
 # The front door contact the devices follow (binary_sensor.aikos_front_door, debounced).
 OPT_FRONT_DOOR = "front_door"
+# The TTS service that reads notes and greetings aloud in the residents' own voices (aikos-app A42–A45; a local one,
+# e.g. the aikos TTS service through the Wyoming integration). Empty = text is only shown.
+OPT_TTS = "tts_engine"
 
 # Call log sources. Live: the transcriber's sensors and the talk computer's call sensor (ids as the devices and the
 # transcriber create them). Test: the bench stand-ins from the homeassistant/ package, so tests never touch the live log.

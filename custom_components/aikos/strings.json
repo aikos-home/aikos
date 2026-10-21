@@ -75,14 +75,16 @@
           "residents": "Residents",
           "notify_targets": "Phones (notify services)",
           "call_archive": "Call archive (developers)",
-          "front_door": "Front door sensor"
+          "front_door": "Front door sensor",
+          "tts_engine": "Voice service (TTS)"
         },
         "data_description": {
           "doorbell": "The doorbell's event (or a binary sensor that turns on when pressed).",
           "residents": "Nobody home = none of these persons is home.",
           "notify_targets": "Where the push goes, e.g. the mobile app service mobile_app_<phone>.",
           "call_archive": "Every call (start with firmware versions, every message, end) as JSON lines in aikos_archive/calls.jsonl in the configuration folder. Stays until you delete it.",
-          "front_door": "The door contact the devices follow (opening the front door ends a call). aikos debounces it by 2 s."
+          "front_door": "The door contact the devices follow (opening the front door ends a call). aikos debounces it by 2 s.",
+          "tts_engine": "Reads notes and the greeting at the door in the residents' own voices. Use a local service (e.g. aikos TTS through Wyoming). Empty = text is only shown."
         }
       }
     }
@@ -171,6 +173,10 @@
         "sender": {
           "name": "From",
           "description": "Who sends it (shown at the door)."
+        },
+        "voice": {
+          "name": "Voice",
+          "description": "The sender's voice at the voice service; empty = shown only."
         }
       }
     },
@@ -223,6 +229,10 @@
         "clear_audio": {
           "name": "Remove sound",
           "description": "No sound, text only."
+        },
+        "voice": {
+          "name": "Voice",
+          "description": "The sender's voice at the voice service; empty = shown only."
         }
       }
     }

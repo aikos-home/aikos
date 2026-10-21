@@ -1,4 +1,5 @@
-"""Plays a sound file on the door speaker (the greeting's recorded sound; later the local voice), as the door's speech output.
+"""Plays a sound file on the door speaker (the greeting's recorded sound, speech in a resident's own voice), as the door's
+speech output.
 
 Contract (vertraege.md, talk computer 0.7.21+): `esphome.aikos_intercom_talk_allow_tts {host, ms}` lets the door play RTP
 from `host` for `ms` (at most 60 s), also outside a call. The sound goes as the room keys send it: RTP v2, L16 big-endian,
