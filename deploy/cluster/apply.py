@@ -33,6 +33,7 @@ COSIGN_SHA256 = "c3b4f5410e608af03a5eb0aaac84a4313d8da131248e08ff1759ac70c79d164
 DIRS = [  # path, mode, owner
     ("/opt/aikos", "0755", "root:root"), ("/usr/local/lib/aikos", "0755", "root:root"),
     ("/etc/aikos", "0755", "root:root"), ("/etc/aikos/certs", "0755", "root:root"),
+    ("/etc/aikos/caddy", "0755", "root:root"),
     ("/etc/aikos/secrets", "0750", "root:root"), ("/etc/aikos/secrets/app", "0700", f"{APP_UID}:{APP_UID}"),
     ("/var/lib/aikos/rqlite", "0700", f"{RQLITE_UID}:{RQLITE_UID}"),
     ("/var/lib/aikos/app", "0700", f"{APP_UID}:{APP_UID}"),
@@ -177,9 +178,11 @@ def main(argv: list[str] | None = None) -> int:
                       "sudo systemctl enable --now aikos-db-backup.timer aikos-heartbeat.timer >/dev/null")
     print("database and Caddy on all nodes")
     for n in inv.nodes:
+        ssh.run(n.ip, "sudo rm -f /etc/aikos/Caddyfile")  # old single-file location (before the folder mount)
         compose(ssh, n.ip, "up", "-d", "--remove-orphans", "rqlite", "caddy")
-        if args.rotate_certs:  # rqlite reads its certificates at start; the three restart within seconds
+        if args.rotate_certs:  # rqlite and the app read certificates at start; the three restart within seconds
             compose(ssh, n.ip, "restart", "rqlite")
+            ssh.run(n.ip, "sudo docker restart aikos-app-1 >/dev/null 2>&1 || true")
         # Compose does not notice a changed Caddyfile; a graceful reload picks it up without dropping connections.
         compose(ssh, n.ip, "exec", "-T", "caddy", "caddy", "reload", "--config", "/etc/caddy/Caddyfile",
                 "--adapter", "caddyfile")

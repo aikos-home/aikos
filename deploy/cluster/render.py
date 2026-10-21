@@ -122,7 +122,7 @@ def node_files(inv: Inventory, node: Node, sec: dict, node_cert: str, node_key: 
     kit = lambda name: (HERE / name).read_text(encoding="utf-8")  # noqa: E731
     return [
         File("/opt/aikos/compose.yaml", kit("compose.yaml")),
-        File("/etc/aikos/Caddyfile", kit("Caddyfile")),
+        File("/etc/aikos/caddy/Caddyfile", kit("Caddyfile")),
         File("/etc/aikos/cluster.env", cluster_env(inv, node)),
         File("/etc/aikos/app.env", app_env(inv, node)),
         File("/etc/aikos/certs/ca.crt", sec["ca_cert"]),

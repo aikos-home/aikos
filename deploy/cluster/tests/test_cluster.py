@@ -152,3 +152,18 @@ def test_health_check_hands_the_address_over_during_a_rollout():
     assert "[ -e /run/aikos/rollout ] && exit 1" in script and script.index("/run/aikos/rollout") < script.index("curl")
     conf = files_of(0)["/etc/keepalived/keepalived.conf"].content
     assert "interval 1" in conf and "fall 2" in conf
+
+
+def test_folders_not_single_files_are_mounted():
+    """Regression 21.10.: files are replaced atomically (new inode); a single-file mount kept the old Caddyfile."""
+    compose_text = (HERE / "compose.yaml").read_text(encoding="utf-8")
+    assert "/etc/aikos/caddy:/etc/caddy:ro" in compose_text and "Caddyfile:/etc/caddy/Caddyfile" not in compose_text
+    assert "/etc/aikos/certs:/certs:ro" in compose_text
+    assert "/etc/aikos/caddy/Caddyfile" in files_of(0)
+
+
+def test_house_proxy_may_use_plain_http_without_a_loop():
+    caddy = (HERE / "Caddyfile").read_text(encoding="utf-8")
+    block = caddy[caddy.index("http://{$AIKOS_DOMAIN}"):]
+    assert "@house_proxy remote_ip {$TRUSTED_PROXIES}" in block and "reverse_proxy 127.0.0.1:8780" in block
+    assert "redir https://{host}{uri} 308" in block
