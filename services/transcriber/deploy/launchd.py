@@ -1,4 +1,4 @@
-"""Writes the LaunchAgents of the aikos transcriber on a Mac, one per side (room, door).
+"""Writes the LaunchAgents of the aikos transcriber on a Mac, one per side (room, door), and the heartbeat if configured.
 
     /usr/bin/python3 deploy/launchd.py --env ~/.aikos/transcriber.env --checkout ~/aikos/repo
     /usr/bin/python3 deploy/launchd.py --env ~/.aikos/transcriber.env --import-from <existing agent plists>
@@ -17,6 +17,7 @@ import shlex
 from pathlib import Path
 
 LABEL = "home.aikos.transcriber.{side}"
+HEARTBEAT_LABEL = "home.aikos.heartbeat"
 SIDES = ("room", "door")
 PATH = "/usr/bin:/bin:/usr/sbin:/sbin"
 PER_SIDE = ("AIKOS_SIDE", "AIKOS_PORT")   # would apply to both agents: each side keeps its own default
@@ -83,6 +84,20 @@ def agent(side: str, env: dict, checkout: Path, logs: Path, python: str = "/usr/
     }
 
 
+def heartbeat_agent(env: dict, checkout: Path, logs: Path, python: str = "/usr/bin/python3") -> dict:
+    """The heartbeat for the push monitor: one check every 30 s (only written when AIKOS_HEARTBEAT_URL is set)."""
+    log = logs / "heartbeat.log"
+    return {
+        "Label": HEARTBEAT_LABEL,
+        "ProgramArguments": ["/bin/bash", "-c",
+                             f"exec {shlex.quote(python)} -u -m aikos_transcriber.heartbeat >> {shlex.quote(str(log))} 2>&1"],
+        "WorkingDirectory": str(checkout / "services" / "transcriber"),
+        "EnvironmentVariables": {**env, "PATH": PATH},
+        "StartInterval": 30,
+        "RunAtLoad": True,
+    }
+
+
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--env", type=Path, required=True, help="the house settings (KEY=value)")
@@ -104,6 +119,11 @@ def main(argv=None) -> None:
         path = a.agents / f"{LABEL.format(side=side)}.plist"
         with open(path, "wb") as f:
             plistlib.dump(agent(side, env, a.checkout.expanduser().resolve(), a.logs, a.python), f)
+        print(f"wrote {path}")
+    if env.get("AIKOS_HEARTBEAT_URL"):
+        path = a.agents / f"{HEARTBEAT_LABEL}.plist"
+        with open(path, "wb") as f:
+            plistlib.dump(heartbeat_agent(env, a.checkout.expanduser().resolve(), a.logs, a.python), f)
         print(f"wrote {path}")
 
 
