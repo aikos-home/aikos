@@ -1,6 +1,6 @@
 # aikos integration for Home Assistant
 
-The household logic of aikos, installed via HACS. Version **0.10.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
+The household logic of aikos, installed via HACS. Version **0.10.1**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
 front door (0.5.0, tag `aikos-v0.5.0`), the mic health warning (0.7.0), the door message register (0.8.0), the door actions (0.9.0) and reading aloud in the residents' own voices (0.10.0). More blocks follow (where the bell
 rings, presence, alarm, pairing of devices); each comes as a new version.
 
@@ -212,6 +212,7 @@ it uses the door's contracts and only writes the door entities named here.
 
 ## History
 
+- 0.10.1: a note shown before its speech was ready no longer leaves the speech file behind.
 - 0.10.0: notes and the greeting read aloud in the sender's own voice through a local TTS (option "Voice service"); speech made
   in advance for waiting notes and the greeting.
 - 0.9.1: the screen's greeting text stays as it is until a greeting is set through aikos (0.9.0 emptied it at start).
