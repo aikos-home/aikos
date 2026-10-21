@@ -4,7 +4,7 @@ Runs the aikos app on three small Linux VMs (one per hypervisor host) so that lo
 takes the app away. Generic: every house value comes from an inventory file you keep private.
 
 ```
-phone ─► reverse proxy (or DNS straight to the virtual address) ─► virtual address (keepalived)
+phone ─► house reverse proxy (public certificate) ─HTTPS─► virtual address (keepalived)
                                                                        │ follows a healthy node
                    ┌───────────────────────────────┬───────────────────┴───────────┐
                node 1                          node 2                          node 3
@@ -35,7 +35,9 @@ All containers use the host network: ports published by Docker would bypass the 
 3. A new digest is checked with `cosign verify` against exactly that workflow identity. Unsigned or foreign: marked bad.
 4. The node takes the cluster-wide lock (one row in rqlite, `INSERT … ON CONFLICT … WHERE`, 10 min lease). Only one
    node changes at a time. If one of the other nodes is not healthy, it waits: a rollout never leaves one node alone.
-5. It starts the new image and waits up to 120 s for `/api/v1/health` with `ok: true` and the commit from the image's
+5. If it holds the virtual address, it hands it over first (its health check fails while it rolls out; a peer takes
+   the address in about 2 s), so a planned rollout has no gap.
+6. It starts the new image and waits up to 120 s for `/api/v1/health` with `ok: true` and the commit from the image's
    `org.opencontainers.image.revision` label. Not healthy: back to the previous digest, the new one is marked bad.
 
 State per node: `/var/lib/aikos/deployer/state.json` (current, previous, bad). Logs: `journalctl -u aikos-deployer`.
@@ -66,7 +68,7 @@ certificates. Template for the inventory: [`cluster.example.toml`](cluster.examp
 | `/etc/aikos/cluster.env`, `/etc/aikos/app.env` | root 0644 | node and app settings, no secrets |
 | `/etc/aikos/app-image.env` | root | the digest the rollout agent runs |
 | `/etc/aikos/certs/` | `node.key` rqlite 0400 | cluster CA certificate, this node's certificate |
-| `/etc/aikos/secrets/` | 0711; files 0400 | `cluster.json` (root), `rqlite-auth.json` (rqlite), `app/` (app: database password, Home Assistant token), `deployer.env`, `backup.env` |
+| `/etc/aikos/secrets/` | 0750; files 0400 | `cluster.json` (root), `rqlite-auth.json` (rqlite), `app/` (app: database password, Home Assistant token), `deployer.env`, `backup.env` |
 | `/var/lib/aikos/{rqlite,app,caddy,deployer}` | per service, 0700 | data |
 | `/var/backups/aikos/` | root:aikos 0750 | `aikos-app.sqlite` (0640), `.sha256`, `last-ok` |
 
@@ -74,7 +76,7 @@ certificates. Template for the inventory: [`cluster.example.toml`](cluster.examp
 
 | What happens | Effect |
 |---|---|
-| One node, VM or host down | keepalived moves the address in about 4 s; rqlite keeps a majority; rollouts wait until it is back |
+| One node, VM or host down | keepalived moves the address in about 2–3 s (measured 21.10. with the old 2 s interval: 4 s); rqlite keeps a majority; rollouts wait until it is back |
 | Two nodes down | rqlite has no majority: the app cannot write (no sign-in); the remaining node keeps the address only if healthy |
 | New image does not start | that node rolls back by itself, marks the digest bad; the other two never take it |
 | Registry or GitHub unreachable | nothing changes; the running version stays |
