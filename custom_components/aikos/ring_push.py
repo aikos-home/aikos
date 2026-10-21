@@ -8,15 +8,17 @@ MIN_GAP = timedelta(seconds=30)
 
 QUIET_HOURS = "quiet_hours"
 NOBODY_HOME = "nobody_home"
+BELL_MUTED = "bell_muted"   # aikos-app A40: muted = nobody hears the bell, so the phones get the push
 
 _TEXT = {
-    "de": {"ring": "Es hat geklingelt", QUIET_HOURS: "Ruhezeit", NOBODY_HOME: "niemand zu Hause"},
-    "en": {"ring": "Someone rang the doorbell", QUIET_HOURS: "quiet hours", NOBODY_HOME: "nobody home"},
+    "de": {"ring": "Es hat geklingelt", QUIET_HOURS: "Ruhezeit", NOBODY_HOME: "niemand zu Hause", BELL_MUTED: "Klingel stumm"},
+    "en": {"ring": "Someone rang the doorbell", QUIET_HOURS: "quiet hours", NOBODY_HOME: "nobody home", BELL_MUTED: "bell muted"},
 }
 
 
-def push_reason(quiet_active: bool, resident_states: list[str], last_push: datetime | None, now: datetime) -> str | None:
-    """Why this ring is pushed (`quiet_hours`, `nobody_home`), or None.
+def push_reason(quiet_active: bool, resident_states: list[str], last_push: datetime | None, now: datetime,
+                muted: bool = False) -> str | None:
+    """Why this ring is pushed (`quiet_hours`, `bell_muted`, `nobody_home`), or None.
 
     Nobody home = residents are configured and none of them is `home` (unknown counts as away: a missed ring is worse than one push too many).
     """
@@ -24,6 +26,8 @@ def push_reason(quiet_active: bool, resident_states: list[str], last_push: datet
         return None
     if quiet_active:
         return QUIET_HOURS
+    if muted:
+        return BELL_MUTED
     if resident_states and all(state != "home" for state in resident_states):
         return NOBODY_HOME
     return None

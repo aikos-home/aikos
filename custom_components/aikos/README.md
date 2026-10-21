@@ -1,7 +1,7 @@
 # aikos integration for Home Assistant
 
-The household logic of aikos, installed via HACS. Version **0.8.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
-front door (0.5.0, tag `aikos-v0.5.0`), the mic health warning (0.7.0) and the door message register (0.8.0). More blocks follow (where the bell
+The household logic of aikos, installed via HACS. Version **0.9.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
+front door (0.5.0, tag `aikos-v0.5.0`), the mic health warning (0.7.0), the door message register (0.8.0) and the door actions (0.9.0). More blocks follow (where the bell
 rings, presence, alarm, pairing of devices); each comes as a new version.
 
 ## Install
@@ -130,6 +130,31 @@ recorder puts it, `<local media>/aikos_door/` (Media → My media).
 - **A file deleted outside** (media browser): the entry stays with `file_missing: true`; nothing is deleted automatically.
 - No signed Home Assistant link and no sound ever goes into the register or the entity.
 
+### Door actions (0.9.0, for the aikos app)
+
+What a resident does at the door from the app (aikos-app A11–A14, A39–A41). Kept in Home Assistant (`.storage/aikos.door_actions`);
+it uses the door's contracts and only writes the door entities named here.
+
+| Entity / service | What |
+|---|---|
+| `binary_sensor.aikos_bell_muted` | **Door contract:** on while the bell is muted (the screen behaves as in quiet hours; room keys should follow). Attribute `until` (ISO, `""` = until switched off) |
+| `switch.aikos_bell_mute` | On = muted until switched off |
+| `aikos.bell_mute {minutes \| until_time \| forever}`, `aikos.bell_unmute` | Mute for some minutes (≤ 7 days), until the next such time of day ("bis morgen 7:00"), or until switched off. Ends by itself |
+| `aikos.quiet_hours {enabled, start, end}` | The quiet-hours settings of 0.1.0, for a client without admin rights |
+| `aikos.door_say {message, sender}` → `{delivered: now \| waiting}` | Someone at the door (radar): shown right away via `esphome.aikos_intercom_screen_show_reply`, event `aikos_door_reply {sender, text}`, logbook. Nobody there: waits for the next visitor (radar off → on), then the same, and gone |
+| `sensor.aikos_door_note` | `waiting` / `none`; attributes `message`, `sender`, `since`. `aikos.door_say_cancel` withdraws it |
+| `aikos.door_picture {image}` → `{path}`, `aikos.door_picture_clear` | Any photo (base64) → grey PNG ≤ 492×536 with the panel's 16 grey levels under `/local/aikos_door/` (random name, the old one is deleted), `text.aikos_intercom_screen_photo_url` set to it. Stays until removed |
+| `sensor.aikos_door_picture` | `shown` / `none`; attribute `path` |
+| `aikos.door_greeting {enabled, text, start, end, clear_window, audio, clear_audio}` | Text (≤ 120) and/or a recorded sound (base64: WebM, Ogg, M4A, MP3, WAV; ≤ 3 MB, kept in `<local media>/aikos/`) for everyone who comes. `text.aikos_intercom_screen_greeting` holds the text only within the window (switched exactly at start and end). The sound plays when the radar sees someone: within the window, not during a call or a message, once per 10 min |
+| `sensor.aikos_door_greeting` | `active` / `scheduled` / `off`; attributes `enabled`, `text`, `start`, `end`, `audio`, `last_played` |
+
+- **Ring push while muted:** muted means nobody hears the bell, so the ring push goes to the phones as in quiet hours (A40):
+  "Es hat geklingelt (14:00) · Klingel stumm".
+- **The sound at the door:** ffmpeg decodes it, `esphome.aikos_intercom_talk_allow_tts {host, ms}` lets the door play this machine's
+  RTP (L16, 16 kHz, PT 96) on UDP 5004 of the talk computer (found from its ESPHome entry `aikos-intercom-talk`). All in the house.
+- **No reading aloud yet:** text is only shown. Reading aloud comes with a local voice (aikos-app A42: no text leaves the house).
+- **A waiting note goes first:** at that visit no greeting sound plays on top of it.
+
 ## Errors
 
 | Case | What happens |
@@ -143,6 +168,10 @@ recorder puts it, `<local media>/aikos_door/` (Media → My media).
 | A door message's MP3 can't be deleted | The service fails, the entry stays (nothing half-deleted) |
 | Unknown message id for delete/heard | The service fails with "Es gibt keine Türnachricht …" |
 | The recorder names an unusable file | Warning in the log; nothing is registered |
+| The door screen is offline when a note is sent | The note waits (`waiting`) and goes at the next visit |
+| A door text entity is unavailable | Not written; the greeting text is set again when the screen comes back |
+| The talk computer is not reachable | The greeting sound is skipped (warning in the log); it is tried at the next visit |
+| Not a picture / not a sound file / end before start | The service fails with "Geht nicht: …"; nothing changes |
 
 ## Structure
 
@@ -163,7 +192,12 @@ recorder puts it, `<local media>/aikos_door/` (Media → My media).
 | `mic_problem.py` | The mic problem sensors, notification and push |
 | `door_messages.py` | The door message register's rules (recipient, words, heard, storage form), no Home Assistant code |
 | `message_register.py` | Listens to the door, keeps the register in HA's storage, deletes the MP3 |
-| `services.py` | The register's services |
+| `door_rules.py` | The door actions' rules (mute end, note, greeting window, storage form), no Home Assistant code |
+| `door_actions.py` | Mute, note, picture, greeting in Home Assistant: storage, timers, radar |
+| `door_entities.py` | The door actions' entities |
+| `door_picture.py` | Photo → the panel's grey PNG (Pillow) |
+| `door_speaker.py` | A sound file to the door speaker (ffmpeg, RTP) |
+| `services.py` | The services for the aikos app |
 | `config_flow.py`, `__init__.py` | Setting up and removing aikos |
 
 ## Tests
@@ -173,6 +207,8 @@ recorder puts it, `<local media>/aikos_door/` (Media → My media).
 
 ## History
 
+- 0.9.0: door actions for the aikos app (bell mute with the ring push still going, quiet hours as a service, note to the door
+  now or for the next visitor, door picture, greeting with window and sound); provides `binary_sensor.aikos_bell_muted`.
 - 0.8.0: door message register for the aikos app (`sensor.aikos_door_messages`, `aikos.door_messages`, `aikos.door_message_delete`,
   `aikos.door_message_heard`); takes over what the door's proof of concept wrote into helpers (words, recipient, last message).
 - 0.7.0: W3 mic health warning (`binary_sensor.aikos_mic_problem`, notification, push) from the transcriber's `aikos_mic_check`.
