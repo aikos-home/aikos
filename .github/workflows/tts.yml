@@ -1,0 +1,21 @@
+name: tts unit checks
+on:
+  push:
+    paths:
+      - "services/tts/**"
+      - ".github/workflows/tts.yml"
+  pull_request:
+    paths:
+      - "services/tts/**"
+      - ".github/workflows/tts.yml"
+jobs:
+  tts-unit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # without the model: the tests use FakeEngine (the model runs only on the house's own machine)
+      - run: pip install -e "services/tts[test]"
+      - run: python -m pytest services/tts -q
