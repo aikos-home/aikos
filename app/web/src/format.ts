@@ -22,7 +22,7 @@ export function duration(seconds: number | null | undefined): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-/** "Paketdienst · DHL: Ich habe …" → speaker and words. The register (step 2) delivers both as fields. */
+/** "Paketdienst · DHL: Ich habe …" → speaker and words (older messages; the register delivers both as fields). */
 export function splitSpeaker(text: string): { speaker: string; words: string } {
   const i = text.indexOf(": ");
   if (i > 0 && i <= 40) return { speaker: text.slice(0, i), words: text.slice(i + 2) };

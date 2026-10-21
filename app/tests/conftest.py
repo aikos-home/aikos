@@ -61,6 +61,13 @@ class FakeHa(HaClient):
         self.audio = b"ID3" + b"\x00" * 5000
         self.asked: list[str] = []
         self.states: dict[str, dict[str, Any]] = {}
+        self.register: list[dict[str, Any]] | None = None
+        """The aikos message register (aikos 0.8.0); None = an older aikos without it."""
+        self.services: list[tuple[str, str, dict[str, Any]]] = []
+
+    def use_register(self, messages: list[dict[str, Any]]) -> None:
+        self.register = messages
+        self.states["sensor.aikos_door_messages"] = {"state": str(len(messages)), "attributes": {}}
 
     async def start(self) -> None:
         pass
@@ -76,7 +83,11 @@ class FakeHa(HaClient):
         return self.states.get(entity_id)
 
     async def command(self, type_: str, **payload: Any) -> Any:
+        self.check(type_, payload)  # the same fixed lists as the real connection
         self.asked.append(type_)
+        if type_ == "call_service":
+            return self._service(payload["domain"], payload["service"], payload.get("service_data") or {},
+                                 payload.get("return_response", False))
         if type_ == "media_source/browse_media":
             return {"children": [{"title": f, "media_class": "music", "can_expand": False} for f in self.files]
                     + [{"title": "fotos", "media_class": "directory", "can_expand": True}]}
@@ -85,6 +96,20 @@ class FakeHa(HaClient):
         if type_ == "media_source/resolve_media":
             return {"url": SIGNED.format(payload["media_content_id"].rsplit("/", 1)[1])}
         raise HaError(f"unexpected {type_}")
+
+    def _service(self, domain: str, service: str, data: dict[str, Any], response: bool) -> Any:
+        assert self.register is not None, "no register in this Home Assistant"
+        self.services.append((domain, service, data))
+        if service == "door_messages":
+            return {"context": {}, "response": {"messages": [dict(m) for m in self.register]}}
+        m = next((m for m in self.register if m["id"] == data["id"]), None)
+        if m is None:
+            raise HaError("Es gibt keine Türnachricht")
+        if service == "door_message_delete":
+            self.register.remove(m)
+        elif service == "door_message_heard" and data["by"] not in m["heard_by"]:
+            m["heard_by"].append(data["by"])
+        return {"context": {}, "response": {"deleted": m["id"]}} if response else {"context": {}}
 
     async def media(self, url: str, headers: dict[str, str] | None = None):
         rng = (headers or {}).get("Range")
@@ -142,6 +167,12 @@ class Household:
 
     async def get(self, path: str, who: Person | None = None, headers: dict[str, str] | None = None):
         return await self.client.get(path, headers={**(who.headers if who else {}), **(headers or {})})
+
+    async def delete(self, path: str, who: Person | None = None, origin: str | None = ORIGIN):
+        h = dict(who.headers if who else {})
+        if origin:
+            h["Origin"] = origin
+        return await self.client.delete(path, headers=h)
 
     async def setup(self, authn: SoftAuthenticator, name: str = "Alex"):
         r = await self.post("/api/v1/setup/start", {"code": self.setup_code(), "name": name})

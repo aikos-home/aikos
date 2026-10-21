@@ -12,7 +12,7 @@ from ..auth.passkeys import Passkeys
 from ..auth.service import AuthService
 from ..config import Settings
 from ..ha.client import HaClient
-from ..ha.door import DoorMessages
+from ..ha.door import REGISTER_ENTITY, DoorMessages
 from ..store import Database
 from ..store.accounts import Accounts
 from ..store.audit import Audit
@@ -91,7 +91,8 @@ def create_app(settings: Settings, ha: HaClient | None = None) -> web.Applicatio
         path = write_setup_code(c)
         if path:
             _LOGGER.warning("nobody is set up yet: the one-time setup code is in %s", path)
-        c.ha.watch([settings.entity_someone_at_door, settings.entity_quiet_hours, settings.entity_bell_muted])
+        c.ha.watch([settings.entity_someone_at_door, settings.entity_quiet_hours, settings.entity_bell_muted,
+                    REGISTER_ENTITY])
         await c.ha.start()
 
     async def on_cleanup(_app: web.Application) -> None:

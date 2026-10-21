@@ -2,14 +2,15 @@
 
 import pytest
 
-from aikos_app.ha.client import ALLOWED_COMMANDS, ALLOWED_SERVICE_DOMAINS, HaClient, HaError
+from aikos_app.ha.client import ALLOWED_COMMANDS, ALLOWED_SERVICES, HaClient, HaError
 
 
 def test_the_list_is_exactly_the_reviewed_one():
     # Each of these was checked in Home Assistant 2026.9.4: no admin-only decorator on its handler.
     assert ALLOWED_COMMANDS == {"get_states", "subscribe_entities", "history/history_during_period",
                                 "media_source/browse_media", "media_source/resolve_media", "call_service"}
-    assert ALLOWED_SERVICE_DOMAINS == frozenset()  # step 1 only reads
+    assert ALLOWED_SERVICES == {("aikos", "door_messages"), ("aikos", "door_message_delete"),
+                                ("aikos", "door_message_heard")}  # step 2: only the message register
 
 
 @pytest.mark.parametrize("command", ["config/auth/list", "auth/long_lived_access_token", "subscribe_events",
@@ -19,9 +20,11 @@ async def test_other_commands_never_leave_the_app(command):
         await HaClient("http://ha.invalid", "t").command(command)
 
 
-async def test_service_domains_are_restricted():
+@pytest.mark.parametrize("domain,service", [("homeassistant", "restart"), ("aikos", "store_media"), ("lock", "unlock"),
+                                            ("aikos", None), (None, "door_messages")])
+async def test_only_the_listed_services_are_called(domain, service):
     with pytest.raises(HaError, match="not allowed"):
-        await HaClient("http://ha.invalid", "t").command("call_service", domain="homeassistant", service="restart")
+        await HaClient("http://ha.invalid", "t").command("call_service", domain=domain, service=service)
 
 
 async def test_only_local_media_links_are_fetched():

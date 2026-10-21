@@ -41,7 +41,11 @@
           "time": {"type": "string", "description": "ISO time"},
           "seconds": {"type": ["number", "null"]}, "text": {"type": "string"},
           "recipient": {"type": "string", "description": "\"\" = for everyone"},
-          "audio": {"type": "string", "description": "path of the audio stream in this API"}
+          "speaker": {"type": "string"}, "heard_by": {"type": "array", "items": {"type": "string"}},
+          "heard": {"type": "boolean", "description": "I have heard it"},
+          "may_delete": {"type": "boolean", "description": "A38: recipient or superadmin; for everyone: adults too"},
+          "audio_missing": {"type": "boolean"},
+          "audio": {"type": ["string", "null"], "description": "path of the audio stream in this API; null if the file is gone"}
         }
       },
       "DoorStatus": {
@@ -84,6 +88,8 @@
     "/api/v1/people/{user_id}/disable": {"post": {"summary": "Block a person and end their sessions (superadmin)", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"description": "ok"}}}},
     "/api/v1/door/status": {"get": {"summary": "Someone at the door, quiet hours, bell muted", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/DoorStatus"}}}, "description": "ok"}}}},
     "/api/v1/door/messages": {"get": {"summary": "Door messages visible to me (A15: for me, for everyone; superadmin all)", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/DoorMessage"}}}}, "description": "ok"}, "503": {"description": "ha_unreachable"}}}},
-    "/api/v1/door/messages/{message_id}/audio": {"get": {"summary": "The message's sound, streamed through the app (Range supported)", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"description": "audio"}, "206": {"description": "partial audio"}, "404": {"description": "not_found (also for someone else's message)"}}}}
+    "/api/v1/door/messages/{message_id}": {"delete": {"summary": "Delete a door message for good, sound and text (A38)", "security": [{"cookie": []}, {"bearer": []}], "responses": {"204": {"description": "deleted"}, "403": {"description": "forbidden"}, "404": {"description": "not_found (also for someone else's message)"}, "503": {"description": "no_register / ha_unreachable"}}}},
+    "/api/v1/door/messages/{message_id}/heard": {"post": {"summary": "I have heard this message (kept in Home Assistant)", "security": [{"cookie": []}, {"bearer": []}], "responses": {"204": {"description": "noted"}, "404": {"description": "not_found"}, "503": {"description": "no_register / ha_unreachable"}}}},
+    "/api/v1/door/messages/{message_id}/audio": {"get": {"summary": "The message's sound, streamed through the app (Range supported). share=1: as a file to forward by hand (A37), recorded", "security": [{"cookie": []}, {"bearer": []}], "parameters": [{"name": "share", "in": "query", "required": false, "schema": {"type": "string", "enum": ["1"]}}], "responses": {"200": {"description": "audio"}, "206": {"description": "partial audio"}, "404": {"description": "not_found (also for someone else's message)"}}}}
   }
 }

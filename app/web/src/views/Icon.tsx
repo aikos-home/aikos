@@ -9,6 +9,8 @@ const PATHS: Record<string, string> = {
   moon: "M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z",
   radar: "M12 12m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8",
   play: "M7 4v16l13-8z",
+  share: "M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 3v13M7 8l5-5 5 5",
+  trash: "M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3",
   pause: "M7 4h4v16H7zM14 4h4v16h-4z",
   mic: "M9 5a3 3 0 0 1 6 0v6a3 3 0 0 1-6 0zM5 11a7 7 0 0 0 14 0M12 18v3",
   text: "M4 6h16M4 12h10M4 18h7",
