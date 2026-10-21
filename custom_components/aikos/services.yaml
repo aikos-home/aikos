@@ -21,3 +21,70 @@ door_message_heard:
       required: true
       selector:
         text:
+# Door actions (for the aikos app; aikos-app A11–A14, A39–A41).
+bell_mute:
+  fields:
+    minutes:
+      example: 60
+      selector:
+        number: {min: 1, max: 10080, unit_of_measurement: min}
+    until_time:
+      example: "07:00"
+      selector:
+        time:
+    forever:
+      selector:
+        boolean:
+bell_unmute:
+quiet_hours:
+  fields:
+    enabled:
+      selector:
+        boolean:
+    start:
+      selector:
+        time:
+    end:
+      selector:
+        time:
+door_say:
+  fields:
+    message:
+      required: true
+      example: Komme sofort
+      selector:
+        text:
+    sender:
+      selector:
+        text:
+door_say_cancel:
+door_picture:
+  fields:
+    image:
+      required: true
+      selector:
+        text:
+door_picture_clear:
+door_greeting:
+  fields:
+    enabled:
+      selector:
+        boolean:
+    text:
+      selector:
+        text:
+    start:
+      selector:
+        datetime:
+    end:
+      selector:
+        datetime:
+    clear_window:
+      selector:
+        boolean:
+    audio:
+      selector:
+        text:
+    clear_audio:
+      selector:
+        boolean:

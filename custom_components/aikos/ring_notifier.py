@@ -1,4 +1,4 @@
-"""Watches the doorbell and sends the push (quiet hours or nobody home) to the configured notify services."""
+"""Watches the doorbell and sends the push (quiet hours, bell muted or nobody home) to the configured notify services."""
 from __future__ import annotations
 
 import logging
@@ -32,8 +32,10 @@ def is_ring(old: State | None, new: State | None) -> bool:
 
 
 class RingNotifier:
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, quiet_hours: QuietHoursSettings) -> None:
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, quiet_hours: QuietHoursSettings,
+                 muted: Callable[[], bool] = lambda: False) -> None:
         self._hass = hass
+        self._muted = muted
         self._entry = entry
         self._quiet = quiet_hours
         self._last_push: datetime | None = None
@@ -66,7 +68,7 @@ class RingNotifier:
         quiet_active = q.enabled and is_quiet(now.time(), q.start, q.end)
         residents = [self._hass.states.get(p) for p in self._entry.options.get(OPT_RESIDENTS, [])]
         states = [s.state if s else STATE_UNKNOWN for s in residents]
-        reason = push_reason(quiet_active, states, self._last_push, now)
+        reason = push_reason(quiet_active, states, self._last_push, now, muted=self._muted())
         if reason is None:
             return
         self._last_push = now

@@ -23,11 +23,17 @@
       },
       "mic_problem_test": {
         "name": "Mikro-Problem Test"
+      },
+      "bell_muted": {
+        "name": "Klingel stumm"
       }
     },
     "switch": {
       "quiet_hours": {
         "name": "Ruhezeit"
+      },
+      "bell_mute": {
+        "name": "Klingel stumm"
       }
     },
     "time": {
@@ -47,6 +53,15 @@
       },
       "door_messages": {
         "name": "Türnachrichten"
+      },
+      "door_note": {
+        "name": "Notiz an die Tür"
+      },
+      "door_greeting": {
+        "name": "Begrüßung"
+      },
+      "door_picture": {
+        "name": "Bild an der Tür"
       }
     }
   },
@@ -104,6 +119,112 @@
           "description": "Wer sie gehört hat."
         }
       }
+    },
+    "bell_mute": {
+      "name": "Klingel stumm",
+      "description": "Eine Zeit lang klingelt es im Haus nicht (der Klingel-Push kommt trotzdem).",
+      "fields": {
+        "minutes": {
+          "name": "Minuten",
+          "description": "So lange stumm."
+        },
+        "until_time": {
+          "name": "Bis",
+          "description": "Stumm bis zu dieser Uhrzeit (der nächsten)."
+        },
+        "forever": {
+          "name": "Bis ausgeschaltet",
+          "description": "Stumm bis aikos.bell_unmute."
+        }
+      }
+    },
+    "bell_unmute": {
+      "name": "Klingel wieder an",
+      "description": "Die Klingel läutet wieder."
+    },
+    "quiet_hours": {
+      "name": "Ruhezeit",
+      "description": "Ruhezeit an oder aus, Beginn und Ende.",
+      "fields": {
+        "enabled": {
+          "name": "An",
+          "description": "Ruhezeit an oder aus."
+        },
+        "start": {
+          "name": "Beginn",
+          "description": "Beginn der Ruhezeit."
+        },
+        "end": {
+          "name": "Ende",
+          "description": "Ende der Ruhezeit."
+        }
+      }
+    },
+    "door_say": {
+      "name": "An die Tür sagen",
+      "description": "Sofort an der Tür, wenn jemand da ist, sonst für den nächsten Besucher.",
+      "fields": {
+        "message": {
+          "name": "Text",
+          "description": "Höchstens 400 Zeichen."
+        },
+        "sender": {
+          "name": "Von",
+          "description": "Wer es schickt (steht an der Tür)."
+        }
+      }
+    },
+    "door_say_cancel": {
+      "name": "Notiz zurücknehmen",
+      "description": "Die wartende Notiz wird nicht gezeigt."
+    },
+    "door_picture": {
+      "name": "Bild an der Tür",
+      "description": "Ein Bild für die Willkommensseite der Tür (grau, bis es entfernt wird).",
+      "fields": {
+        "image": {
+          "name": "Bild",
+          "description": "JPEG oder PNG als Base64."
+        }
+      }
+    },
+    "door_picture_clear": {
+      "name": "Bild entfernen",
+      "description": "Kein Bild mehr an der Tür."
+    },
+    "door_greeting": {
+      "name": "Begrüßung",
+      "description": "Text und/oder aufgenommener Ton für jeden, der kommt, im Zeitraum, einmal pro Besuch.",
+      "fields": {
+        "enabled": {
+          "name": "An",
+          "description": "Begrüßung an oder aus."
+        },
+        "text": {
+          "name": "Text",
+          "description": "Höchstens 120 Zeichen, steht an der Tür."
+        },
+        "start": {
+          "name": "Von",
+          "description": "Beginn des Zeitraums."
+        },
+        "end": {
+          "name": "Bis",
+          "description": "Ende des Zeitraums."
+        },
+        "clear_window": {
+          "name": "Ohne Zeitraum",
+          "description": "Immer, bis ausgeschaltet."
+        },
+        "audio": {
+          "name": "Ton",
+          "description": "Der aufgenommene Ton als Base64."
+        },
+        "clear_audio": {
+          "name": "Ton entfernen",
+          "description": "Kein Ton, nur Text."
+        }
+      }
     }
   },
   "exceptions": {
@@ -112,6 +233,9 @@
     },
     "unknown_message": {
       "message": "Es gibt keine Türnachricht {id}."
+    },
+    "invalid": {
+      "message": "Geht nicht: {reason}."
     }
   }
 }

@@ -12,11 +12,20 @@
       },
       "mic_problem_test": {
         "default": "mdi:microphone-off"
+      },
+      "bell_muted": {
+        "default": "mdi:bell-ring",
+        "state": {
+          "on": "mdi:bell-off"
+        }
       }
     },
     "switch": {
       "quiet_hours": {
         "default": "mdi:sleep"
+      },
+      "bell_mute": {
+        "default": "mdi:bell-off"
       }
     },
     "time": {
@@ -36,6 +45,15 @@
       },
       "door_messages": {
         "default": "mdi:message-audio"
+      },
+      "door_note": {
+        "default": "mdi:message-reply-text"
+      },
+      "door_greeting": {
+        "default": "mdi:hand-wave"
+      },
+      "door_picture": {
+        "default": "mdi:image"
       }
     }
   },
@@ -48,6 +66,30 @@
     },
     "door_message_heard": {
       "service": "mdi:ear-hearing"
+    },
+    "bell_mute": {
+      "service": "mdi:bell-off"
+    },
+    "bell_unmute": {
+      "service": "mdi:bell-ring"
+    },
+    "quiet_hours": {
+      "service": "mdi:sleep"
+    },
+    "door_say": {
+      "service": "mdi:message-reply-text"
+    },
+    "door_say_cancel": {
+      "service": "mdi:message-off"
+    },
+    "door_picture": {
+      "service": "mdi:image"
+    },
+    "door_picture_clear": {
+      "service": "mdi:image-off"
+    },
+    "door_greeting": {
+      "service": "mdi:hand-wave"
     }
   }
 }

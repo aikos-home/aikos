@@ -1,4 +1,4 @@
-"""Quiet hours on/off."""
+"""Quiet hours on/off; bell mute on/off (door_entities.py)."""
 from __future__ import annotations
 
 from typing import Any
@@ -8,11 +8,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import AikosConfigEntry
+from .door_entities import BellMuteSwitch
 from .entity import AikosEntity
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: AikosConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
-    async_add_entities([QuietHoursSwitch(entry, "quiet_hours", "switch.aikos_quiet_hours")])
+    async_add_entities([QuietHoursSwitch(entry, "quiet_hours", "switch.aikos_quiet_hours"),
+                        BellMuteSwitch(entry, "bell_mute", "switch.aikos_bell_mute")])
 
 
 class QuietHoursSwitch(AikosEntity, SwitchEntity):

@@ -37,6 +37,12 @@ DOOR_SAVED_EVENT = "aikos_door_message_saved"
 DOOR_FAILED_EVENT = "aikos_door_message_failed"
 DOOR_MEDIA_FOLDER = "aikos_door"
 
+# Door actions (aikos-app A11–A14, A39–A41): the screen's contracts (vertraege.md, screen 0.7.18–0.7.20).
+DOOR_SOMEONE = "binary_sensor.aikos_intercom_screen_someone_at_the_door"
+DOOR_GREETING_TEXT = "text.aikos_intercom_screen_greeting"
+DOOR_PHOTO_URL = "text.aikos_intercom_screen_photo_url"
+DOOR_SHOW_REPLY = "aikos_intercom_screen_show_reply"   # ESPHome action of the screen
+
 # Requirement 1: the bell doesn't ring after about 8 pm.
 DEFAULT_QUIET_ENABLED = True
 DEFAULT_QUIET_START = time(20, 0)
