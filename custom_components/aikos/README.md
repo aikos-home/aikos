@@ -146,7 +146,7 @@ it uses the door's contracts and only writes the door entities named here.
 | `aikos.door_picture {image}` → `{path}`, `aikos.door_picture_clear` | Any photo (base64) → grey PNG ≤ 492×536 with the panel's 16 grey levels under `/local/aikos_door/` (random name, the old one is deleted), `text.aikos_intercom_screen_photo_url` set to it. Stays until removed |
 | `sensor.aikos_door_picture` | `shown` / `none`; attribute `path` |
 | `aikos.door_greeting {enabled, text, start, end, clear_window, audio, clear_audio}` | Text (≤ 120) and/or a recorded sound (base64: WebM, Ogg, M4A, MP3, WAV; ≤ 3 MB, kept in `<local media>/aikos/`) for everyone who comes. `text.aikos_intercom_screen_greeting` holds the text only within the window (switched exactly at start and end). The sound plays when the radar sees someone: within the window, not during a call or a message, once per 10 min |
-| `sensor.aikos_door_greeting` | `active` / `scheduled` / `off`; attributes `enabled`, `text`, `start`, `end`, `audio`, `last_played` |
+| `sensor.aikos_door_greeting` | `active` / `scheduled` / `off`; attributes `enabled`, `text`, `start`, `end`, `audio`, `audio_file` (in `<local media>/aikos/`), `last_played` |
 
 - **Ring push while muted:** muted means nobody hears the bell, so the ring push goes to the phones as in quiet hours (A40):
   "Es hat geklingelt (14:00) · Klingel stumm".

@@ -219,7 +219,8 @@ async def test_greeting_sound_once_per_visit_not_in_a_call_and_not_over_a_note(h
     freezer.move_to(local(21, 14, 0))
     await setup(hass)
     await call(hass, "door_greeting", {"enabled": True, "text": "Hallo", "audio": WAV}, response=True)
-    assert hass.states.get(GREETING).attributes["audio"] is True
+    attrs = hass.states.get(GREETING).attributes
+    assert attrs["audio"] is True and attrs["audio_file"].startswith("greeting-") and (media / "aikos" / attrs["audio_file"]).is_file()
     assert any(p.name.startswith("greeting-") and p.suffix == ".wav" for p in (media / "aikos").iterdir())
     await radar(hass, "on")
     assert len(played) == 1

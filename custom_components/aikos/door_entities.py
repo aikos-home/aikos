@@ -76,7 +76,7 @@ class DoorGreeting(_DoorEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         g = self.door.state.greeting
         return {"enabled": g.enabled, "text": g.text, "start": g.start, "end": g.end, "audio": bool(g.audio),
-                "last_played": g.last_played}
+                "audio_file": g.audio, "last_played": g.last_played}
 
 
 class DoorPicture(_DoorEntity, SensorEntity):
