@@ -1,6 +1,8 @@
 {
 	admin localhost:2019
 	skip_install_trust
+	# The house reverse proxy connects by address and may send no SNI; answer with the domain's certificate anyway.
+	default_sni {$AIKOS_DOMAIN}
 	servers {
 		# Only the reverse proxy in front of the house may name the client (X-Real-IP below takes it from here).
 		trusted_proxies static {$TRUSTED_PROXIES}
@@ -8,8 +10,8 @@
 	}
 }
 
-# The app for people. Until the certificate for the domain is settled (feature file aikos-app §2.3a), Caddy uses its
-# own CA here and the house's reverse proxy terminates the public certificate in front of it.
+# The app for people. The house reverse proxy holds the public certificate and forwards to the virtual address over
+# HTTPS; Caddy uses its own CA here (the proxy does not verify it). Passkeys see only the public certificate.
 {$AIKOS_DOMAIN} {
 	tls internal
 	encode zstd gzip

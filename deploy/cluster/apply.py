@@ -33,7 +33,7 @@ COSIGN_SHA256 = "c3b4f5410e608af03a5eb0aaac84a4313d8da131248e08ff1759ac70c79d164
 DIRS = [  # path, mode, owner
     ("/opt/aikos", "0755", "root:root"), ("/usr/local/lib/aikos", "0755", "root:root"),
     ("/etc/aikos", "0755", "root:root"), ("/etc/aikos/certs", "0755", "root:root"),
-    ("/etc/aikos/secrets", "0711", "root:root"), ("/etc/aikos/secrets/app", "0700", f"{APP_UID}:{APP_UID}"),
+    ("/etc/aikos/secrets", "0750", "root:root"), ("/etc/aikos/secrets/app", "0700", f"{APP_UID}:{APP_UID}"),
     ("/var/lib/aikos/rqlite", "0700", f"{RQLITE_UID}:{RQLITE_UID}"),
     ("/var/lib/aikos/app", "0700", f"{APP_UID}:{APP_UID}"),
     ("/var/lib/aikos/caddy", "0700", "root:root"), ("/var/lib/aikos/deployer", "0700", "root:root"),

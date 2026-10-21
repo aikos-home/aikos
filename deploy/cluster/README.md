@@ -4,7 +4,7 @@ Runs the aikos app on three small Linux VMs (one per hypervisor host) so that lo
 takes the app away. Generic: every house value comes from an inventory file you keep private.
 
 ```
-phone ─► reverse proxy (or DNS straight to the virtual address) ─► virtual address (keepalived)
+phone ─► house reverse proxy (public certificate) ─HTTPS─► virtual address (keepalived)
                                                                        │ follows a healthy node
                    ┌───────────────────────────────┬───────────────────┴───────────┐
                node 1                          node 2                          node 3
@@ -68,7 +68,7 @@ certificates. Template for the inventory: [`cluster.example.toml`](cluster.examp
 | `/etc/aikos/cluster.env`, `/etc/aikos/app.env` | root 0644 | node and app settings, no secrets |
 | `/etc/aikos/app-image.env` | root | the digest the rollout agent runs |
 | `/etc/aikos/certs/` | `node.key` rqlite 0400 | cluster CA certificate, this node's certificate |
-| `/etc/aikos/secrets/` | 0711; files 0400 | `cluster.json` (root), `rqlite-auth.json` (rqlite), `app/` (app: database password, Home Assistant token), `deployer.env`, `backup.env` |
+| `/etc/aikos/secrets/` | 0750; files 0400 | `cluster.json` (root), `rqlite-auth.json` (rqlite), `app/` (app: database password, Home Assistant token), `deployer.env`, `backup.env` |
 | `/var/lib/aikos/{rqlite,app,caddy,deployer}` | per service, 0700 | data |
 | `/var/backups/aikos/` | root:aikos 0750 | `aikos-app.sqlite` (0640), `.sha256`, `last-ok` |
 
