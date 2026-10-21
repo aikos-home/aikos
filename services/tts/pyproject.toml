@@ -1,0 +1,23 @@
+[project]
+name = "aikos-tts"
+version = "0.1.0"
+description = "aikos TTS: speech in the residents' own voices, locally (Wyoming for Home Assistant, HTTP for the aikos app)"
+requires-python = ">=3.11"
+dependencies = ["wyoming==1.10.2", "aiohttp>=3.10", "numpy>=1.26"]
+
+[project.optional-dependencies]
+# the real model; the tests run without it (FakeEngine)
+chatterbox = ["chatterbox-tts==0.1.7", "setuptools<81"]
+test = ["pytest>=8", "pytest-aiohttp>=1.0"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["aikos_tts"]
