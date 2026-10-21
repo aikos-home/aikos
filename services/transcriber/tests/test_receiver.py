@@ -100,12 +100,12 @@ class DoorTurn(unittest.TestCase):
     """Door side (--split-on-silence): a resident who starts talking ends the visitor's utterance at once (04.10.: the turn gap
     was shorter than --silence-s, the resident's echo kept the segment running to --max-s, the visitor's text came 21 s late)."""
 
-    def start(self):
+    def start(self, *extra):
         self.tmp = Path(tempfile.mkdtemp())
         self.port = free_port()
         self.quiet = self.tmp / "room_active"
         args = ["--port", str(self.port), "--out", str(self.tmp / "rec"), "--split-on-silence", "--test-sources", "",
-                "--live-quiet-file", str(self.quiet)]
+                "--live-quiet-file", str(self.quiet)] + list(extra)
         threading.Thread(target=receiver.main, args=(args,), daemon=True).start()
         time.sleep(0.3)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -149,6 +149,25 @@ class DoorTurn(unittest.TestCase):
         lengths = self.recordings()
         self.assertEqual(len(lengths), 1, lengths)                       # the visitor only
         self.assertLessEqual(lengths[0], 4.0, lengths)                   # pre-roll + 1.5 s speech + 1.5 s pause, not 15 s
+
+    def test_a_stream_that_stops_mid_sentence_is_handed_over_whole(self):
+        """21.10.: a door message ended mid-sentence and its last part had no text. The receiver is not the cause: with or
+        without comfort noise at the end, the whole utterance goes to the worker (that day the worker's connection to
+        Whisper never opened, see the heartbeat in the README)."""
+        for end_with_cn in (False, True):
+            with self.subTest(comfort_noise=end_with_cn):
+                done = Path(tempfile.mkdtemp()) / "handed_over"            # --exec notes each recording it gets
+                self.start("--exec", f'echo {{wav}} >> "{done.as_posix()}"')
+                self.stream(room_noise(1.0))
+                self.stream(speech_on_room(2.0))                          # speech to the last packet, then the stream ends
+                if end_with_cn:
+                    self.seq += 1
+                    self.sock.sendto(rtp(self.seq, silence(0.0), pt=13), ("127.0.0.1", self.port))
+                time.sleep(1.8)                                           # > --gap-s
+                lengths = self.recordings()
+                self.assertEqual(len(lengths), 1, lengths)
+                self.assertGreaterEqual(lengths[0], 2.0)                  # all of the speech (+ pre-roll)
+                self.assertEqual(len(done.read_text().split()), 1)       # and the worker was started for it
 
     def test_an_older_resident_turn_does_not_cut(self):
         self.start()
