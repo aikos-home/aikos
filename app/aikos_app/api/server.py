@@ -13,12 +13,16 @@ from ..auth.service import AuthService
 from ..config import Settings
 from ..ha.client import HaClient
 from ..ha.door import REGISTER_ENTITY, DoorMessages
+from ..push.door_push import DoorPush
+from ..push.sender import PushSender
+from ..push.webpush import new_vapid_key, vapid_public
 from ..store import Database
 from ..store.accounts import Accounts
 from ..store.audit import Audit
 from ..store.flows import Flows
+from ..store.push import Pushes
 from ..store.sessions import Sessions
-from . import routes_auth, routes_door, routes_meta, routes_people
+from . import routes_auth, routes_door, routes_meta, routes_people, routes_push
 from .context import CTX, AppContext, api_error
 from .middleware import Brake, brake_middleware, errors, identify, same_origin_writes, security_headers
 
@@ -34,7 +38,11 @@ def build_context(settings: Settings, ha: HaClient | None = None) -> AppContext:
     passkeys = Passkeys(settings.rp_id, settings.rp_name, settings.origin)
     auth = AuthService(accounts, sessions, Flows(db), audit, passkeys)
     ha = ha or HaClient(settings.ha_url, settings.ha_token)
-    return AppContext(settings, db, accounts, sessions, audit, auth, ha, DoorMessages(ha, settings))
+    door, pushes = DoorMessages(ha, settings), Pushes(db)
+    vapid = pushes.vapid_private(new_vapid_key())
+    door_push = DoorPush(ha, door, accounts, pushes, PushSender(vapid, settings.public_url),
+                         settings.entity_someone_at_door)
+    return AppContext(settings, db, accounts, sessions, audit, auth, ha, door, pushes, door_push, vapid_public(vapid))
 
 
 def write_setup_code(c: AppContext) -> Path | None:
@@ -80,7 +88,7 @@ def create_app(settings: Settings, ha: HaClient | None = None) -> web.Applicatio
                           middlewares=[security_headers, errors, brake_middleware(Brake()), same_origin_writes,
                                        identify])
     app[CTX] = c
-    for module in (routes_meta, routes_auth, routes_people, routes_door):
+    for module in (routes_meta, routes_auth, routes_people, routes_door, routes_push):
         app.add_routes(module.routes)
     app.router.add_get("/{tail:.*}", _spa(settings.web_dir or DEFAULT_WEB_DIR))
 
@@ -93,9 +101,12 @@ def create_app(settings: Settings, ha: HaClient | None = None) -> web.Applicatio
             _LOGGER.warning("nobody is set up yet: the one-time setup code is in %s", path)
         c.ha.watch([settings.entity_someone_at_door, settings.entity_quiet_hours, settings.entity_bell_muted,
                     REGISTER_ENTITY])
+        c.door_push.attach()
         await c.ha.start()
 
     async def on_cleanup(_app: web.Application) -> None:
+        await c.door_push.stop()
+        await c.door_push.sender.close()
         await c.ha.stop()
         c.db.close()
 

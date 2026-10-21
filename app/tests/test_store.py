@@ -7,7 +7,7 @@ import sqlite3
 import pytest
 from conftest import fresh_db
 
-from aikos_app.store import Database, b64e, now, token_hash
+from aikos_app.store import SCHEMA_VERSION, Database, b64e, now, token_hash
 from aikos_app.store.accounts import Accounts, Credential
 from aikos_app.store.flows import Flows
 from aikos_app.store.sessions import Sessions
@@ -120,7 +120,7 @@ def test_old_local_file_is_converted(tmp_path):
     assert acc.user_by_handle(b"H" * 32).name == "Alex"
     assert acc.credential(b"C" * 16).public_key == b"PUBKEY"
     assert Sessions(db).resolve("old-session").user_id == 1
-    assert db.one("SELECT value FROM meta WHERE key = 'schema'")["value"] == "2"
+    assert db.one("SELECT value FROM meta WHERE key = 'schema'")["value"] == str(SCHEMA_VERSION)
     assert token_hash("old-session") == b64e(hashlib.sha256(b"old-session").digest())
     db.close()
     Database(path).close()  # opening again is a no-op
@@ -139,7 +139,7 @@ def test_a_new_device_link_voids_the_older_ones(db):
 def test_a_compatible_newer_schema_still_opens_for_a_rollback(db):
     """A rolling update migrates the shared database first; if the new image fails, the previous one must still start.
     Additive changes keep `schema_min`, so the older app opens the newer database and leaves it as it is."""
-    from aikos_app.store import SCHEMA_VERSION, DatabaseError
+    from aikos_app.store import DatabaseError
     assert db.one("SELECT value FROM meta WHERE key = 'schema_min'")["value"] == "2"
     db.execute("UPDATE meta SET value = ? WHERE key = 'schema'", (str(SCHEMA_VERSION + 1),))
     Database(db.backend)

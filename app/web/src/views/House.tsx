@@ -1,9 +1,10 @@
-// Haus: my profile and passkeys; for the superadmin the people and invites; space for the RoomKeys (A18).
+// Haus: my profile, passkeys and notifications; for the superadmin the people and invites; space for the RoomKeys (A18).
 import { useEffect, useState } from "preact/hooks";
 import { api, can, ROLE_NAMES, type Passkey, type Person, type Role, type User } from "../api";
 import { addPasskey, errorText } from "../passkey";
 import { Icon } from "./Icon";
 import { LinkPanel } from "./LinkPanel";
+import { Notifications } from "./Notifications";
 
 const DEVICE_HINT = "Mit der Kamera des Handys scannen, die Seite öffnet sich, dort „Passkey anlegen“. Gilt 24 h und einmal; "
   + "ein neuer Code macht den alten ungültig.";
@@ -12,6 +13,7 @@ export function House({ user, onSignedOut }: { user: User; onSignedOut: () => vo
   return (
     <div>
       <Profile user={user} onSignedOut={onSignedOut} />
+      <Notifications />
       {can(user, "people.manage") && <People me={user} />}
       <section class="pad">
         <h2>RoomKeys</h2>

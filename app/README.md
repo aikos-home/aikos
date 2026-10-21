@@ -5,7 +5,7 @@ Assistant stays the system of record for entities, devices, states, events, soun
 way to them. It signs people in with passkeys, knows who may see and do what, and is the single path from a phone to
 Home Assistant. The phone never gets a Home Assistant token, address or link.
 
-Version **0.2.0** (step 1: sign-in, roles, door messages; step 2: message register, delete, forward by hand). Python 3.12+ (aiohttp, py_webauthn); PWA in TypeScript
+Version **0.3.0** (step 1: sign-in, roles, door messages; step 2: message register, delete, forward by hand, push). Python 3.12+ (aiohttp, py_webauthn); PWA in TypeScript
 (Preact, Vite).
 
 Runs on one machine (SQLite) or on three nodes with a replicated database and rollouts of signed images
@@ -33,6 +33,7 @@ HTTP API under `/api/v1`, described in [`aikos_app/api/openapi.json`](aikos_app/
 | Me | `GET /api/v1/me`, `GET /api/v1/me/passkeys`, `POST /api/v1/me/passkeys/start` and `/finish`, `DELETE /api/v1/me/passkeys/{id}` |
 | People (superadmin) | `GET /api/v1/people`, `POST /api/v1/people/invites`, `POST /api/v1/people/{id}/device-invite`, `POST /api/v1/people/{id}/disable` |
 | Door | `GET /api/v1/door/status`, `GET /api/v1/door/messages`, `GET /api/v1/door/messages/{id}/audio` (Range supported; `?share=1` = as a file to forward, recorded), `POST /api/v1/door/messages/{id}/heard`, `DELETE /api/v1/door/messages/{id}` |
+| Push | `GET /api/v1/push/key`, `POST /api/v1/push/subscription`, `DELETE /api/v1/push/subscription`, `POST /api/v1/push/test` |
 | Other | `GET /api/v1/health` (200 with `ok`, `version`, `commit`, `db`, `ha_connected`; 503 without its database), `GET /.well-known/assetlinks.json` |
 
 **Sessions:** an `HttpOnly`, `Secure`, `SameSite=Strict` cookie for the PWA. A native app sends
@@ -40,7 +41,7 @@ HTTP API under `/api/v1`, described in [`aikos_app/api/openapi.json`](aikos_app/
 
 **Errors:** `{"error": "<code>"}` with a stable code, e.g. `not_signed_in` (401), `forbidden` (403), `not_found` (404,
 also for a message that exists but is not yours), `invalid_code`, `invite_invalid`, `passkey_failed`,
-`unknown_passkey`, `flow_expired` (400), `already_set_up` (409), `slow_down` (429), `ha_unreachable`, `no_register` (503).
+`unknown_passkey`, `flow_expired`, `bad_subscription` (400), `already_set_up` (409), `slow_down` (429), `ha_unreachable`, `no_register` (503).
 
 ## Roles
 
@@ -81,6 +82,23 @@ folder; deleting and "heard" then answer `no_register`. Messages the register ad
 and the folder list can get metadata from two optional interim entities: `AIKOS_APP_INTERIM_LAST_MESSAGE_ENTITY` (state =
 file name of the last saved message; attributes `seconds`, `time`, `recipient`) and `AIKOS_APP_INTERIM_MESSAGE_TEXT_ENTITY`
 (state = recognised text, cleared when a recording starts).
+
+## Push
+
+Web Push (VAPID), built in: message encryption per RFC 8291 (`aes128gcm`) and the VAPID token per RFC 8292 with
+`cryptography`, no further library. The key pair is created once and kept in the app's database, so every node sends with
+the same key and phones stay subscribed across nodes and rollouts.
+
+- **A new door message:** the app sees `newest` of `sensor.aikos_door_messages` change, waits 6 s for the last words, and
+  sends time, length, recipient, speaker and recognised text (A24), never sound (G5), to the phones of the people who may
+  see that message (A15). Of several nodes only the one that claims the message first in the database sends. Messages
+  older than 10 min get no push (e.g. after a restart).
+- **Targets:** only the push services of the browser makers (`fcm.googleapis.com`, `*.push.apple.com`,
+  `*.push.services.mozilla.com`, Microsoft's WNS; HTTPS on 443). A subscription is an address the server posts to,
+  so anything else is refused (no way into the house network). Gone subscriptions (404/410) are forgotten.
+- **Phone:** Haus → Benachrichtigungen → "Auf diesem Gerät einschalten", then "Test". iPhone: only in the installed app
+  (iOS 16.4+). The service worker shows the notification; a tap opens the messages.
+- The nodes need outbound HTTPS to those services.
 
 ## Configuration (environment)
 

@@ -1,6 +1,7 @@
 // The signed-in app (rule A20): status on top, one page per tab, tabs at the bottom: Tür · Nachrichten · Verlauf · Haus.
 import { useEffect, useState } from "preact/hooks";
 import { api, type DoorStatus, type User } from "../api";
+import { syncPush } from "../push";
 import { clock, hhmm } from "../format";
 import { Door } from "./Door";
 import { History } from "./History";
@@ -26,8 +27,15 @@ export function Shell({ user, onSignedOut }: { user: User; onSignedOut: () => vo
 
   useEffect(() => {
     const onHash = () => setTab(tabFromHash());
+    // a notification tapped while the app is open: the service worker asks for the messages
+    const onWorker = (e: MessageEvent) => e.data?.type === "open" && go("nachrichten");
     window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    navigator.serviceWorker?.addEventListener("message", onWorker);
+    syncPush();
+    return () => {
+      window.removeEventListener("hashchange", onHash);
+      navigator.serviceWorker?.removeEventListener("message", onWorker);
+    };
   }, []);
 
   useEffect(() => {
