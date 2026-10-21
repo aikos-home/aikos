@@ -1,7 +1,7 @@
 # aikos integration for Home Assistant
 
-The household logic of aikos, installed via HACS. Version **0.11.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
-front door (0.5.0, tag `aikos-v0.5.0`), the mic health warning (0.7.0), the door message register (0.8.0), the door actions (0.9.0), reading aloud in the residents' own voices (0.10.0) and the door announcements (0.11.0). More blocks follow (where the bell
+The household logic of aikos, installed via HACS. Version **0.12.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
+front door (0.5.0, tag `aikos-v0.5.0`), the mic health warning (0.7.0), the door message register (0.8.0), the door actions (0.9.0), reading aloud in the residents' own voices (0.10.0), the door announcements (0.11.0) and parcels from the carriers' mails (0.12.0). More blocks follow (where the bell
 rings, presence, alarm, pairing of devices); each comes as a new version.
 
 ## Install
@@ -170,7 +170,7 @@ After a ring the door says one sentence in a resident's own voice when a situati
 | `number.aikos_door_disclosure` | 0–4, what the door may tell: 0 nothing; 1 that nobody can come or nobody is home, where to leave a parcel; 2, 3 as 1 for now; 4 also where the residents are (only residents in `named`, only zones in `places`) |
 | `aikos.door_announcements {disclosure, parcel, away, quiet, away_places, places, named, voice}` | Sets what is given (sentences ≤ 200; `away_places` needs `{wo}`, replaced by "A ist beim Laden und B ist im Studio"; `places` = zone → how the door says it, ≤ 20; `named` = person ids who agreed; `voice` = whose voice says them). Returns the settings |
 | `sensor.aikos_door_announcements` | What a ring would get now: `parcel` / `away` / `quiet` / `none`; attributes the settings, `now_text`, `ready` (sentences made in advance), `last` {situation, text, at}, `zones` and `residents` to choose from |
-| Option **Parcel expected (sensor)** | A binary sensor or input boolean, on while a delivery is expected today |
+| Option **Parcel expected (sensor)** | A binary sensor or input boolean, on while a delivery is expected today; empty = aikos' own `binary_sensor.aikos_parcel_expected` (below) |
 | Event `aikos_door_announced {situation, text}`, logbook "angesagt: …" | After each announcement |
 
 - **Situations,** the first that applies and has a sentence wins: **parcel** (the parcel sensor is on; this one also speaks when
@@ -180,6 +180,22 @@ After a ring the door says one sentence in a resident's own voice when a situati
   residents move (`<local media>/aikos/speech-announce-*`). A ring before that: the sentence is made on the spot (a little later).
 - **When:** 1.5 s after the ring; not during a call or a message; a second ring within 60 s gets no second announcement. Without
   a voice or a voice service nothing is said.
+
+### Parcels from the carriers' mails (0.12.0, sprachausgabe S15)
+
+| Interface | Meaning |
+|---|---|
+| Options **Parcel mails: mailbox / app password / IMAP server** | One mailbox (IMAP over TLS, port 993; default server `imap.gmail.com`), with an app password, not the normal one. The login is tried before it is stored. Empty mailbox = off; empty password = keep the stored one |
+| `binary_sensor.aikos_parcel_expected` | On while a carrier's mail says a parcel comes today and no "delivered" followed; attributes `carriers`, `soon`, `window` ("13:45–15:45"), `checked`, `error` (`login` / `connect` / `search`), `configured`. No subjects, no items |
+
+- **What is read:** every 3 minutes, the inbox, read-only, only mails since yesterday from the carriers' domains (Amazon, DHL,
+  DPD, Hermes, GLS, UPS), and of those only sender, subject and date (`BODY.PEEK` of three header fields: nothing is marked as
+  read, no text is fetched). The whole day is read each time, so a mail missed once costs nothing.
+- **The rules** (`parcel_rules.py`, no model): "In Zustellung", "kommt heute", "Zustellung heute", "zwischen 13:45 und 15:45"
+  = today; "wird gleich zugestellt" = soon; "Zugestellt", "Geliefert", "wurde zugestellt", "ist da", "liegt im Briefkasten"
+  = delivered; anything else is no notice. Followed per shipment: Amazon by its item, the other carriers by the carrier (two
+  parcels of one carrier count as one: at worst a courier is not expected). Over with "delivered", one hour after the time
+  window, or at 21:00; a new day starts empty.
 
 ## Errors
 
@@ -199,6 +215,7 @@ After a ring the door says one sentence in a resident's own voice when a situati
 | The talk computer is not reachable | The greeting sound is skipped (warning in the log); it is tried at the next visit |
 | The voice service is away when an announcement is due | Nothing is said (warning in the log); the ring push goes as always |
 | `away_places` without `{wo}`, `{wo}` in another sentence, level outside 0–4 | The service fails with "Geht nicht: …"; nothing changes |
+| The parcel mailbox refuses the login or can't be reached | In the options: the form says so and stores nothing. Later: the sensor keeps its last answer, `error` says why, one warning in the log |
 | Not a picture / not a sound file / end before start | The service fails with "Geht nicht: …"; nothing changes |
 
 ## Structure
@@ -229,6 +246,8 @@ After a ring the door says one sentence in a resident's own voice when a situati
 | `announce_rules.py` | The announcements' rules (level, situations, places), no Home Assistant code |
 | `door_announce.py` | The announcements in Home Assistant: ring, radar, residents, made in advance |
 | `announce_entities.py`, `number.py` | The announcements' sensor and the disclosure slider |
+| `parcel_rules.py` | Which carrier mail says what, and whether a parcel is still expected (no Home Assistant code) |
+| `parcel_mail.py` | Reads the mailbox (imaplib, in an executor), keeps the parcel state |
 | `services.py` | The services for the aikos app |
 | `config_flow.py`, `__init__.py` | Setting up and removing aikos |
 
@@ -239,6 +258,8 @@ After a ring the door says one sentence in a resident's own voice when a situati
 
 ## History
 
+- 0.12.0: parcels from the carriers' mails (options "Parcel mails", `binary_sensor.aikos_parcel_expected`); the door
+  announcements use it when no other parcel sensor is set.
 - 0.11.0: door announcements after a ring in a resident's own voice (parcel, away with places, quiet), the disclosure slider
   `number.aikos_door_disclosure` (default 0 = nothing), option "Parcel expected (sensor)".
 - 0.10.1: a note shown before its speech was ready no longer leaves the speech file behind.

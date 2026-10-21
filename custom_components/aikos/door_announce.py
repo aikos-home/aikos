@@ -4,7 +4,8 @@ expected also speaks when someone only comes close (S14). The rules are announce
 Assistant and keeps each sentence made in advance, so it plays at once.
 
 Kept in HA's storage (.storage/aikos.door_announcements). Inputs: the doorbell and the residents (options, as for the ring
-push), the parcel sensor (option; on = a delivery is expected today), the bell mute, the quiet hours. Nothing is said
+push), the parcel sensor (option; on = a delivery is expected today; empty = aikos' own from the parcel mails), the bell
+mute, the quiet hours. Nothing is said
 during a call or while a message is recorded, and nothing without a voice and a voice service.
 """
 from __future__ import annotations
@@ -32,7 +33,7 @@ from .announce_rules import (
     pick,
     sentence,
 )
-from .const import DOOR_MESSAGE_RECORDING, LIVE_CALL, OPT_DOORBELL, OPT_PARCEL, OPT_RESIDENTS
+from .const import DOOR_MESSAGE_RECORDING, LIVE_CALL, OPT_DOORBELL, OPT_PARCEL, OPT_RESIDENTS, PARCEL_EXPECTED
 from .door_speech import DoorSpeech
 from .quiet_hours import is_quiet
 from .ring_notifier import is_ring
@@ -84,7 +85,7 @@ class DoorAnnouncer:
         o = self._entry.options
         if o.get(OPT_DOORBELL):
             self._unsubs.append(async_track_state_change_event(self._hass, [o[OPT_DOORBELL]], self._on_bell))
-        inputs = [*o.get(OPT_RESIDENTS, []), *([o[OPT_PARCEL]] if o.get(OPT_PARCEL) else []), "binary_sensor.aikos_quiet_hours",
+        inputs = [*o.get(OPT_RESIDENTS, []), self._parcel_sensor(), "binary_sensor.aikos_quiet_hours",
                   "binary_sensor.aikos_bell_muted"]
         self._unsubs.append(async_track_state_change_event(self._hass, inputs, self._on_input))
         self._background(self._prepare())
@@ -133,9 +134,11 @@ class DoorAnnouncer:
             out.append(Resident(st.name, st.state, place))
         return out
 
+    def _parcel_sensor(self) -> str:
+        return self._entry.options.get(OPT_PARCEL) or PARCEL_EXPECTED
+
     def _parcel(self) -> bool:
-        sensor = self._entry.options.get(OPT_PARCEL)
-        st = self._hass.states.get(sensor) if sensor else None
+        st = self._hass.states.get(self._parcel_sensor())
         return st is not None and st.state == "on"
 
     def _quiet_or_muted(self) -> bool:
