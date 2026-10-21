@@ -29,16 +29,27 @@ ALLOWED_SERVICES = frozenset({
     ("aikos", "door_messages"),
     ("aikos", "door_message_delete"),
     ("aikos", "door_message_heard"),
+    ("aikos", "bell_mute"),
+    ("aikos", "bell_unmute"),
+    ("aikos", "quiet_hours"),
+    ("aikos", "door_say"),
+    ("aikos", "door_say_cancel"),
+    ("aikos", "door_picture"),
+    ("aikos", "door_picture_clear"),
+    ("aikos", "door_greeting"),
 })
 """The services the app may call, each behind one endpoint that checks the person's rights first (rule G2)."""
 
-MEDIA_PATH_PREFIX = "/media/local/"
+MEDIA_PATH_PREFIXES = ("/media/local/", "/local/aikos_door/")
+"""Signed local media links (resolve_media), and the door picture (public in Home Assistant anyway)."""
 COMMAND_TIMEOUT_S = 15
 CONNECT_WAIT_S = 5
 
 
 class HaError(Exception):
-    pass
+    def __init__(self, message: str = "", code: str = "") -> None:
+        super().__init__(message)
+        self.code = code
 
 
 class HaNotConnected(HaError):
@@ -129,12 +140,13 @@ class HaClient:
         finally:
             self._pending.pop(msg_id, None)
         if not msg.get("success"):
-            raise HaError((msg.get("error") or {}).get("message", "failed"))
+            err = msg.get("error") or {}
+            raise HaError(err.get("message", "failed"), str(err.get("code") or ""))
         return msg.get("result")
 
     async def media(self, url: str, headers: dict[str, str] | None = None) -> aiohttp.ClientResponse:
-        """GET a signed media link from `media_source/resolve_media`. The caller releases the response."""
-        if not url.startswith(MEDIA_PATH_PREFIX):
+        """GET a signed media link from `media_source/resolve_media`, or the door picture. The caller releases the response."""
+        if not url.startswith(MEDIA_PATH_PREFIXES) or ".." in url:
             raise HaError("not a local media link")
         if self._session is None:
             raise HaNotConnected("not started")

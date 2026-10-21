@@ -209,7 +209,10 @@ class DoorStatus:
     quiet_hours: bool | None
     quiet_start: str
     quiet_end: str
+    quiet_enabled: bool | None
     bell_muted: bool | None
+    bell_muted_until: str
+    """ISO time; "" while muted = until switched off."""
 
 
 def _on(state: dict[str, Any] | None) -> bool | None:
@@ -218,14 +221,20 @@ def _on(state: dict[str, Any] | None) -> bool | None:
     return state.get("state") == "on"
 
 
+QUIET_SWITCH = "switch.aikos_quiet_hours"
+
+
 def door_status(ha: HaClient, s: Settings) -> DoorStatus:
     someone = ha.state(s.entity_someone_at_door)
     quiet = ha.state(s.entity_quiet_hours) or {}
+    muted = ha.state(s.entity_bell_muted)
     return DoorStatus(
         someone_at_door=_on(someone),
         someone_since=(someone or {}).get("last_changed"),
         quiet_hours=_on(quiet or None),
         quiet_start=str((quiet.get("attributes") or {}).get("start") or ""),
         quiet_end=str((quiet.get("attributes") or {}).get("end") or ""),
-        bell_muted=_on(ha.state(s.entity_bell_muted)),
+        quiet_enabled=_on(ha.state(QUIET_SWITCH)),
+        bell_muted=_on(muted),
+        bell_muted_until=str(((muted or {}).get("attributes") or {}).get("until") or ""),
     )

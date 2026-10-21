@@ -64,6 +64,14 @@ class FakeHa(HaClient):
         self.register: list[dict[str, Any]] | None = None
         """The aikos message register (aikos 0.8.0); None = an older aikos without it."""
         self.services: list[tuple[str, str, dict[str, Any]]] = []
+        self.picture = bytes([0x89]) + b"PNG" + bytes(104)
+
+    def use_door_actions(self) -> None:
+        """aikos 0.9.0: the door actions' entities, as the integration provides them."""
+        self.states["sensor.aikos_door_note"] = {"state": "none", "attributes": {"message": "", "sender": "", "since": ""}}
+        self.states["sensor.aikos_door_greeting"] = {"state": "off", "attributes": {
+            "enabled": False, "text": "", "start": "", "end": "", "audio": False, "audio_file": ""}}
+        self.states["sensor.aikos_door_picture"] = {"state": "none", "attributes": {"path": ""}}
 
     def use_register(self, messages: list[dict[str, Any]]) -> None:
         self.register = messages
@@ -98,6 +106,8 @@ class FakeHa(HaClient):
         raise HaError(f"unexpected {type_}")
 
     def _service(self, domain: str, service: str, data: dict[str, Any], response: bool) -> Any:
+        if service not in ("door_messages", "door_message_delete", "door_message_heard"):
+            return self._door_action(service, data)
         assert self.register is not None, "no register in this Home Assistant"
         self.services.append((domain, service, data))
         if service == "door_messages":
@@ -111,7 +121,23 @@ class FakeHa(HaClient):
             m["heard_by"].append(data["by"])
         return {"context": {}, "response": {"deleted": m["id"]}} if response else {"context": {}}
 
+    def _door_action(self, service: str, data: dict[str, Any]) -> Any:
+        self.services.append(("aikos", service, data))
+        if service == "door_say":
+            someone = (self.states.get("binary_sensor.aikos_test_someone") or {}).get("state") == "on"
+            if not someone:
+                self.states["sensor.aikos_door_note"] = {"state": "waiting", "attributes": {
+                    "message": data["message"], "sender": data["sender"], "since": "2026-10-21T15:00:00+02:00"}}
+            return {"context": {}, "response": {"delivered": "now" if someone else "waiting"}}
+        if service == "door_picture":
+            self.states["sensor.aikos_door_picture"] = {"state": "shown", "attributes": {"path": "/local/aikos_door/foto-ab.png"}}
+        if service == "door_greeting" and "audio" in data:
+            self.states["sensor.aikos_door_greeting"]["attributes"].update(audio=True, audio_file="greeting-1.webm")
+        return {"context": {}, "response": {}}
+
     async def media(self, url: str, headers: dict[str, str] | None = None):
+        if url.startswith("/local/aikos_door/"):
+            return FakeResponse(200, self.picture, {"Content-Type": "image/png", "Content-Length": str(len(self.picture))})
         rng = (headers or {}).get("Range")
         if rng:
             start = int(rng.split("=")[1].split("-")[0])
