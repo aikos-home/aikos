@@ -16,6 +16,11 @@ token_file = "~/.aikos/ha-token"  # read here, copied to the nodes (0400, only t
 user = "aikos"
 key = "~/.ssh/aikos_vms_ed25519"
 
+# Only if the image is private: a read-only registry token in a file here (GHCR: classic token, scope read:packages).
+# [registry]
+# user = "your-github-user"
+# token_file = "~/.aikos/ghcr-read-token"
+
 [app]                             # optional AIKOS_APP_* settings (lower case, without the prefix)
 door_media_dir = "aikos_door"
 

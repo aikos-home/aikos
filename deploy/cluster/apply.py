@@ -104,6 +104,16 @@ fi""")
     return iface.strip()
 
 
+def registry_read_token(inv: Inventory) -> str:
+    """For a private image: a read-only registry token from a file on the admin machine (none = public image)."""
+    if not inv.registry_token_file:
+        return ""
+    path = Path(inv.registry_token_file).expanduser()
+    if not path.is_file():
+        raise SystemExit(f"registry token file missing: {path}")
+    return path.read_text(encoding="utf-8").strip()
+
+
 def compose(ssh: Ssh, ip: str, *args: str) -> str:
     image_env = "/etc/aikos/app-image.env"
     return ssh.run(ip, f"sudo touch {image_env} && sudo docker compose --project-name aikos "
@@ -152,13 +162,19 @@ def main(argv: list[str] | None = None) -> int:
         sec["ca_cert"], sec["ca_key"] = pki.new_ca()
         args.rotate_certs = True
     ha_token = Path(inv.ha_token_file).expanduser().read_text(encoding="utf-8").strip()
+    registry_token = registry_read_token(inv)
     for n in inv.nodes:
         print(f"{n.name}: host")
         iface = prepare_host(ssh, n)
         crt, key = node_cert_for(ssh, n, sec, args.rotate_certs)
         for f in node_files(inv, n, sec, crt, key, ha_token, iface):
             ssh.put(n.ip, f.path, f.content, f.mode, f.owner)
-        ssh.run(n.ip, "sudo systemctl daemon-reload && sudo systemctl enable --now aikos-db-backup.timer aikos-heartbeat.timer >/dev/null")
+        if registry_token:
+            # root's Docker credentials (0600) serve docker pull, buildx imagetools and cosign alike; token on stdin only
+            ssh.run(n.ip, f"sudo docker login ghcr.io -u {shlex.quote(inv.registry_user)} --password-stdin >/dev/null",
+                    stdin=registry_token.encode())
+        ssh.run(n.ip, "sudo systemctl daemon-reload && "
+                      "sudo systemctl enable --now aikos-db-backup.timer aikos-heartbeat.timer >/dev/null")
     print("database and Caddy on all nodes")
     for n in inv.nodes:
         compose(ssh, n.ip, "up", "-d", "--remove-orphans", "rqlite", "caddy")
