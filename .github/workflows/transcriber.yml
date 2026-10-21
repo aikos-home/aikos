@@ -7,7 +7,8 @@ on:
   pull_request:
 jobs:
   transcriber-unit:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04 (October 2026), where setup-python has no 3.9 any more.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

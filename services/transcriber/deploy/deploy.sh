@@ -5,9 +5,11 @@
 #
 #   1. check out the version in ~/aikos/repo (a tag: tags never move; the first run clones the repository)
 #   2. unit tests with the agents' Python (AIKOS_PYTHON, else /usr/bin/python3); red = nothing is changed
-#   3. back up both LaunchAgents to ~/.aikos/backup and write new ones (deploy/launchd.py)
-#   4. restart both; both receivers must listen within 15 s
-#   5. one spoken test utterance per side must reach Home Assistant (deploy/smoke.py, *_test entities only)
+#   3. back up the LaunchAgents to ~/.aikos/backup and write new ones (deploy/launchd.py); the heartbeat agent only
+#      when AIKOS_HEARTBEAT_URL is set, else an existing one is left alone
+#   4. restart both; both receivers must listen within 15 s; then the heartbeat
+#   5. one spoken test utterance per side must reach Home Assistant (deploy/smoke.py, *_test entities only); the
+#      heartbeat's own verdict is logged (not a gate: it also judges the Mac, not only this version)
 #   A failure in 3-5 brings back the previous LaunchAgents and checkout and exits 1.
 #
 # Settings: ~/.aikos/transcriber.env (see transcriber.env.example). Without it, the settings are taken over once from
@@ -42,14 +44,19 @@ if [ ! -x "$py" ]; then
   exit 1
 fi
 plist() { echo "$agents/home.aikos.transcriber.$1.plist"; }
+hb_label=home.aikos.heartbeat
+hb_plist="$agents/$hb_label.plist"
+# the heartbeat agent is ours only when the settings name a push monitor
+heartbeat_on() { [ -n "$({ grep -E '^AIKOS_HEARTBEAT_URL=.' "$1" 2>/dev/null || true; } | tail -n 1)" ]; }
 # lsof exits non-zero on mere warnings (e.g. an unreachable network mount): under pipefail that must not end the script
 listening() { { lsof -nP -iUDP:5006 -iUDP:5008 2>/dev/null || true; } | awk 'NR>1' | wc -l | tr -d ' '; }
 
-restart() {   # $1 = room | door
-  launchctl bootout "gui/$uid/home.aikos.transcriber.$1" 2>/dev/null || true
+start_agent() {   # $1 = label, $2 = plist
+  launchctl bootout "gui/$uid/$1" 2>/dev/null || true
   sleep 1
-  launchctl bootstrap "gui/$uid" "$(plist "$1")" 2>/dev/null || { sleep 2; launchctl bootstrap "gui/$uid" "$(plist "$1")"; }
+  launchctl bootstrap "gui/$uid" "$2" 2>/dev/null || { sleep 2; launchctl bootstrap "gui/$uid" "$2"; }
 }
+restart() { start_agent "home.aikos.transcriber.$1" "$(plist "$1")"; }   # $1 = room | door
 
 rollback() {
   note "ROLLBACK: $*"
@@ -59,6 +66,13 @@ rollback() {
     fi
     restart "$side" || note "could not start the previous $side agent"
   done
+  if [ -f "$backup/$hb_label.plist.$stamp" ]; then
+    cp "$backup/$hb_label.plist.$stamp" "$hb_plist"
+    start_agent "$hb_label" "$hb_plist" || note "could not start the previous heartbeat agent"
+  elif heartbeat_on "$envf" && [ -f "$hb_plist" ]; then        # there was none before: the new one goes
+    launchctl bootout "gui/$uid/$hb_label" 2>/dev/null || true
+    rm -f "$hb_plist"
+  fi
   if [ -n "$prev" ]; then git -C "$repo" checkout --quiet --detach "$prev"; fi
   sleep 3
   note "rolled back: $(listening)/2 receivers listening"
@@ -95,6 +109,7 @@ fi
 for side in room door; do
   if [ -f "$(plist "$side")" ]; then cp "$(plist "$side")" "$backup/home.aikos.transcriber.$side.plist.$stamp"; fi
 done
+if heartbeat_on "$envf" && [ -f "$hb_plist" ]; then cp "$hb_plist" "$backup/$hb_label.plist.$stamp"; fi
 "$py" "$svc/deploy/launchd.py" --env "$envf" --checkout "$repo" --agents "$agents" --logs "$logs" --python "$py" >/dev/null \
   || rollback "could not write the LaunchAgents"
 
@@ -108,7 +123,12 @@ for _ in $(seq 1 15); do
   sleep 1
 done
 [ "$n" -ge 2 ] || rollback "only $n/2 receivers listening"
+if heartbeat_on "$envf"; then start_agent "$hb_label" "$hb_plist" || rollback "the heartbeat agent did not start"; fi
 
 # 5. one utterance per side
 "$py" "$svc/deploy/smoke.py" --env "$envf" 2>&1 | tee -a "$logs/deploy.log" || rollback "smoke test failed"
+if heartbeat_on "$envf"; then
+  verdict=$(cd "$svc" && "$py" -m aikos_transcriber.heartbeat --dry-run --env "$envf" 2>&1 | tail -n 1) || true
+  note "heartbeat says: $verdict"
+fi
 note "OK: $ref live, 2/2 receivers, both sides answered"

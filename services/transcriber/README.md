@@ -5,7 +5,7 @@ at the door (door side). It also tells who is speaking ("Paketdienst · DHL", "A
 foreign languages into German. Everything runs locally: audio goes to a Whisper server on your own network, never to a
 cloud. Python 3.9+ standard library only.
 
-Version **1.3.1** (component tag `transcriber-v1.3.1`).
+Version **1.3.2** (component tag `transcriber-v1.3.2`).
 
 ## Interface
 
@@ -81,6 +81,8 @@ Environment variables (on a Mac: the settings file of the LaunchAgents, see belo
 | `AIKOS_RECORDINGS` | `~/Library/Application Support/aikos/transcriber/recordings` | recordings are deleted when handled |
 | `AIKOS_STATE_DIR` | `~/Library/Application Support/aikos/transcriber` | the activity file |
 | `AIKOS_PYTHON` | the running Python | Python for the worker processes; on a Mac also the agents' and `deploy.sh`'s Python: set an absolute path to a pinned interpreter (e.g. uv-managed CPython 3.12) so macOS or Command Line Tools updates can't swap it |
+| `AIKOS_HEARTBEAT_URL` | empty = no heartbeat | push URL of the monitor without the token, e.g. `https://status.example.org/api/push` (Uptime Kuma); see [Heartbeat](#heartbeat) |
+| `AIKOS_HEARTBEAT_TOKEN_FILE` | required with the URL | file with the push token, mode 600 |
 
 Run one side: `cd services/transcriber && AIKOS_SIDE=door ... python3 -m aikos_transcriber`.
 
@@ -97,6 +99,39 @@ Run one side: `cd services/transcriber && AIKOS_SIDE=door ... python3 -m aikos_t
 | silence, a click, music, Whisper's typical hallucinations (subtitle credits like "ARD Text im Auftrag") | nothing is published; such a credit is never taken as the speaker either |
 | a second utterance in the same second | its recording gets `_2`, `_3`, ...; nothing is overwritten |
 
+## Heartbeat
+
+`python -m aikos_transcriber.heartbeat` checks once and pushes the result to a push monitor (Uptime Kuma:
+`<AIKOS_HEARTBEAT_URL>/<token>?status=up|down&msg=…`). On a Mac the LaunchAgent `home.aikos.heartbeat` runs it every 30 s;
+the monitor's window must be at least twice that. `--dry-run` prints the verdict and pushes nothing (`--env FILE` reads the
+settings file instead of the environment). Down lines and retried connections go to `~/Library/Logs/aikos/heartbeat.log`.
+The push token never appears in any output.
+
+**up** = both receivers listen (UDP 5006 + 5008), Whisper is ready and Home Assistant answers the transcriber's token.
+Otherwise **down**, with the reasons as the message:
+
+| Message | Meaning |
+|---|---|
+| `receivers n/2` | a receiver does not listen (launchd restarts it after 10 s) |
+| `whisper down (refused)` | nothing listens on the Whisper port |
+| `whisper loading model` | Whisper started and loads its model (`/health` 503) |
+| `whisper not answering (stalled, 2 tries)` | two connections in a row did not open or got no reply within 4 s |
+| `HA 401`, `HA not answering (…)`, `HA token file not readable` | Home Assistant refuses the token, does not answer, or the token is missing |
+| `Mac restart needed: up 51.7 d, macOS TCP clock wrapped at 49.7 d, TIME_WAIT never ends (13272 now)` | see below |
+| `TCP ports running out: n TIME_WAIT` | half of macOS' ephemeral ports are stuck, whatever the cause |
+
+- **Busy is not dead.** Whisper is asked for `/health`, which whisper-server answers outside its inference lock (11 HTTP
+  threads): a running transcription never reads as down. Measured 21.10.2026: `/health` < 1 ms while transcribing.
+- **A stalled connection gets one more try,** on a new connection and so from a new local port. Only a second miss counts;
+  a refused connection counts at once.
+- **The Mac's 49.7-day TCP wrap.** macOS keeps TCP time in milliseconds in 32 bits. After 49.7 days of uptime it wraps,
+  TIME_WAIT never ends any more, and a connection from a local port the server still holds in TIME_WAIT never opens. The
+  ports fill up within a day or two, and then the Mac opens no new outgoing connections at all, so no transcripts either.
+  Only a restart helps. Past 49.7 days with ≥ 1,000 TIME_WAIT the heartbeat says so instead of blaming Whisper. From
+  45 days on, the up message names the time by which to restart (`ok; restart the Mac before <date time> (macOS TCP clock, 49.7 d)`).
+  A long uptime alone, with TIME_WAIT ending normally (a macOS without the bug), stays up. Found 21.10.2026: 41 false
+  `whisper down` in 20 h, the heartbeat's own connections being most of the stuck ones (5,800 each to Whisper and HA).
+
 ## Deploying on a Mac
 
 ```
@@ -107,7 +142,9 @@ Checks out the tag in `~/aikos/repo`, runs the unit tests with the Mac's Python,
 `home.aikos.transcriber.room` and `.door` (`deploy/launchd.py`), restarts them, waits until both receivers listen and
 sends one spoken test sentence per side (`deploy/smoke.py`, macOS `say`, test sender 127.0.0.1, `_test` entities only).
 If anything after the tests fails, the previous LaunchAgents and checkout come back by themselves. Log:
-`~/Library/Logs/aikos/deploy.log`.
+`~/Library/Logs/aikos/deploy.log`. With `AIKOS_HEARTBEAT_URL` in the settings it also writes and restarts the heartbeat agent
+`home.aikos.heartbeat` (backed up and restored like the others) and logs the heartbeat's verdict; that verdict is no gate,
+since it also judges the Mac. Without the setting an existing heartbeat agent is left alone.
 
 **macOS Local Network permission:** a LaunchAgent may reach Home Assistant on the LAN only with that permission. Apple's
 `/usr/bin/python3` is exempt. Any other interpreter (uv, Homebrew) must first be allowed in System Settings → Privacy & Security
@@ -126,8 +163,9 @@ python3 -m unittest discover -s services/transcriber/tests
 
 CI job `transcriber-unit`, on Python 3.9 (the Mac's) and 3.12. They cover who-is-speaking (the RoomKey self-test
 cases), configuration, speech detection, the receiver over real UDP (one recording per utterance, the activity-file
-contract), the worker end to end against fake Whisper, Ollama and Home Assistant (test senders never reach live
-entities), and the LaunchAgent writer. Nothing in the tests talks to a real Home Assistant.
+contract, a door stream that stops mid-sentence is handed over whole), the worker end to end against fake Whisper, Ollama
+and Home Assistant (test senders never reach live entities), the heartbeat (busy, stalled, refused, the 49.7-day wrap, the
+push without the token in the output) and the LaunchAgent writer. Nothing in the tests talks to a real Home Assistant.
 
 **Who is speaking, all eval cases:** `tests/test_identity_snapshot.py` runs the rules (+ visitor type, no LLM, no audio) over
 the 716 cases in `tests/eval/` and compares every case with `tests/eval/snapshot.json`. A rule change that moves any case
@@ -150,6 +188,11 @@ Changes go through a pull request. Once tagged, this block is listed in [`FROZEN
 
 ## History
 
+- 1.3.2: monitoring and deployment only, the transcription is unchanged. The heartbeat for the push monitor moves into the
+  block (`heartbeat.py`, written and rolled back by `deploy.sh`; before it was an unversioned script on the Mac). It asks
+  `/health` instead of `/`, gives a stalled connection one more try, and names the Mac's 49.7-day TCP wrap instead of
+  reporting `whisper down` (20./21.10.: 41 false alarms while Whisper ran; the same fault made the door's 09:19 message
+  lose its final text, as the worker's connection to Whisper never opened). Written by aikos core.
 - 1.3.1: the W3 release (below). **`transcriber-v1.3.0` is void:** it was set by mistake on `d22b26a`, which holds the 1.2.3
   code without W3 (the merge had failed); tags are immutable, so W3 ships as 1.3.1. Never deploy `transcriber-v1.3.0`.
 - 1.3.0 (content shipped as 1.3.1): W3 mic health behind `AIKOS_MIC_CHECK` (default off): every recording's verdict as the event

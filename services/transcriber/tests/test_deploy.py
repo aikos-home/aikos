@@ -1,4 +1,6 @@
 """deploy/launchd.py: settings file, takeover from existing agents, and the LaunchAgents it writes."""
+import contextlib
+import io
 import os
 import plistlib
 import re
@@ -85,6 +87,32 @@ class Agents(unittest.TestCase):
         a = launchd.agent("door", SHARED, Path("/srv/aikos"), Path("/logs"), "/opt/py/bin/python3.12")
         self.assertIn("exec /opt/py/bin/python3.12 -u -m aikos_transcriber >> ", a["ProgramArguments"][2])
 
+    def test_heartbeat_agent(self):
+        """1.3.2: the heartbeat runs from the checkout every 30 s with the pinned Python; never KeepAlive (one check per run)."""
+        env = dict(SHARED, AIKOS_HEARTBEAT_URL="https://status.invalid/api/push", AIKOS_HEARTBEAT_TOKEN_FILE="/push.token")
+        a = launchd.heartbeat_agent(env, Path("/srv/aikos"), Path("/logs"), "/opt/py/bin/python3.12")
+        plistlib.loads(plistlib.dumps(a))
+        self.assertEqual(a["Label"], "home.aikos.heartbeat")
+        self.assertEqual((a["StartInterval"], a["RunAtLoad"]), (30, True))
+        self.assertNotIn("KeepAlive", a)
+        self.assertEqual(a["EnvironmentVariables"], dict(env, PATH=launchd.PATH))
+        self.assertEqual(Path(a["WorkingDirectory"]), Path("/srv/aikos/services/transcriber"))
+        self.assertIn("exec /opt/py/bin/python3.12 -u -m aikos_transcriber.heartbeat >> ", a["ProgramArguments"][2])
+        self.assertIn("heartbeat.log", a["ProgramArguments"][2])
+
+    def test_heartbeat_agent_only_when_configured(self):
+        tmp = Path(tempfile.mkdtemp())
+        for extra, expected in (({}, False), ({"AIKOS_HEARTBEAT_URL": "https://status.invalid/api/push"}, True)):
+            agents = tmp / f"agents{int(expected)}"
+            agents.mkdir()
+            env = tmp / f"env{int(expected)}"
+            env.write_text("".join(f"{k}={v}\n" for k, v in dict(SHARED, **extra).items()))
+            with contextlib.redirect_stdout(io.StringIO()):
+                launchd.main(["--env", str(env), "--checkout", str(tmp), "--agents", str(agents), "--logs", str(tmp / "logs")])
+            with self.subTest(heartbeat=expected):
+                self.assertEqual((agents / "home.aikos.heartbeat.plist").exists(), expected)
+                self.assertTrue((agents / "home.aikos.transcriber.door.plist").exists())
+
 
 @unittest.skipUnless(os.name == "posix" and shutil.which("bash"), "needs bash (macOS, Linux)")
 class DeployScript(unittest.TestCase):
@@ -103,6 +131,22 @@ class DeployScript(unittest.TestCase):
         self.assertEqual(run(pinned), "/opt/uv/python3.12")
         self.assertEqual(run(plain), "")
         self.assertEqual(run(tmp / "missing.env"), "")
+
+    def test_heartbeat_only_with_a_push_url(self):
+        """1.3.2: deploy.sh touches the heartbeat agent only when the settings name a push monitor."""
+        script = (Path(__file__).resolve().parent.parent / "deploy" / "deploy.sh").read_text(encoding="utf-8")
+        fn = re.search(r"^heartbeat_on\(\) \{.*\}$", script, re.M).group(0)
+        tmp = Path(tempfile.mkdtemp())
+        cases = {"on.env": ("AIKOS_HEARTBEAT_URL=https://status.invalid/api/push\n", "on"),
+                 "empty.env": ("AIKOS_HEARTBEAT_URL=\n", "off"), "none.env": ("AIKOS_KNOWN_NAMES=Anna\n", "off"),
+                 "missing.env": (None, "off")}
+        for name, (text, expected) in cases.items():
+            if text is not None:
+                (tmp / name).write_text(text)
+            r = subprocess.run(["bash", "-c", f"set -eu -o pipefail; {fn}; if heartbeat_on {tmp / name}; then echo on; else echo off; fi"],
+                               capture_output=True, text=True)
+            with self.subTest(name):
+                self.assertEqual(r.stdout.strip(), expected)
 
     def test_receiver_count_survives_lsof_warnings(self):
         script = (Path(__file__).resolve().parent.parent / "deploy" / "deploy.sh").read_text(encoding="utf-8")
