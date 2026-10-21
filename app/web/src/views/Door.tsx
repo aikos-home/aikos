@@ -74,12 +74,13 @@ function Section({ icon, title, extra, children }: { icon: string; title: string
 function useAction(done: () => void) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  // fn may return the message to show (e.g. "now" or "waiting"); otherwise `ok` is shown
   const run = async (fn: () => Promise<unknown>, ok = "") => {
     setBusy(true);
     setMsg("");
     try {
-      await fn();
-      setMsg(ok);
+      const said = await fn();
+      setMsg(typeof said === "string" ? said : ok);
       done();
     } catch (e) {
       setMsg((e as Error).message);
@@ -98,7 +99,7 @@ function Say({ state, status, done }: { state: DoorActionsState; status: DoorSta
     a.run(async () => {
       const r = await api.say(message);
       setText("");
-      a.setMsg(r.delivered === "now" ? "An der Tür angezeigt." : "Wartet auf den nächsten Besucher.");
+      return r.delivered === "now" ? "An der Tür angezeigt." : "Wartet auf den nächsten Besucher.";
     });
   return (
     <Section icon="text" title="An die Tür sagen">
