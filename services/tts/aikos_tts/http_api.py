@@ -17,11 +17,13 @@ from aiohttp import web
 
 from . import __version__
 from .engine import Engine
+from .prepare import Preparer
 from .voices import UPLOAD_MAX, VoiceError, VoiceStore
 
 _LOGGER = logging.getLogger(__name__)
 STORE = web.AppKey("store", VoiceStore)
 ENGINE = web.AppKey("engine", Engine)
+PREPARER = web.AppKey("preparer", Preparer)
 SPEAK_MAX = 300
 
 
@@ -54,6 +56,7 @@ def create_app(store: VoiceStore, engine: Engine, token: str, allowed: Callable[
 
     app = web.Application(middlewares=[guard], client_max_size=UPLOAD_MAX + 1024)
     app[STORE], app[ENGINE] = store, engine
+    app[PREPARER] = preparer = Preparer(engine)
     routes = web.RouteTableDef()
 
     @routes.get("/v1/health")
@@ -87,24 +90,19 @@ def create_app(store: VoiceStore, engine: Engine, token: str, allowed: Callable[
 
     @routes.post("/v1/prepare")
     async def prepare(request: web.Request) -> web.Response:
-        """Say these texts once now, in the background, so they play at once later (quick replies, announcements)."""
+        """Say these texts once now, in the background, so they play at once later (quick replies, announcements).
+        `draft: true` = text still being typed: made first, and replaces this voice's older draft (prepare.py)."""
         try:
             body = await request.json()
             texts = [" ".join(str(t).split()) for t in body.get("texts") or []][:50]
-            ref = store.reference(str(body.get("voice") or ""))
+            voice = str(body.get("voice") or "")
+            ref = store.reference(voice)
         except (ValueError, VoiceError, AttributeError):
             raise _error(400, "bad_request") from None
         if ref is None:
             raise _error(404, "voice")
         texts = [t for t in texts if 0 < len(t) <= SPEAK_MAX]
-
-        def run() -> None:
-            for t in texts:
-                try:
-                    engine.synthesize(t, ref)
-                except Exception as e:  # one sentence that can't be said must not stop the others
-                    _LOGGER.warning("not prepared: %s", e)
-        asyncio.get_running_loop().run_in_executor(None, run)
+        preparer.add(voice, ref, texts, draft=body.get("draft") is True)
         return web.json_response({"queued": len(texts)}, status=202)
 
     @routes.post("/v1/speak")

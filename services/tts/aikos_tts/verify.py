@@ -59,11 +59,20 @@ class Verdict:
     heard: str
 
 
+def same_word(want: str, got: str) -> bool:
+    """The text's word, as Whisper may write it: the same, or an inflected form of it ("schelm" / "schelmen", "tür" /
+    "türen"): one starts with the other, at least 4 letters, at most 2 more."""
+    if want == got:
+        return True
+    short, long_ = sorted((want, got), key=len)
+    return len(short) >= 4 and len(long_) - len(short) <= 2 and long_.startswith(short)
+
+
 def judge(expected: str, heard: list[Heard], duration_s: float) -> Verdict:
     """Pure rule: may this take be used, and where does the text end in it?"""
     want = [w.replace("ß", "ss") for w in norm_words(expected)]
-    got = [w.word for w in heard]
-    text = " ".join(got)
+    text = " ".join(w.word for w in heard)
+    got = [next((x for x in want if same_word(x, w.word)), w.word) for w in heard]
     if not want:
         return Verdict(False, None, 0.0, text)
     blocks = [b for b in difflib.SequenceMatcher(None, want, got, autojunk=False).get_matching_blocks() if b.size]

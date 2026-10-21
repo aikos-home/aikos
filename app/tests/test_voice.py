@@ -50,7 +50,7 @@ def voice_service(seen: list) -> web.Application:
     app.router.add_delete("/v1/voices/{id}", delete)
     async def prepare(request):
         body = await request.json()
-        seen.append(("PREPARE", body["voice"], tuple(body["texts"]), None))
+        seen.append(("PREPARE", body["voice"], tuple(body["texts"]), body.get("draft")))
         return web.json_response({"queued": len(body["texts"])}, status=202)
     app.router.add_post("/v1/speak", speak)
     app.router.add_post("/v1/prepare", prepare)
@@ -106,7 +106,19 @@ async def test_record_listen_delete_my_own_voice(house, aiohttp_server):
         if any(s[0] == "PREPARE" for s in seen):
             break
         await asyncio.sleep(0.01)
-    assert ("PREPARE", voice_id(sam_user), ("Komme sofort.", "Bitte vor die Tür legen.", "Moment bitte."), None) in seen
+    assert ("PREPARE", voice_id(sam_user), ("Komme sofort.", "Bitte vor die Tür legen.", "Moment bitte."), False) in seen
+    r = await house.post("/api/v1/door/say/draft", {"message": "Ich bin  gleich da"}, who=sam)
+    assert r.status == 202
+    for _ in range(50):
+        if any(s[0] == "PREPARE" and s[3] for s in seen):
+            break
+        await asyncio.sleep(0.01)
+    assert ("PREPARE", voice_id(sam_user), ("Ich bin gleich da",), True) in seen        # typed, made ahead as a draft
+    n = len(seen)
+    assert (await house.post("/api/v1/door/say/draft", {"message": "Hallo"}, who=admin)).status == 202   # no own voice
+    await asyncio.sleep(0.05)
+    assert not any(s[0] == "PREPARE" for s in seen[n:])
+    assert (await house.post("/api/v1/door/say/draft", {"message": ""}, who=sam)).status == 400
     assert (await (await house.get("/api/v1/me/voice", admin)).json())["voice"] is None   # only Sam's own
     r = await house.post("/api/v1/me/voice/sample", who=sam)
     assert r.status == 200 and r.content_type == "audio/wav"

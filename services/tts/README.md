@@ -4,13 +4,14 @@ Speech in the residents' own voices, locally. The door reads a resident's note o
 (aikos-app A42–A45). Each person records their own voice in the aikos app (Haus → Meine Stimme), so every voice is enrolled
 by its owner. Voices, text and audio never leave the machine this runs on (R11). Owner: aikos core.
 
-Version **0.3.0**. Python 3.11. Model: [Chatterbox multilingual](https://github.com/resemble-ai/chatterbox) (MIT licence),
+Version **0.4.0**. Python 3.11. Model: [Chatterbox multilingual](https://github.com/resemble-ai/chatterbox) (MIT licence),
 zero-shot voice cloning from a 8–60 s recording, German. Every generated clip carries Chatterbox's inaudible watermark,
 so it can be recognised as synthetic. A voice is never proof of identity.
 
 **The model never decides what is said.** With `AIKOS_TTS_WHISPER_URL` (a local whisper-server), every sentence is written
 back and compared with the text: whatever the model adds after the text's last word is cut off and the rest is checked
-again; an invented start or missing words mean another take (up to three, each a little less free); if none fits, nothing
+again (an inflected form of a word counts: "Schelmen" for "Schelm", at least 4 letters, at most 2 more); an invented
+start or missing words mean another take (up to three, each a little less free); if none fits, nothing
 is spoken and Home Assistant shows the text only. Measured on 21.10. with a resident's voice: 5 of 5 door sentences word for
 word (before the check: 3 of 5, with babbling after the sentence); 7–25 s per sentence including the retries.
 
@@ -31,7 +32,7 @@ word (before the check: 3 of 5, with babbling after the sentence); 7–25 s per 
 | `GET /v1/voices` | `[{id, name, created, seconds}]` |
 | `PUT /v1/voices/{id}` | body = the recording (any format ffmpeg reads), header `X-Voice-Name` (URL-encoded). 8–60 s after cutting leading silence; replaces the voice only once the new recording is checked |
 | `DELETE /v1/voices/{id}` | the voice and its recording, for good |
-| `POST /v1/prepare {voice, texts}` | say these once now in the background (202), so they play at once later; the takes are kept per voice (`cache/`, at most 400, a new recording or deleting the voice drops them) |
+| `POST /v1/prepare {voice, texts, draft}` | say these once now in the background (202), so they play at once later; the takes are kept per voice (`cache/`, at most 400, a new recording or deleting the voice drops them). One after the other; `draft: true` (a note still being typed in the app) goes first, and a newer draft of the voice replaces the older one that hasn't started |
 | `POST /v1/speak {voice, text}` | a short test sentence (≤ 300 characters) as WAV, to listen to in the app |
 
 Voice ids: `^[a-z0-9][a-z0-9_-]{0,39}$`. The app decides who may change which voice (only the person themself).
@@ -41,7 +42,12 @@ Voice ids: `^[a-z0-9][a-z0-9_-]{0,39}$`. The app decides who may change which vo
 `deploy/install.sh SOURCE_DIR` installs into `~/aikos/services/tts` (own venv `.venv-clone`, voices `0700`, token `0600`,
 settings `tts.env`) and runs it as the LaunchAgent `home.aikos.tts` (log `~/Library/Logs/aikos-tts.log`). The model loads
 once (~10 s) and stays in memory; one synthesis at a time. A short door sentence takes about 5–8 s on an M2 Max (MPS), so
-the aikos integration makes waiting notes and the greeting in advance.
+the aikos integration makes waiting notes, the greeting and the announcements in advance, and the app makes a note while it
+is being typed.
+
+Measured on 22.10. (M2 Max, MPS), one take of a short sentence: the model's speech tokens 2–6 s (about 20 tokens/s, slower
+than the speech itself), the vocoder 1.2–2 s, the Whisper check 0.85 s, the watermark 0.01 s. Without guidance or with 5
+instead of 10 vocoder steps it is barely faster and says more nonsense, so neither is used.
 
 ## Errors
 

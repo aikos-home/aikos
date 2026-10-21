@@ -53,6 +53,21 @@ def test_missing_words_or_a_wrong_start_mean_another_take():
     assert not judge("", heard(*spaced("hallo")), 1.0).ok
 
 
+def test_an_inflected_word_counts_and_the_repeat_after_it_is_cut():
+    """Live 21.10. 23:56: "Hinfort, sie Schelm." was heard as "hinfort sie schelmen sie schelmen" three times, so nothing
+    was said. The inflected form counts; the repeat after it is cut off."""
+    words = spaced("hinfort sie schelmen sie schelmen")
+    v = judge("Hinfort, sie Schelm.", heard(*words), 3.0)
+    assert v.ok and v.cut_s == pytest.approx(words[3][1])                 # where the repeated "sie" starts
+
+
+def test_short_or_different_words_are_not_taken_as_inflections():
+    from aikos_tts.verify import same_word
+    assert same_word("schelm", "schelmen") and same_word("komme", "kommen") and same_word("paket", "pakete")
+    assert not same_word("an", "and") and not same_word("tür", "türen")        # under 4 letters: must be the same
+    assert not same_word("komm", "kommission") and not same_word("tür", "tor")
+
+
 def test_one_word_heard_differently_is_still_fine():
     v = judge("Wir sind gerade im Garten. Bitte kommen Sie hinten herum.",
               heard(*spaced("wir sind gerade im garten bitte kommen sie hintern herum")), 5.0)

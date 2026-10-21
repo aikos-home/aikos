@@ -210,6 +210,7 @@ export const api = {
     call<unknown>("POST", "/api/v1/door/quiet-hours", body),
   say: (message: string) => call<{ delivered: "now" | "waiting" }>("POST", "/api/v1/door/say", { message }),
   cancelSay: () => call<unknown>("DELETE", "/api/v1/door/say"),
+  sayDraft: (message: string) => call<unknown>("POST", "/api/v1/door/say/draft", { message }),
   putPicture: (blob: Blob) => upload("PUT", "/api/v1/door/picture", blob),
   deletePicture: () => call<unknown>("DELETE", "/api/v1/door/picture"),
   putGreeting: (body: { enabled?: boolean; text?: string; start?: string; end?: string; always?: boolean }) =>

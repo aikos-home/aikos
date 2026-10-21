@@ -55,9 +55,18 @@ export function Door({ user, status, refresh }: Props) {
   );
 }
 
+const DRAFT_PAUSE_MS = 900;   // a pause in typing: the note's speech is made now, so it plays at once when sent
+
 function Say({ state, status, done }: { state: DoorActionsState; status: DoorStatus | null; done: () => void }) {
   const [text, setText] = useState("");
   const a = useAction(done);
+  const draft = useRef<number>();
+  const typed = (value: string) => {
+    setText(value);
+    window.clearTimeout(draft.current);
+    const message = value.trim();
+    if (message.length >= 3) draft.current = window.setTimeout(() => api.sayDraft(message).catch(() => {}), DRAFT_PAUSE_MS);
+  };
   const here = !!status?.someone_at_door;
   const send = (message: string) =>
     a.run(async () => {
@@ -75,7 +84,7 @@ function Say({ state, status, done }: { state: DoorActionsState; status: DoorSta
         {(state.quick ?? []).map((q) => <button class="chip" disabled={a.busy} onClick={() => send(q)}>{q.replace(/\.$/, "")}</button>)}
       </div>
       <form class="row" onSubmit={(e) => { e.preventDefault(); if (text.trim()) send(text); }}>
-        <input value={text} maxLength={400} placeholder="Eigener Text" onInput={(e) => setText(e.currentTarget.value)} />
+        <input value={text} maxLength={400} placeholder="Eigener Text" onInput={(e) => typed(e.currentTarget.value)} />
         <button class="primary" disabled={a.busy || !text.trim()}>Senden</button>
       </form>
       {state.note && (
