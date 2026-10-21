@@ -52,13 +52,13 @@ async def setup(hass: HomeAssistant, engine=ENGINE):
 
 async def call(hass, service, data, response=False):
     r = await hass.services.async_call(DOMAIN, service, data, blocking=True, return_response=response)
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)   # speech is made in the background
     return r
 
 
 async def radar(hass, state):
     hass.states.async_set(SOMEONE, state)
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
 
 
 async def test_a_note_now_is_read_in_the_senders_voice(hass: HomeAssistant, media, door):
