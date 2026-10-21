@@ -1,5 +1,5 @@
 // The signed-in app (rule A20): status on top, one page per tab, tabs at the bottom: Tür · Nachrichten · Verlauf · Haus.
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { api, type DoorStatus, type User } from "../api";
 import { syncPush } from "../push";
 import { clock, hhmm } from "../format";
@@ -24,6 +24,8 @@ const tabFromHash = (): Tab => (TABS.find((t) => `#${t.id}` === location.hash)?.
 export function Shell({ user, onSignedOut }: { user: User; onSignedOut: () => void }) {
   const [tab, setTab] = useState<Tab>(tabFromHash());
   const [status, setStatus] = useState<DoorStatus | null>(null);
+  const alive = useRef(true);
+  const loadStatus = () => api.doorStatus().then((s) => alive.current && setStatus(s)).catch(() => undefined);
 
   useEffect(() => {
     const onHash = () => setTab(tabFromHash());
@@ -39,12 +41,11 @@ export function Shell({ user, onSignedOut }: { user: User; onSignedOut: () => vo
   }, []);
 
   useEffect(() => {
-    let alive = true;
-    const load = () => api.doorStatus().then((s) => alive && setStatus(s)).catch(() => undefined);
-    load();
-    const timer = setInterval(load, STATUS_EVERY_MS);
+    alive.current = true;
+    loadStatus();
+    const timer = setInterval(loadStatus, STATUS_EVERY_MS);
     return () => {
-      alive = false;
+      alive.current = false;
       clearInterval(timer);
     };
   }, []);
@@ -71,7 +72,7 @@ export function Shell({ user, onSignedOut }: { user: User; onSignedOut: () => vo
         </div>
       )}
       <main class="content">
-        {tab === "tuer" && <Door user={user} />}
+        {tab === "tuer" && <Door user={user} status={status} refresh={loadStatus} />}
         {tab === "nachrichten" && <Messages user={user} />}
         {tab === "verlauf" && <History user={user} />}
         {tab === "haus" && <House user={user} onSignedOut={onSignedOut} />}
@@ -94,7 +95,8 @@ function StatusChips({ status }: { status: DoorStatus | null }) {
     <>
       {status.bell_muted !== null && (
         <span class={`chip ${status.bell_muted ? "warn" : ""}`}>
-          <Icon name={status.bell_muted ? "bell-off" : "bell"} /> {status.bell_muted ? "Stumm" : "Klingel an"}
+          <Icon name={status.bell_muted ? "bell-off" : "bell"} />{" "}
+          {status.bell_muted ? `Stumm${status.bell_muted_until ? ` bis ${clock(Date.parse(status.bell_muted_until) / 1000)}` : ""}` : "Klingel an"}
         </span>
       )}
       {status.quiet_hours !== null && (

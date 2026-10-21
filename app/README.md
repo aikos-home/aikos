@@ -5,7 +5,7 @@ Assistant stays the system of record for entities, devices, states, events, soun
 way to them. It signs people in with passkeys, knows who may see and do what, and is the single path from a phone to
 Home Assistant. The phone never gets a Home Assistant token, address or link.
 
-Version **0.3.0** (step 1: sign-in, roles, door messages; step 2: message register, delete, forward by hand, push). Python 3.12+ (aiohttp, py_webauthn); PWA in TypeScript
+Version **0.4.0** (step 1: sign-in, roles, door messages; step 2: message register, delete, forward by hand, push; step 3: door actions). Python 3.12+ (aiohttp, py_webauthn); PWA in TypeScript
 (Preact, Vite).
 
 Runs on one machine (SQLite) or on three nodes with a replicated database and rollouts of signed images
@@ -33,6 +33,7 @@ HTTP API under `/api/v1`, described in [`aikos_app/api/openapi.json`](aikos_app/
 | Me | `GET /api/v1/me`, `GET /api/v1/me/passkeys`, `POST /api/v1/me/passkeys/start` and `/finish`, `DELETE /api/v1/me/passkeys/{id}` |
 | People (superadmin) | `GET /api/v1/people`, `POST /api/v1/people/invites`, `POST /api/v1/people/{id}/device-invite`, `POST /api/v1/people/{id}/disable` |
 | Door | `GET /api/v1/door/status`, `GET /api/v1/door/messages`, `GET /api/v1/door/messages/{id}/audio` (Range supported; `?share=1` = as a file to forward, recorded), `POST /api/v1/door/messages/{id}/heard`, `DELETE /api/v1/door/messages/{id}` |
+| Door actions | `GET /api/v1/door/actions`, `POST /api/v1/door/bell`, `POST /api/v1/door/quiet-hours` (`bell.settings`); `POST`/`DELETE /api/v1/door/say`, `PUT`/`GET`/`DELETE /api/v1/door/picture`, `PUT /api/v1/door/greeting`, `PUT`/`GET`/`DELETE /api/v1/door/greeting/audio` (`door.act`) |
 | Push | `GET /api/v1/push/key`, `POST /api/v1/push/subscription`, `DELETE /api/v1/push/subscription`, `POST /api/v1/push/test` |
 | Other | `GET /api/v1/health` (200 with `ok`, `version`, `commit`, `db`, `ha_connected`; 503 without its database), `GET /.well-known/assetlinks.json` |
 
@@ -41,7 +42,7 @@ HTTP API under `/api/v1`, described in [`aikos_app/api/openapi.json`](aikos_app/
 
 **Errors:** `{"error": "<code>"}` with a stable code, e.g. `not_signed_in` (401), `forbidden` (403), `not_found` (404,
 also for a message that exists but is not yours), `invalid_code`, `invite_invalid`, `passkey_failed`,
-`unknown_passkey`, `flow_expired`, `bad_subscription` (400), `already_set_up` (409), `slow_down` (429), `ha_unreachable`, `no_register` (503).
+`unknown_passkey`, `flow_expired`, `bad_subscription` (400), `already_set_up` (409), `slow_down` (429), `ha_unreachable`, `no_register`, `no_door_actions` (503); `invalid` (400: Home Assistant refused the input).
 
 ## Roles
 
@@ -82,6 +83,18 @@ folder; deleting and "heard" then answer `no_register`. Messages the register ad
 and the folder list can get metadata from two optional interim entities: `AIKOS_APP_INTERIM_LAST_MESSAGE_ENTITY` (state =
 file name of the last saved message; attributes `seconds`, `time`, `recipient`) and `AIKOS_APP_INTERIM_MESSAGE_TEXT_ENTITY`
 (state = recognised text, cleared when a recording starts).
+
+## Door actions
+
+Through the aikos integration (0.9.0+), each exactly one aikos service with the acting person's name; children have none
+of them (matrix 2.4a).
+- **Bell:** mute for 1 h, 2 h, until tomorrow 7:00 or until switched off (the ring push still comes, A40); quiet hours on/off,
+  start and end.
+- **A note to the door** (A11/A39): shown at once if the radar sees someone, else for the next visitor; quick replies; a waiting
+  note can be withdrawn. Nothing is read aloud yet (A42: only a local voice, later).
+- **Picture** (A12/A41): the phone shrinks the photo (≤ 1280 px, ≤ 900 KB JPEG), aikos turns it into the door's grey PNG; it stays
+  until removed. The preview comes through the app.
+- **Greeting** (A13/A26): text (≤ 120) and/or a sound recorded with the phone (≤ 20 s), always or from–until.
 
 ## Push
 

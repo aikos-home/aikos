@@ -11,6 +11,7 @@ from ..auth.service import AuthService
 from ..config import Settings
 from ..ha.client import HaClient
 from ..ha.door import DoorMessages
+from ..ha.door_actions import DoorActions
 from ..push.door_push import DoorPush
 from ..roles import Cap, can
 from ..store import Database
@@ -36,6 +37,7 @@ class AppContext:
     pushes: Pushes
     door_push: DoorPush
     push_public_key: str
+    door_actions: DoorActions
 
 
 CTX = web.AppKey("aikos_ctx", AppContext)

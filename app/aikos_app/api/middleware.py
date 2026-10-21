@@ -40,6 +40,8 @@ async def errors(request: web.Request, handler):
     except HaNotConnected:
         raise api_error(503, "ha_unreachable") from None
     except HaError as e:
+        if e.code in ("service_validation_error", "invalid_format"):  # HA refused the input (not a picture, ...)
+            raise api_error(400, "invalid") from None
         _LOGGER.warning("Home Assistant: %s", e)
         raise api_error(503, "ha_error") from None
 

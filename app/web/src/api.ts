@@ -33,8 +33,17 @@ export interface DoorStatus {
   quiet_hours: boolean | null;
   quiet_start: string;
   quiet_end: string;
+  quiet_enabled: boolean | null;
   bell_muted: boolean | null;
+  /** ISO; "" while muted = until switched off. */
+  bell_muted_until: string;
   ha_connected: boolean;
+}
+
+export interface DoorActionsState {
+  note: { message: string; sender: string; since: string } | null;
+  greeting: { state: "active" | "scheduled" | "off"; enabled: boolean; text: string; start: string; end: string; audio: boolean };
+  picture: boolean;
 }
 
 export interface Passkey {
@@ -72,12 +81,31 @@ const MESSAGES: Record<string, string> = {
   bad_origin: "Anfrage von einer fremden Seite abgelehnt.",
   network: "Keine Verbindung zu aikos.",
   bad_subscription: "Dieses Gerät lässt sich nicht für Benachrichtigungen anmelden.",
+  no_door_actions: "Dafür braucht Home Assistant die aikos-Integration ab 0.9.0.",
+  invalid: "Home Assistant hat das nicht angenommen.",
+  bad_type: "Diese Datei passt nicht.",
+  too_large: "Die Datei ist zu groß.",
   no_register: "Dafür braucht Home Assistant die aikos-Integration ab 0.8.0.",
 };
 
 export class ApiError extends Error {
   constructor(public code: string, public status: number) {
     super(MESSAGES[code] ?? `Fehler (${code})`);
+  }
+}
+
+async function upload(method: string, path: string, blob: Blob): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      method, credentials: "same-origin", headers: { "Content-Type": blob.type.split(";")[0] }, body: blob,
+    });
+  } catch {
+    throw new ApiError("network", 0);
+  }
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new ApiError(data.error ?? (response.status === 413 ? "too_large" : "unknown"), response.status);
   }
 }
 
@@ -127,6 +155,19 @@ export const api = {
   disablePerson: (userId: number) => call<{ ok: boolean }>("POST", `/api/v1/people/${userId}/disable`),
   doorStatus: () => call<DoorStatus>("GET", "/api/v1/door/status"),
   doorMessages: () => call<DoorMessage[]>("GET", "/api/v1/door/messages"),
+  doorActions: () => call<DoorActionsState | null>("GET", "/api/v1/door/actions"),
+  bell: (body: { minutes?: number; until_time?: string; forever?: boolean; off?: boolean }) =>
+    call<unknown>("POST", "/api/v1/door/bell", body),
+  quietHours: (body: { enabled?: boolean; start?: string; end?: string }) =>
+    call<unknown>("POST", "/api/v1/door/quiet-hours", body),
+  say: (message: string) => call<{ delivered: "now" | "waiting" }>("POST", "/api/v1/door/say", { message }),
+  cancelSay: () => call<unknown>("DELETE", "/api/v1/door/say"),
+  putPicture: (blob: Blob) => upload("PUT", "/api/v1/door/picture", blob),
+  deletePicture: () => call<unknown>("DELETE", "/api/v1/door/picture"),
+  putGreeting: (body: { enabled?: boolean; text?: string; start?: string; end?: string; always?: boolean }) =>
+    call<unknown>("PUT", "/api/v1/door/greeting", body),
+  putGreetingAudio: (blob: Blob) => upload("PUT", "/api/v1/door/greeting/audio", blob),
+  deleteGreetingAudio: () => call<unknown>("DELETE", "/api/v1/door/greeting/audio"),
   deleteMessage: (id: string) => call<unknown>("DELETE", `/api/v1/door/messages/${encodeURIComponent(id)}`),
   pushKey: () => call<{ key: string }>("GET", "/api/v1/push/key"),
   pushSubscribe: (subscription: PushSubscriptionJSON, label: string) =>
