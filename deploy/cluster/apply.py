@@ -163,12 +163,13 @@ def main(argv: list[str] | None = None) -> int:
         sec["ca_cert"], sec["ca_key"] = pki.new_ca()
         args.rotate_certs = True
     ha_token = Path(inv.ha_token_file).expanduser().read_text(encoding="utf-8").strip()
+    tts_token = Path(inv.tts_token_file).expanduser().read_text(encoding="utf-8").strip() if inv.tts_token_file else ""
     registry_token = registry_read_token(inv)
     for n in inv.nodes:
         print(f"{n.name}: host")
         iface = prepare_host(ssh, n)
         crt, key = node_cert_for(ssh, n, sec, args.rotate_certs)
-        for f in node_files(inv, n, sec, crt, key, ha_token, iface):
+        for f in node_files(inv, n, sec, crt, key, ha_token, iface, tts_token):
             ssh.put(n.ip, f.path, f.content, f.mode, f.owner)
         if registry_token:
             # root's Docker credentials (0600) serve docker pull, buildx imagetools and cosign alike; token on stdin only

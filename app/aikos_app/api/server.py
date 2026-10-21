@@ -24,7 +24,8 @@ from ..store.audit import Audit
 from ..store.flows import Flows
 from ..store.push import Pushes
 from ..store.sessions import Sessions
-from . import routes_auth, routes_door, routes_door_actions, routes_meta, routes_people, routes_push
+from ..voice import Voices
+from . import routes_auth, routes_door, routes_door_actions, routes_meta, routes_people, routes_push, routes_voice
 from .context import CTX, AppContext, api_error
 from .middleware import Brake, brake_middleware, errors, identify, same_origin_writes, security_headers
 
@@ -45,7 +46,7 @@ def build_context(settings: Settings, ha: HaClient | None = None) -> AppContext:
     door_push = DoorPush(ha, door, accounts, pushes, PushSender(vapid, settings.public_url),
                          settings.entity_someone_at_door)
     return AppContext(settings, db, accounts, sessions, audit, auth, ha, door, pushes, door_push, vapid_public(vapid),
-                      DoorActions(ha))
+                      DoorActions(ha), Voices(settings.tts_url, settings.tts_token))
 
 
 def write_setup_code(c: AppContext) -> Path | None:
@@ -91,7 +92,7 @@ def create_app(settings: Settings, ha: HaClient | None = None) -> web.Applicatio
                           middlewares=[security_headers, errors, brake_middleware(Brake()), same_origin_writes,
                                        identify])
     app[CTX] = c
-    for module in (routes_meta, routes_auth, routes_people, routes_door, routes_door_actions, routes_push):
+    for module in (routes_meta, routes_auth, routes_people, routes_door, routes_door_actions, routes_push, routes_voice):
         app.add_routes(module.routes)
     app.router.add_get("/{tail:.*}", _spa(settings.web_dir or DEFAULT_WEB_DIR))
 
@@ -110,6 +111,7 @@ def create_app(settings: Settings, ha: HaClient | None = None) -> web.Applicatio
     async def on_cleanup(_app: web.Application) -> None:
         await c.door_push.stop()
         await c.door_push.sender.close()
+        await c.voices.close()
         await c.ha.stop()
         c.db.close()
 

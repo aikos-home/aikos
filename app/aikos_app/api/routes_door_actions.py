@@ -108,7 +108,8 @@ async def say(request: web.Request) -> web.Response:
     message = " ".join(str((await _json(request)).get("message") or "").split())
     if not message or len(message) > 400:
         raise api_error(400, "bad_request")
-    delivered = await _do(ctx(request).door_actions.say(message, user.name))
+    c = ctx(request)
+    delivered = await _do(c.door_actions.say(message, user.name, await c.voices.for_speech(user)))
     _audit(request, "door.say", user.id, target=delivered)
     return web.json_response({"delivered": delivered})
 
@@ -184,6 +185,8 @@ async def put_greeting(request: web.Request) -> web.Response:
     for key in ("start", "end"):
         if body.get(key):
             data[key] = str(body[key])[:40]
+    if "text" in data:  # the greeting text is read in the voice of whoever saved it (A45)
+        data["voice"] = await ctx(request).voices.for_speech(user)
     await _do(ctx(request).door_actions.set_greeting(data))
     _audit(request, "door.greeting", user.id)
     return web.Response(status=204)

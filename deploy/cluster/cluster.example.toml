@@ -21,6 +21,10 @@ key = "~/.ssh/aikos_vms_ed25519"
 # user = "your-github-user"
 # token_file = "~/.aikos/ghcr-read-token"
 
+# [tts]                           # optional: the house's voice service for "Meine Stimme" (services/tts)
+# url = "http://192.0.2.110:10201"
+# token_file = "~/.aikos/tts-token"  # copied to the nodes (0400, only the app can read it)
+
 [app]                             # optional AIKOS_APP_* settings (lower case, without the prefix)
 door_media_dir = "aikos_door"
 

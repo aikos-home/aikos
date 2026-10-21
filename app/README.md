@@ -5,7 +5,7 @@ Assistant stays the system of record for entities, devices, states, events, soun
 way to them. It signs people in with passkeys, knows who may see and do what, and is the single path from a phone to
 Home Assistant. The phone never gets a Home Assistant token, address or link.
 
-Version **0.4.0** (step 1: sign-in, roles, door messages; step 2: message register, delete, forward by hand, push; step 3: door actions). Python 3.12+ (aiohttp, py_webauthn); PWA in TypeScript
+Version **0.5.0** (step 1: sign-in, roles, door messages; step 2: message register, delete, forward by hand, push; step 3: door actions, own voices). Python 3.12+ (aiohttp, py_webauthn); PWA in TypeScript
 (Preact, Vite).
 
 Runs on one machine (SQLite) or on three nodes with a replicated database and rollouts of signed images
@@ -34,6 +34,7 @@ HTTP API under `/api/v1`, described in [`aikos_app/api/openapi.json`](aikos_app/
 | People (superadmin) | `GET /api/v1/people`, `POST /api/v1/people/invites`, `POST /api/v1/people/{id}/device-invite`, `POST /api/v1/people/{id}/disable` |
 | Door | `GET /api/v1/door/status`, `GET /api/v1/door/messages`, `GET /api/v1/door/messages/{id}/audio` (Range supported; `?share=1` = as a file to forward, recorded), `POST /api/v1/door/messages/{id}/heard`, `DELETE /api/v1/door/messages/{id}` |
 | Door actions | `GET /api/v1/door/actions`, `POST /api/v1/door/bell`, `POST /api/v1/door/quiet-hours` (`bell.settings`); `POST`/`DELETE /api/v1/door/say`, `PUT`/`GET`/`DELETE /api/v1/door/picture`, `PUT /api/v1/door/greeting`, `PUT`/`GET`/`DELETE /api/v1/door/greeting/audio` (`door.act`) |
+| My voice | `GET`/`PUT`/`DELETE /api/v1/me/voice`, `POST /api/v1/me/voice/sample` (`door.act`, only one's own) |
 | Push | `GET /api/v1/push/key`, `POST /api/v1/push/subscription`, `DELETE /api/v1/push/subscription`, `POST /api/v1/push/test` |
 | Other | `GET /api/v1/health` (200 with `ok`, `version`, `commit`, `db`, `ha_connected`; 503 without its database), `GET /.well-known/assetlinks.json` |
 
@@ -96,6 +97,14 @@ of them (matrix 2.4a).
   until removed. The preview comes through the app.
 - **Greeting** (A13/A26): text (≤ 120) and/or a sound recorded with the phone (≤ 20 s), always or from–until.
 
+## Own voices
+
+"Meine Stimme" (A43–A45, S9): a person records their own voice in the app, reading a short text that includes their consent.
+The recording goes to the house's voice service (`services/tts`, `AIKOS_APP_TTS_URL` + `AIKOS_APP_TTS_TOKEN_FILE`) and nowhere
+else; the app keeps no copy. The voice id comes from the account's random handle (the same on every node, says nothing about
+the person). Notes to the door and the greeting text are read in the sender's own voice; without one they are only shown.
+Deleting removes it for good. The voice service being away only means no reading aloud.
+
 ## Push
 
 Web Push (VAPID), built in: message encryption per RFC 8291 (`aes128gcm`) and the VAPID token per RFC 8292 with
@@ -128,6 +137,8 @@ the same key and phones stay subscribed across nodes and rollouts.
 | `AIKOS_APP_WEB_DIR` | bundled `aikos_app/web` | the built PWA (`web/dist`) |
 | `AIKOS_APP_ASSETLINKS_FILE` | – | Digital Asset Links JSON for a later Android app |
 | `AIKOS_APP_DOOR_MEDIA_DIR` | `aikos_door` | local media folder of the door |
+| `AIKOS_APP_TTS_URL` | empty | the house's voice service (HTTP side); empty = no own voices |
+| `AIKOS_APP_TTS_TOKEN_FILE` | empty | file with its token |
 | `AIKOS_APP_ENTITY_SOMEONE_AT_DOOR`, `…_QUIET_HOURS`, `…_BELL_MUTED` | the aikos names | status entities shown at the top |
 | `AIKOS_APP_INTERIM_LAST_MESSAGE_ENTITY`, `AIKOS_APP_INTERIM_MESSAGE_TEXT_ENTITY` | off | see above |
 

@@ -56,6 +56,19 @@ def test_secrets_are_readable_only_by_their_process():
             assert secret not in f[p].content, p
 
 
+def test_voice_service_token_only_when_configured_and_only_for_the_app():
+    import dataclasses
+    assert "/etc/aikos/secrets/app/tts-token" not in files_of(0) and "AIKOS_APP_TTS_URL" not in env(files_of(0)["/etc/aikos/app.env"].content)
+    inv = dataclasses.replace(INV, tts_url="http://192.0.2.110:10201", tts_token_file="x")
+    node = inv.nodes[0]
+    crt, key = pki.node_cert(SEC["ca_cert"], SEC["ca_key"], node.name, node.ip)
+    f = {x.path: x for x in node_files(inv, node, SEC, crt, key, "ha-token-value", "eth0", "tts-token-value")}
+    assert f["/etc/aikos/secrets/app/tts-token"].mode == "0400" and f["/etc/aikos/secrets/app/tts-token"].owner == "10001:10001"
+    e = env(f["/etc/aikos/app.env"].content)
+    assert e["AIKOS_APP_TTS_URL"] == "http://192.0.2.110:10201" and e["AIKOS_APP_TTS_TOKEN_FILE"] == "/secrets/tts-token"
+    assert all("tts-token-value" not in x.content for p, x in f.items() if p != "/etc/aikos/secrets/app/tts-token")
+
+
 def test_rqlite_users_have_only_their_rights():
     users = {u["username"]: u["perms"] for u in json.loads(files_of(0)["/etc/aikos/secrets/rqlite-auth.json"].content)}
     assert users["app"] == ["execute", "query"] and users["backup"] == ["backup"]
