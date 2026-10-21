@@ -1,0 +1,89 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "aikos app API",
+    "version": "1",
+    "description": "The only way from a phone to Home Assistant in an aikos house. Sign-in with passkeys only. Session as HttpOnly cookie (PWA) or, with header `X-Aikos-Client: native`, as bearer token (native apps). Errors: `{\"error\": \"<code>\"}`. Writes from a browser must carry the app's own Origin."
+  },
+  "components": {
+    "securitySchemes": {
+      "cookie": {"type": "apiKey", "in": "cookie", "name": "aikos_session"},
+      "bearer": {"type": "http", "scheme": "bearer"}
+    },
+    "schemas": {
+      "Error": {"type": "object", "properties": {"error": {"type": "string"}}, "required": ["error"]},
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "integer"}, "name": {"type": "string"},
+          "role": {"enum": ["superadmin", "adult", "child"]},
+          "ha_person": {"type": "string", "description": "Home Assistant person entity, may be empty"},
+          "capabilities": {"type": "array", "items": {"type": "string"}}
+        }
+      },
+      "Ceremony": {
+        "type": "object",
+        "properties": {"flow": {"type": "string"}, "options": {"type": "object", "description": "WebAuthn options (JSON form)"}}
+      },
+      "CeremonyFinish": {
+        "type": "object",
+        "properties": {"flow": {"type": "string"}, "credential": {"type": "object", "description": "WebAuthn credential (JSON form)"}},
+        "required": ["flow", "credential"]
+      },
+      "SignedIn": {
+        "type": "object",
+        "properties": {"user": {"$ref": "#/components/schemas/User"}, "token": {"type": "string", "description": "only for native clients"}}
+      },
+      "DoorMessage": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"}, "content_type": {"type": "string"},
+          "time": {"type": "string", "description": "ISO time"},
+          "seconds": {"type": ["number", "null"]}, "text": {"type": "string"},
+          "recipient": {"type": "string", "description": "\"\" = for everyone"},
+          "audio": {"type": "string", "description": "path of the audio stream in this API"}
+        }
+      },
+      "DoorStatus": {
+        "type": "object",
+        "properties": {
+          "someone_at_door": {"type": ["boolean", "null"]}, "someone_since": {"type": ["number", "null"]},
+          "quiet_hours": {"type": ["boolean", "null"]}, "quiet_start": {"type": "string"}, "quiet_end": {"type": "string"},
+          "bell_muted": {"type": ["boolean", "null"]}, "ha_connected": {"type": "boolean"}
+        }
+      },
+      "Passkey": {
+        "type": "object",
+        "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "created_at": {"type": "integer"}, "last_used_at": {"type": ["integer", "null"]}}
+      },
+      "Link": {"type": "object", "properties": {"link": {"type": "string"}, "expires_at": {"type": "integer"}}}
+    }
+  },
+  "paths": {
+    "/api/v1/health": {"get": {"summary": "Service and Home Assistant reachability", "responses": {"200": {"description": "ok"}}}},
+    "/api/v1/openapi.json": {"get": {"summary": "This document", "responses": {"200": {"description": "ok"}}}},
+    "/.well-known/assetlinks.json": {"get": {"summary": "Digital asset links for a later Android app", "responses": {"200": {"description": "ok"}}}},
+    "/api/v1/setup": {"get": {"summary": "Whether the first person still has to be set up", "responses": {"200": {"description": "{needs_setup}"}}}},
+    "/api/v1/setup/start": {"post": {"summary": "Setup code + name → passkey registration options", "responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Ceremony"}}}, "description": "ok"}, "400": {"description": "invalid_code, invalid_name"}, "409": {"description": "already_set_up"}}}},
+    "/api/v1/setup/finish": {"post": {"summary": "First person (superadmin) with the new passkey; signs in", "responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/SignedIn"}}}, "description": "ok"}}}},
+    "/api/v1/invites/info": {"post": {"summary": "Who an invite is for ({token})", "responses": {"200": {"description": "{name, role, kind, expires_at}"}, "400": {"description": "invite_invalid"}}}},
+    "/api/v1/invites/start": {"post": {"summary": "Invite token → passkey registration options", "responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Ceremony"}}}, "description": "ok"}}}},
+    "/api/v1/invites/finish": {"post": {"summary": "New person or new device; signs in. Each invite works once, 24 h", "responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/SignedIn"}}}, "description": "ok"}}}},
+    "/api/v1/login/start": {"post": {"summary": "Passkey login options (no user name)", "responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Ceremony"}}}, "description": "ok"}}}},
+    "/api/v1/login/finish": {"post": {"summary": "Verify the passkey; signs in", "responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/SignedIn"}}}, "description": "ok"}, "400": {"description": "unknown_passkey, passkey_failed, flow_expired"}}}},
+    "/api/v1/logout": {"post": {"summary": "End this session", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"description": "ok"}}}},
+    "/api/v1/logout/all": {"post": {"summary": "End all sessions of this person", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"description": "ok"}}}},
+    "/api/v1/me": {"get": {"summary": "The signed-in person", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/User"}}}, "description": "ok"}, "401": {"description": "not_signed_in"}}}},
+    "/api/v1/me/passkeys": {"get": {"summary": "My passkeys", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/Passkey"}}}}, "description": "ok"}}}},
+    "/api/v1/me/passkeys/start": {"post": {"summary": "Add a passkey: options", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Ceremony"}}}, "description": "ok"}}}},
+    "/api/v1/me/passkeys/finish": {"post": {"summary": "Add a passkey: verify", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"description": "ok"}}}},
+    "/api/v1/me/passkeys/{cred_id}": {"delete": {"summary": "Remove one of my passkeys (never the last)", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"description": "ok"}, "409": {"description": "last_passkey_or_unknown"}}}},
+    "/api/v1/people": {"get": {"summary": "All people (superadmin)", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"description": "ok"}, "403": {"description": "forbidden"}}}},
+    "/api/v1/people/invites": {"post": {"summary": "Invite a person {name, role, ha_person} (superadmin)", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Link"}}}, "description": "ok"}}}},
+    "/api/v1/people/{user_id}/device-invite": {"post": {"summary": "Link that adds a passkey to this person (superadmin)", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Link"}}}, "description": "ok"}}}},
+    "/api/v1/people/{user_id}/disable": {"post": {"summary": "Block a person and end their sessions (superadmin)", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"description": "ok"}}}},
+    "/api/v1/door/status": {"get": {"summary": "Someone at the door, quiet hours, bell muted", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/DoorStatus"}}}, "description": "ok"}}}},
+    "/api/v1/door/messages": {"get": {"summary": "Door messages visible to me (A15: for me, for everyone; superadmin all)", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/DoorMessage"}}}}, "description": "ok"}, "503": {"description": "ha_unreachable"}}}},
+    "/api/v1/door/messages/{message_id}/audio": {"get": {"summary": "The message's sound, streamed through the app (Range supported)", "security": [{"cookie": []}, {"bearer": []}], "responses": {"200": {"description": "audio"}, "206": {"description": "partial audio"}, "404": {"description": "not_found (also for someone else's message)"}}}}
+  }
+}

@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aikos-app"
+version = "0.1.0"
+description = "aikos app: the household's user interface (PWA) in front of Home Assistant"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "aiohttp>=3.10,<4",
+    "webauthn>=3.0,<4",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "pytest-aiohttp>=1.0"]
+
+[project.scripts]
+aikos-app = "aikos_app.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["aikos_app*"]
+
+[tool.setuptools.package-data]
+aikos_app = ["api/openapi.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
