@@ -48,7 +48,12 @@ def voice_service(seen: list) -> web.Application:
     app.router.add_get("/v1/voices", all_)
     app.router.add_put("/v1/voices/{id}", put)
     app.router.add_delete("/v1/voices/{id}", delete)
+    async def prepare(request):
+        body = await request.json()
+        seen.append(("PREPARE", body["voice"], tuple(body["texts"]), None))
+        return web.json_response({"queued": len(body["texts"])}, status=202)
     app.router.add_post("/v1/speak", speak)
+    app.router.add_post("/v1/prepare", prepare)
     return app
 
 
@@ -96,6 +101,12 @@ async def test_record_listen_delete_my_own_voice(house, aiohttp_server):
     sam_user = house.client.app[CTX].accounts.list_users()[1]
     assert put[1] == f"/v1/voices/{voice_id(sam_user)}" and put[2] == f"Bearer {TOKEN}" and put[3] == "Sam"
     assert (await (await house.get("/api/v1/me/voice", sam)).json())["voice"]["seconds"] == 21.5
+    import asyncio
+    for _ in range(50):
+        if any(s[0] == "PREPARE" for s in seen):
+            break
+        await asyncio.sleep(0.01)
+    assert ("PREPARE", voice_id(sam_user), ("Komme sofort.", "Bitte vor die Tür legen.", "Moment bitte."), None) in seen
     assert (await (await house.get("/api/v1/me/voice", admin)).json())["voice"] is None   # only Sam's own
     r = await house.post("/api/v1/me/voice/sample", who=sam)
     assert r.status == 200 and r.content_type == "audio/wav"

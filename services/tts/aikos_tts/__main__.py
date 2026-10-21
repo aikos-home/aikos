@@ -19,6 +19,7 @@ from pathlib import Path
 from aiohttp import web
 from wyoming.server import AsyncServer
 
+from .cache import SpeechCache
 from .engine import ChatterboxEngine, Engine, FakeEngine
 from .http_api import create_app
 from .verify import WhisperChecker
@@ -40,9 +41,12 @@ def make_engine(kind: str) -> Engine:
 
 
 async def serve(args: argparse.Namespace) -> None:
-    store = VoiceStore(Path(args.voices).expanduser())
+    root = Path(args.voices).expanduser()
+    cache = SpeechCache(root.parent / "cache")
+    store = VoiceStore(root, on_change=cache.drop)
     _LOGGER.info("loading the %s engine", args.engine)
     engine = await asyncio.get_running_loop().run_in_executor(None, make_engine, args.engine)
+    engine.cache = cache
     token_file = os.environ.get("AIKOS_TTS_TOKEN_FILE", "")
     token = Path(token_file).expanduser().read_text(encoding="utf-8").strip() if token_file else ""
     app = create_app(store, engine, token, allow_list(os.environ.get("AIKOS_TTS_HTTP_CLIENTS", "")))

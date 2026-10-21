@@ -44,6 +44,7 @@ export interface DoorActionsState {
   note: { message: string; sender: string; since: string } | null;
   greeting: { state: "active" | "scheduled" | "off"; enabled: boolean; text: string; start: string; end: string; audio: boolean };
   picture: boolean;
+  quick: string[];
 }
 
 export interface MyVoice {

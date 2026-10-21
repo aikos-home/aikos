@@ -94,6 +94,13 @@ class Voices:
         if status not in (204, 404):
             raise VoiceError("voice_service_error")
 
+    async def prepare(self, user: User, texts: list[str]) -> None:
+        """Say these once now, so they play at once later (the quick replies). Best effort."""
+        try:
+            await self._request("POST", "/v1/prepare", json={"voice": voice_id(user), "texts": texts})
+        except VoiceError:
+            pass
+
     async def sample(self, user: User, text: str) -> bytes:
         status, body = await self._request("POST", "/v1/speak", json={"voice": voice_id(user), "text": text}, timeout=90)
         if status == 404:

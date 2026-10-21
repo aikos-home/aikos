@@ -4,7 +4,7 @@ Speech in the residents' own voices, locally. The door reads a resident's note o
 (aikos-app A42–A45). Each person records their own voice in the aikos app (Haus → Meine Stimme), so every voice is enrolled
 by its owner. Voices, text and audio never leave the machine this runs on (R11). Owner: aikos core.
 
-Version **0.2.0**. Python 3.11. Model: [Chatterbox multilingual](https://github.com/resemble-ai/chatterbox) (MIT licence),
+Version **0.3.0**. Python 3.11. Model: [Chatterbox multilingual](https://github.com/resemble-ai/chatterbox) (MIT licence),
 zero-shot voice cloning from a 8–60 s recording, German. Every generated clip carries Chatterbox's inaudible watermark,
 so it can be recognised as synthetic. A voice is never proof of identity.
 
@@ -31,6 +31,7 @@ word (before the check: 3 of 5, with babbling after the sentence); 7–25 s per 
 | `GET /v1/voices` | `[{id, name, created, seconds}]` |
 | `PUT /v1/voices/{id}` | body = the recording (any format ffmpeg reads), header `X-Voice-Name` (URL-encoded). 8–60 s after cutting leading silence; replaces the voice only once the new recording is checked |
 | `DELETE /v1/voices/{id}` | the voice and its recording, for good |
+| `POST /v1/prepare {voice, texts}` | say these once now in the background (202), so they play at once later; the takes are kept per voice (`cache/`, at most 400, a new recording or deleting the voice drops them) |
 | `POST /v1/speak {voice, text}` | a short test sentence (≤ 300 characters) as WAV, to listen to in the app |
 
 Voice ids: `^[a-z0-9][a-z0-9_-]{0,39}$`. The app decides who may change which voice (only the person themself).

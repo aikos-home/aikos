@@ -6,7 +6,6 @@ import { Recorder, RECORD_MAX_S } from "../media";
 import { Cropper } from "./Cropper";
 import { Icon } from "./Icon";
 
-const QUICK = ["Komme sofort", "Bitte vor die Tür legen", "Moment bitte"];
 const MUTE_FOR: { label: string; body: { minutes?: number; until_time?: string; forever?: boolean } }[] = [
   { label: "1 Std", body: { minutes: 60 } },
   { label: "2 Std", body: { minutes: 120 } },
@@ -109,7 +108,7 @@ function Say({ state, status, done }: { state: DoorActionsState; status: DoorSta
         {" "}Vorgelesen wird in deiner eigenen Stimme, wenn du sie unter Haus → Meine Stimme aufgenommen hast.
       </p>
       <div class="row gap">
-        {QUICK.map((q) => <button class="chip" disabled={a.busy} onClick={() => send(q)}>{q}</button>)}
+        {(state.quick ?? []).map((q) => <button class="chip" disabled={a.busy} onClick={() => send(q)}>{q.replace(/\.$/, "")}</button>)}
       </div>
       <form class="row" onSubmit={(e) => { e.preventDefault(); if (text.trim()) send(text); }}>
         <input value={text} maxLength={400} placeholder="Eigener Text" onInput={(e) => setText(e.currentTarget.value)} />

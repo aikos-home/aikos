@@ -10,6 +10,8 @@ from typing import Any
 
 from .client import HaClient, HaError
 
+QUICK_REPLIES = ("Komme sofort.", "Bitte vor die Tür legen.", "Moment bitte.")
+"""The quick replies of "An die Tür sagen" (one list for the app and for the speech made in advance)."""
 NOTE = "sensor.aikos_door_note"
 GREETING = "sensor.aikos_door_greeting"
 PICTURE = "sensor.aikos_door_picture"
@@ -40,6 +42,7 @@ def actions_state(ha: HaClient) -> dict[str, Any] | None:
                      "text": g.get("text") or "", "start": g.get("start") or "", "end": g.get("end") or "",
                      "audio": bool(g.get("audio"))},
         "picture": bool(pic.get("path")),
+        "quick": list(QUICK_REPLIES),
     }
 
 
