@@ -1,31 +1,7 @@
-// Photos and sound from the phone for the door: the photo is shrunk on the phone (the app takes at most 900 KB, the door
-// shows 492×536 grey anyway); the greeting is recorded with the phone's microphone (at most 20 s).
+// Sound from the phone for the door: the greeting and one's own voice are recorded with the phone's microphone.
+// (Photos are cropped to the door's field in views/Cropper.tsx.)
 
-const MAX_SIDE = 1280;
-const MAX_BYTES = 880 * 1024;
 export const RECORD_MAX_S = 20;
-
-function canvasBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
-  return new Promise((ok, bad) => canvas.toBlob((b) => (b ? ok(b) : bad(new Error("Das Bild ließ sich nicht umrechnen."))),
-    "image/jpeg", quality));
-}
-
-export async function shrinkPhoto(file: File): Promise<Blob> {
-  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" }).catch(() => {
-    throw new Error("Das ist kein Bild, das der Browser lesen kann.");
-  });
-  const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
-  for (const quality of [0.85, 0.7, 0.55, 0.4]) {
-    const blob = await canvasBlob(canvas, quality);
-    if (blob.size <= MAX_BYTES) return blob;
-  }
-  throw new Error("Das Bild ist auch verkleinert noch zu groß.");
-}
 
 const TYPES = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"];
 
