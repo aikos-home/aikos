@@ -63,7 +63,12 @@ class Handler(AsyncEventHandler):
             await self.write_event(Error(text=f"unknown voice {voice_id!r}", code="voice").event())
             return
         text = " ".join((s.text or "").split())[:TEXT_MAX]
-        pcm = await asyncio.get_running_loop().run_in_executor(None, self.engine.synthesize, text, ref)
+        try:
+            pcm = await asyncio.get_running_loop().run_in_executor(None, self.engine.synthesize, text, ref)
+        except Exception as e:  # the text could not be said faithfully (or the model failed): say nothing
+            _LOGGER.warning("not spoken for %s: %s", self.peer, e, exc_info=not isinstance(e, RuntimeError))
+            await self.write_event(Error(text="could not say it", code="speech").event())
+            return
         rate = self.engine.rate
         await self.write_event(AudioStart(rate=rate, width=2, channels=1).event())
         for i in range(0, len(pcm), CHUNK):

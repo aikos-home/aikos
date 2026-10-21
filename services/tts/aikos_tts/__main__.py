@@ -3,7 +3,8 @@
     python -m aikos_tts --voices DIR [--wyoming tcp://0.0.0.0:10200] [--http 0.0.0.0:10201] [--engine chatterbox|fake]
 
 Environment: AIKOS_TTS_TOKEN_FILE (the app's token), AIKOS_TTS_WYOMING_CLIENTS (Home Assistant addresses, comma-separated),
-AIKOS_TTS_HTTP_CLIENTS (the app's nodes). An empty list allows nobody.
+AIKOS_TTS_HTTP_CLIENTS (the app's nodes; an empty list allows nobody), AIKOS_TTS_WHISPER_URL (a local whisper-server that
+checks every sentence against the text; empty = unchecked).
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from wyoming.server import AsyncServer
 
 from .engine import ChatterboxEngine, Engine, FakeEngine
 from .http_api import create_app
+from .verify import WhisperChecker
 from .voices import VoiceStore
 from .wyoming_handler import Handler
 
@@ -32,7 +34,9 @@ def allow_list(value: str):
 
 
 def make_engine(kind: str) -> Engine:
-    return FakeEngine() if kind == "fake" else ChatterboxEngine()
+    url = os.environ.get("AIKOS_TTS_WHISPER_URL", "")
+    checker = WhisperChecker(url) if url else None
+    return FakeEngine(checker=checker) if kind == "fake" else ChatterboxEngine(checker=checker)
 
 
 async def serve(args: argparse.Namespace) -> None:

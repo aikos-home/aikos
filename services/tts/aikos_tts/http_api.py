@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import hmac
+import logging
 import io
 import json
 import wave
@@ -18,6 +19,7 @@ from . import __version__
 from .engine import Engine
 from .voices import UPLOAD_MAX, VoiceError, VoiceStore
 
+_LOGGER = logging.getLogger(__name__)
 STORE = web.AppKey("store", VoiceStore)
 ENGINE = web.AppKey("engine", Engine)
 SPEAK_MAX = 300
@@ -98,7 +100,11 @@ def create_app(store: VoiceStore, engine: Engine, token: str, allowed: Callable[
             raise _error(404, "voice")
         if not text or len(text) > SPEAK_MAX:
             raise _error(400, "text")
-        pcm = await asyncio.get_running_loop().run_in_executor(None, engine.synthesize, text, ref)
+        try:
+            pcm = await asyncio.get_running_loop().run_in_executor(None, engine.synthesize, text, ref)
+        except Exception as e:
+            _LOGGER.warning("test sentence not spoken: %s", e, exc_info=not isinstance(e, RuntimeError))
+            raise web.HTTPBadGateway(text=json.dumps({"error": "speech"}), content_type="application/json") from None
         return web.Response(body=wav_bytes(pcm, engine.rate), content_type="audio/wav",
                             headers={"Cache-Control": "no-store"})
 

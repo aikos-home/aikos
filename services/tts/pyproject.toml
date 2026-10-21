@@ -1,6 +1,6 @@
 [project]
 name = "aikos-tts"
-version = "0.1.0"
+version = "0.2.0"
 description = "aikos TTS: speech in the residents' own voices, locally (Wyoming for Home Assistant, HTTP for the aikos app)"
 requires-python = ">=3.11"
 dependencies = ["wyoming==1.10.2", "aiohttp>=3.10", "numpy>=1.26"]
