@@ -70,7 +70,7 @@ async def test_a_note_now_or_for_the_next_visitor(house, fake_ha):
     _, sam, _ = await people(house)
     r = await house.post("/api/v1/door/say", {"message": "  Paket bitte\nin die Box "}, who=sam)
     assert (await r.json()) == {"delivered": "waiting"}
-    assert actions(fake_ha)[-1] == ("aikos", "door_say", {"message": "Paket bitte in die Box", "sender": "Sam"})
+    assert actions(fake_ha)[-1] == ("aikos", "door_say", {"message": "Paket bitte in die Box", "sender": "Sam", "voice": ""})
     state = await (await house.get("/api/v1/door/actions", sam)).json()
     assert state["note"]["message"] == "Paket bitte in die Box" and state["note"]["sender"] == "Sam"
     fake_ha.states["binary_sensor.aikos_test_someone"] = {"state": "on"}
@@ -105,7 +105,7 @@ async def test_greeting_text_window_and_sound(house, fake_ha):
     assert r.status == 204
     assert actions(fake_ha)[-1] == ("aikos", "door_greeting", {"enabled": True, "text": "Willkommen!",
                                                                "start": "2026-10-21T13:00:00.000Z",
-                                                               "end": "2026-10-22T10:00:00.000Z"})
+                                                               "end": "2026-10-22T10:00:00.000Z", "voice": ""})
     r = await house.client.put("/api/v1/door/greeting", json={"always": True}, headers={**admin.headers, "Origin": ORIGIN})
     assert r.status == 204 and actions(fake_ha)[-1][2] == {"clear_window": True}
     r = await put(house, "/api/v1/door/greeting/audio", b"OggS-sound", "audio/ogg", admin)

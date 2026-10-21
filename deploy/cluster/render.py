@@ -36,17 +36,20 @@ class Inventory:
     registry_user: str = ""
     registry_token_file: str = ""
     """A private image needs a read-only token (GHCR: classic token with only read:packages); empty = public image."""
+    tts_url: str = ""
+    """The house's voice service (aikos TTS, HTTP side) for "Meine Stimme"; empty = no own voices."""
+    tts_token_file: str = ""
 
     @classmethod
     def from_dict(cls, d: dict) -> "Inventory":
-        c, ha, ssh, reg = d["cluster"], d["ha"], d.get("ssh", {}), d.get("registry", {})
+        c, ha, ssh, reg, tts = d["cluster"], d["ha"], d.get("ssh", {}), d.get("registry", {}), d.get("tts", {})
         nodes = [Node(n["name"], n["ip"], int(n.get("priority", 100))) for n in d["nodes"]]
         if len(nodes) != 3:
             raise ValueError("the cluster has exactly three nodes")
         return cls(c["domain"], c["vip"], int(c.get("prefix", 24)), int(c.get("vrid", 229)),
                    c.get("trusted_proxies", ""), ha["url"], ha.get("token_file", ""), nodes,
                    {k: str(v) for k, v in d.get("app", {}).items()}, ssh.get("user", "aikos"), ssh.get("key", ""),
-                   reg.get("user", ""), reg.get("token_file", ""))
+                   reg.get("user", ""), reg.get("token_file", ""), tts.get("url", ""), tts.get("token_file", ""))
 
 
 def new_cluster_secrets(ca_cert: str, ca_key: str) -> dict:
@@ -86,6 +89,8 @@ def app_env(inv: Inventory, node: Node) -> str:
         "AIKOS_APP_DB_CA_FILE": "/certs/ca.crt",
         "AIKOS_APP_HA_URL": inv.ha_url, "AIKOS_APP_HA_TOKEN_FILE": "/secrets/ha-token",
     }
+    if inv.tts_url:
+        base.update({"AIKOS_APP_TTS_URL": inv.tts_url, "AIKOS_APP_TTS_TOKEN_FILE": "/secrets/tts-token"})
     base.update({f"AIKOS_APP_{k.upper()}": v for k, v in inv.app.items()})
     return _env(base)
 
@@ -116,7 +121,7 @@ class File:
 
 
 def node_files(inv: Inventory, node: Node, sec: dict, node_cert: str, node_key: str, ha_token: str,
-               iface: str) -> list[File]:
+               iface: str, tts_token: str = "") -> list[File]:
     """Every file on a node, with owner and mode. Secrets only readable by the one process that needs them."""
     p = sec["passwords"]
     kit = lambda name: (HERE / name).read_text(encoding="utf-8")  # noqa: E731
@@ -132,6 +137,7 @@ def node_files(inv: Inventory, node: Node, sec: dict, node_cert: str, node_key: 
         File("/etc/aikos/secrets/rqlite-auth.json", rqlite_auth(sec), "0400", f"{RQLITE_UID}:{RQLITE_UID}"),
         File("/etc/aikos/secrets/app/db-password", p["app"], "0400", f"{APP_UID}:{APP_UID}"),
         File("/etc/aikos/secrets/app/ha-token", ha_token, "0400", f"{APP_UID}:{APP_UID}"),
+        *([File("/etc/aikos/secrets/app/tts-token", tts_token, "0400", f"{APP_UID}:{APP_UID}")] if tts_token else []),
         File("/etc/aikos/secrets/deployer.env", f"DB_USER=deployer\nDB_PASSWORD={p['deployer']}\n", "0400"),
         File("/etc/aikos/secrets/backup.env", f"DB_USER=backup\nDB_PASSWORD={p['backup']}\n", "0400"),
         File("/etc/keepalived/keepalived.conf", keepalived_conf(inv, node, sec, iface), "0600"),

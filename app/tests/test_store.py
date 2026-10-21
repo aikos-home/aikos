@@ -139,11 +139,15 @@ def test_a_new_device_link_voids_the_older_ones(db):
 def test_a_compatible_newer_schema_still_opens_for_a_rollback(db):
     """A rolling update migrates the shared database first; if the new image fails, the previous one must still start.
     Additive changes keep `schema_min`, so the older app opens the newer database and leaves it as it is."""
-    from aikos_app.store import DatabaseError
+    from aikos_app.store import SCHEMA_MIN, DatabaseError
     assert db.one("SELECT value FROM meta WHERE key = 'schema_min'")["value"] == "2"
-    db.execute("UPDATE meta SET value = ? WHERE key = 'schema'", (str(SCHEMA_VERSION + 1),))
-    Database(db.backend)
-    assert db.one("SELECT value FROM meta WHERE key = 'schema'")["value"] == str(SCHEMA_VERSION + 1)  # not stepped back
-    db.execute("UPDATE meta SET value = ? WHERE key = 'schema_min'", (str(SCHEMA_VERSION + 1),))
-    with pytest.raises(DatabaseError, match="newer"):
+    try:
+        db.execute("UPDATE meta SET value = ? WHERE key = 'schema'", (str(SCHEMA_VERSION + 1),))
         Database(db.backend)
+        assert db.one("SELECT value FROM meta WHERE key = 'schema'")["value"] == str(SCHEMA_VERSION + 1)  # not stepped back
+        db.execute("UPDATE meta SET value = ? WHERE key = 'schema_min'", (str(SCHEMA_VERSION + 1),))
+        with pytest.raises(DatabaseError, match="newer"):
+            Database(db.backend)
+    finally:  # the rqlite test database is shared: leave it as the next test expects it
+        db.batch([("UPDATE meta SET value = ? WHERE key = 'schema'", (str(SCHEMA_VERSION),)),
+                  ("UPDATE meta SET value = ? WHERE key = 'schema_min'", (str(SCHEMA_MIN),))])

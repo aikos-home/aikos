@@ -41,6 +41,9 @@ class Settings:
     the last saved message with attributes seconds, time, recipient. Empty = off."""
     interim_message_text_entity: str = ""
     """Interim source: an entity whose state is the recognised text of the message being recorded. Empty = off."""
+    tts_url: str = ""
+    """The house's voice service (aikos TTS, its HTTP side), for "Meine Stimme"; empty = no own voices."""
+    tts_token: str = field(default="", repr=False)
 
     @property
     def origin(self) -> str:
@@ -93,4 +96,6 @@ def from_env(env: dict[str, str] | None = None) -> Settings:
         entity_bell_muted=e.get("AIKOS_APP_ENTITY_BELL_MUTED", defaults.entity_bell_muted),
         interim_last_message_entity=e.get("AIKOS_APP_INTERIM_LAST_MESSAGE_ENTITY", ""),
         interim_message_text_entity=e.get("AIKOS_APP_INTERIM_MESSAGE_TEXT_ENTITY", ""),
+        tts_url=e.get("AIKOS_APP_TTS_URL", "").rstrip("/"),
+        tts_token=_read_secret(e.get("AIKOS_APP_TTS_TOKEN_FILE", "")),
     )

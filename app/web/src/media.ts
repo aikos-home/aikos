@@ -38,7 +38,7 @@ export class Recorder {
     return typeof MediaRecorder !== "undefined" && !!navigator.mediaDevices?.getUserMedia;
   }
 
-  async start(onDone: (blob: Blob) => void): Promise<void> {
+  async start(onDone: (blob: Blob) => void, maxS = RECORD_MAX_S): Promise<void> {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
     const mimeType = TYPES.find((t) => MediaRecorder.isTypeSupported(t));
     this.rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
@@ -50,7 +50,7 @@ export class Recorder {
       onDone(new Blob(this.chunks, { type: (this.rec?.mimeType || "audio/webm").split(";")[0] }));
     };
     this.rec.start();
-    this.timer = window.setTimeout(() => this.stop(), RECORD_MAX_S * 1000);
+    this.timer = window.setTimeout(() => this.stop(), maxS * 1000);
   }
 
   stop(): void {

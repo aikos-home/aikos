@@ -67,8 +67,9 @@ class DoorActions:
         await self._call("quiet_hours", data)
 
     # a note to the door (A11/A39)
-    async def say(self, message: str, sender: str) -> str:
-        res = await self._call("door_say", {"message": message, "sender": sender}, response=True)
+    async def say(self, message: str, sender: str, voice: str = "") -> str:
+        """`voice` = the sender's own voice (read aloud in it); "" = shown only (A45)."""
+        res = await self._call("door_say", {"message": message, "sender": sender, "voice": voice}, response=True)
         return str((res or {}).get("delivered") or "")
 
     async def cancel_note(self) -> None:

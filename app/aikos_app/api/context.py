@@ -19,6 +19,7 @@ from ..store.accounts import Accounts, User
 from ..store.audit import Audit
 from ..store.push import Pushes
 from ..store.sessions import Sessions
+from ..voice import Voices
 
 SESSION_COOKIE = "aikos_session"
 NATIVE_CLIENT_HEADER = "X-Aikos-Client"
@@ -38,6 +39,7 @@ class AppContext:
     door_push: DoorPush
     push_public_key: str
     door_actions: DoorActions
+    voices: Voices
 
 
 CTX = web.AppKey("aikos_ctx", AppContext)

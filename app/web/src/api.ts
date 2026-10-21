@@ -46,6 +46,12 @@ export interface DoorActionsState {
   picture: boolean;
 }
 
+export interface MyVoice {
+  available: boolean;
+  voice: { seconds: number | null; created: number | null } | null;
+  reading: string;
+}
+
 export interface Passkey {
   id: string;
   label: string;
@@ -81,6 +87,11 @@ const MESSAGES: Record<string, string> = {
   bad_origin: "Anfrage von einer fremden Seite abgelehnt.",
   network: "Keine Verbindung zu aikos.",
   bad_subscription: "Dieses Gerät lässt sich nicht für Benachrichtigungen anmelden.",
+  no_voice_service: "Der Sprachdienst des Hauses ist nicht eingerichtet.",
+  voice_service_unreachable: "Der Sprachdienst des Hauses antwortet gerade nicht.",
+  voice_service_error: "Der Sprachdienst hat einen Fehler gemeldet.",
+  voice_recording: "Die Aufnahme ging nicht: bitte mindestens 15 Sekunden am Stück vorlesen.",
+  no_voice: "Du hast noch keine Stimme aufgenommen.",
   no_door_actions: "Dafür braucht Home Assistant die aikos-Integration ab 0.9.0.",
   invalid: "Home Assistant hat das nicht angenommen.",
   bad_type: "Diese Datei passt nicht.",
@@ -94,7 +105,7 @@ export class ApiError extends Error {
   }
 }
 
-async function upload(method: string, path: string, blob: Blob): Promise<void> {
+async function upload<T = void>(method: string, path: string, blob: Blob): Promise<T> {
   let response: Response;
   try {
     response = await fetch(path, {
@@ -103,10 +114,23 @@ async function upload(method: string, path: string, blob: Blob): Promise<void> {
   } catch {
     throw new ApiError("network", 0);
   }
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new ApiError(data.error ?? (response.status === 413 ? "too_large" : "unknown"), response.status);
+  return data as T;
+}
+
+async function binary(method: string, path: string): Promise<Blob> {
+  let response: Response;
+  try {
+    response = await fetch(path, { method, credentials: "same-origin" });
+  } catch {
+    throw new ApiError("network", 0);
+  }
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new ApiError(data.error ?? (response.status === 413 ? "too_large" : "unknown"), response.status);
+    throw new ApiError(data.error ?? "unknown", response.status);
   }
+  return response.blob();
 }
 
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -167,6 +191,10 @@ export const api = {
   putGreeting: (body: { enabled?: boolean; text?: string; start?: string; end?: string; always?: boolean }) =>
     call<unknown>("PUT", "/api/v1/door/greeting", body),
   putGreetingAudio: (blob: Blob) => upload("PUT", "/api/v1/door/greeting/audio", blob),
+  myVoice: () => call<MyVoice>("GET", "/api/v1/me/voice"),
+  putMyVoice: (blob: Blob) => upload<{ seconds: number; created: number }>("PUT", "/api/v1/me/voice", blob),
+  deleteMyVoice: () => call<unknown>("DELETE", "/api/v1/me/voice"),
+  myVoiceSample: () => binary("POST", "/api/v1/me/voice/sample"),
   deleteGreetingAudio: () => call<unknown>("DELETE", "/api/v1/door/greeting/audio"),
   deleteMessage: (id: string) => call<unknown>("DELETE", `/api/v1/door/messages/${encodeURIComponent(id)}`),
   pushKey: () => call<{ key: string }>("GET", "/api/v1/push/key"),

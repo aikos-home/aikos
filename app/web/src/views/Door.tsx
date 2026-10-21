@@ -105,7 +105,7 @@ function Say({ state, status, done }: { state: DoorActionsState; status: DoorSta
     <Section icon="text" title="An die Tür sagen">
       <p class="meta">
         {here ? "Jemand steht vor der Tür: wird sofort angezeigt." : "Niemand vor der Tür: wird dem nächsten Besucher angezeigt."}
-        {" "}Vorlesen kommt mit der eigenen Stimme im Haus.
+        {" "}Vorgelesen wird in deiner eigenen Stimme, wenn du sie unter Haus → Meine Stimme aufgenommen hast.
       </p>
       <div class="row gap">
         {QUICK.map((q) => <button class="chip" disabled={a.busy} onClick={() => send(q)}>{q}</button>)}
@@ -263,7 +263,7 @@ function Greeting({ state, done }: { state: DoorActionsState; done: () => void }
       )}
       <div class="row gap">
         <button class="primary" disabled={a.busy} onClick={save}>Speichern</button>
-        <span class="meta">Ohne Ton steht nur der Text an der Tür; Vorlesen kommt mit der eigenen Stimme im Haus.</span>
+        <span class="meta">Ohne Ton liest die Tür den Text in deiner Stimme vor (Haus → Meine Stimme), sonst steht er nur da.</span>
       </div>
       {a.msg && <p class="meta">{a.msg}</p>}
     </Section>
