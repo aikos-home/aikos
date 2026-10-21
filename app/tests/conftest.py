@@ -76,9 +76,9 @@ class FakeHa(HaClient):
     def use_announcements(self) -> None:
         """aikos 0.11.0: the door announcements' sensor."""
         self.states["sensor.aikos_door_announcements"] = {"state": "none", "attributes": {
-            "disclosure": 0, "parcel": "", "away": "", "quiet": "", "away_places": "", "places": {}, "named": ["person.other"],
-            "voice": False, "now_text": "", "ready": [], "last": {}, "zones": [{"id": "zone.laden", "name": "Laden"}],
-            "residents": [{"id": "person.aikos_test_sam", "name": "Sam"}, {"id": "person.other", "name": "Other"}]}}
+            "disclosure": 0, "parcel": "", "away": "", "quiet": "", "away_places": "", "places": {}, "named": ["person.aikos_test_other"],
+            "voice": False, "now_text": "", "ready": [], "last": {}, "zones": [{"id": "zone.aikos_test_laden", "name": "Laden"}],
+            "residents": [{"id": "person.aikos_test_sam", "name": "Sam"}, {"id": "person.aikos_test_other", "name": "Other"}]}}
 
     def use_register(self, messages: list[dict[str, Any]]) -> None:
         self.register = messages

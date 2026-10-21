@@ -272,7 +272,7 @@
         },
         "places": {
           "name": "Orte",
-          "description": "Zone → wie die Tür sie nennt, z. B. zone.laden: „beim Laden“. Andere Zonen werden nie genannt."
+          "description": "Zone → wie die Tür sie nennt, z. B. eine Laden-Zone: „beim Laden“. Andere Zonen werden nie genannt."
         },
         "named": {
           "name": "Genannte Bewohner",

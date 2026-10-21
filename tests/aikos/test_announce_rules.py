@@ -88,7 +88,7 @@ def test_check_refuses(bad):
 
 
 def test_from_dict_keeps_good_data_and_drops_bad():
-    a = ann(4, away_places="Unterwegs: {wo}.", places={"zone.laden": "beim Laden"}, named=["person.a"])
+    a = ann(4, away_places="Unterwegs: {wo}.", places={"zone.aikos_test_laden": "beim Laden"}, named=["person.a"])
     assert Announcements.from_dict(a.to_dict()) == a
     assert Announcements.from_dict({"disclosure": 9}) == Announcements()
     assert Announcements.from_dict({"texts": "nope"}) == Announcements()

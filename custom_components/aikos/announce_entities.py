@@ -50,7 +50,7 @@ class DoorAnnouncements(_AnnounceEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         a, hass = self.announcer.state, self.hass
         now = self.announcer.now()
-        zones = [{"id": z.entity_id, "name": z.name} for z in hass.states.async_all("zone") if z.entity_id != "zone.home"]
+        zones = [{"id": z.entity_id, "name": z.name} for z in hass.states.async_all("zone") if z.object_id != "home"]
         residents = []
         for person in self._entry.options.get(OPT_RESIDENTS, []):
             st = hass.states.get(person)

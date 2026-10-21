@@ -272,7 +272,7 @@
         },
         "places": {
           "name": "Places",
-          "description": "Zone → how the door says it, e.g. zone.shop: \"beim Laden\". Zones not listed are never named."
+          "description": "Zone → how the door says it, e.g. a shop zone: \"beim Laden\". Zones not listed are never named."
         },
         "named": {
           "name": "Named residents",

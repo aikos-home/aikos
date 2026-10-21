@@ -15,7 +15,7 @@ DOMAIN = "aikos"
 BELL = "event.test_doorbell"
 SOMEONE = "binary_sensor.aikos_intercom_screen_someone_at_the_door"
 CALL = "binary_sensor.aikos_intercom_talk_in_call"
-PARCEL = "input_boolean.test_parcel"
+PARCEL = "input_boolean.aikos_test_parcel"
 SENSOR = "sensor.aikos_door_announcements"
 SENTENCES = {"parcel": "Bitte legen Sie das Paket vor die Tür.", "away": "Wir sind gerade nicht zu Hause.",
              "quiet": "Wir können gerade nicht an die Tür kommen."}
@@ -53,7 +53,7 @@ async def setup(hass: HomeAssistant, a="not_home", b="not_home"):
     hass.states.async_set(PARCEL, "off")
     hass.states.async_set("person.a", a, {"friendly_name": "Alex"})
     hass.states.async_set("person.b", b, {"friendly_name": "Sam"})
-    hass.states.async_set("zone.laden", "0", {"friendly_name": "Laden"})
+    hass.states.async_set("zone.aikos_test_laden", "0", {"friendly_name": "Laden"})
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
     entry = (await hass.config_entries.flow.async_configure(result["flow_id"], {}))["result"]
     await hass.async_block_till_done()
@@ -142,7 +142,7 @@ async def test_nothing_during_a_call(hass: HomeAssistant, door):
 async def test_level_4_tells_the_place_only_of_who_agreed(hass: HomeAssistant, door):
     spoken, played = door
     await setup(hass, a="Laden", b="Laden")
-    await save(hass, 4, away_places="Wir sind unterwegs. {wo}.", places={"zone.laden": "beim Laden"}, named=["person.a"])
+    await save(hass, 4, away_places="Wir sind unterwegs. {wo}.", places={"zone.aikos_test_laden": "beim Laden"}, named=["person.a"])
     assert ("Wir sind unterwegs. Alex ist beim Laden.", "v1") in spoken
     await ring(hass)
     assert played == ["Wir sind unterwegs. Alex ist beim Laden."]            # Sam did not agree: not named
@@ -151,7 +151,7 @@ async def test_level_4_tells_the_place_only_of_who_agreed(hass: HomeAssistant, d
 async def test_residents_moving_make_the_sentence_again_after_they_settle(hass: HomeAssistant, door):
     spoken, played = door
     await setup(hass, a="not_home", b="not_home")
-    await save(hass, 4, away_places="Wir sind unterwegs. {wo}.", places={"zone.laden": "beim Laden"}, named=["person.a"])
+    await save(hass, 4, away_places="Wir sind unterwegs. {wo}.", places={"zone.aikos_test_laden": "beim Laden"}, named=["person.a"])
     spoken.clear()
     hass.states.async_set("person.a", "Laden", {"friendly_name": "Alex"})
     await hass.async_block_till_done()
@@ -166,7 +166,7 @@ async def test_residents_moving_make_the_sentence_again_after_they_settle(hass: 
 async def test_a_ring_before_the_new_sentence_is_ready_says_it_anyway(hass: HomeAssistant, door):
     spoken, played = door
     await setup(hass)
-    await save(hass, 4, away_places="Wir sind unterwegs. {wo}.", places={"zone.laden": "beim Laden"}, named=["person.a"])
+    await save(hass, 4, away_places="Wir sind unterwegs. {wo}.", places={"zone.aikos_test_laden": "beim Laden"}, named=["person.a"])
     hass.states.async_set("person.a", "Laden", {"friendly_name": "Alex"})
     await ring(hass)                                                          # before the residents settled
     assert played == ["Wir sind unterwegs. Alex ist beim Laden."]
