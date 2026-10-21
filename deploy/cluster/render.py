@@ -33,16 +33,20 @@ class Inventory:
     app: dict[str, str] = field(default_factory=dict)
     ssh_user: str = "aikos"
     ssh_key: str = ""
+    registry_user: str = ""
+    registry_token_file: str = ""
+    """A private image needs a read-only token (GHCR: classic token with only read:packages); empty = public image."""
 
     @classmethod
     def from_dict(cls, d: dict) -> "Inventory":
-        c, ha, ssh = d["cluster"], d["ha"], d.get("ssh", {})
+        c, ha, ssh, reg = d["cluster"], d["ha"], d.get("ssh", {}), d.get("registry", {})
         nodes = [Node(n["name"], n["ip"], int(n.get("priority", 100))) for n in d["nodes"]]
         if len(nodes) != 3:
             raise ValueError("the cluster has exactly three nodes")
         return cls(c["domain"], c["vip"], int(c.get("prefix", 24)), int(c.get("vrid", 229)),
                    c.get("trusted_proxies", ""), ha["url"], ha.get("token_file", ""), nodes,
-                   {k: str(v) for k, v in d.get("app", {}).items()}, ssh.get("user", "aikos"), ssh.get("key", ""))
+                   {k: str(v) for k, v in d.get("app", {}).items()}, ssh.get("user", "aikos"), ssh.get("key", ""),
+                   reg.get("user", ""), reg.get("token_file", ""))
 
 
 def new_cluster_secrets(ca_cert: str, ca_key: str) -> dict:

@@ -40,6 +40,11 @@ All containers use the host network: ports published by Docker would bypass the 
 
 State per node: `/var/lib/aikos/deployer/state.json` (current, previous, bad). Logs: `journalctl -u aikos-deployer`.
 
+**Private image:** if the package in the registry is private, put a read-only token in a file on the admin machine and
+name it in the inventory (`[registry]`, see the example). `apply.py` logs root's Docker on every node in with it (token on
+stdin only, stored in `/root/.docker/config.json`, 0600); pulls, the registry lookup and `cosign verify` then use it.
+For GHCR that is a classic token with only `read:packages`. If it expires, rollouts stop (the running version stays).
+
 ## Setting up or changing nodes
 
 ```sh
