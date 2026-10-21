@@ -25,6 +25,7 @@ if [ ! -f "$HOME_DIR/tts.env" ]; then
   cat > "$HOME_DIR/tts.env" <<EOF
 AIKOS_TTS_WYOMING_CLIENTS=
 AIKOS_TTS_HTTP_CLIENTS=
+AIKOS_TTS_WHISPER_URL=
 EOF
   echo "edit $HOME_DIR/tts.env (client lists), then run this again" >&2
 fi
@@ -43,6 +44,7 @@ cat > "$PLIST" <<EOF
     <key>AIKOS_TTS_TOKEN_FILE</key><string>$HOME_DIR/token</string>
     <key>AIKOS_TTS_WYOMING_CLIENTS</key><string>$AIKOS_TTS_WYOMING_CLIENTS</string>
     <key>AIKOS_TTS_HTTP_CLIENTS</key><string>$AIKOS_TTS_HTTP_CLIENTS</string>
+    <key>AIKOS_TTS_WHISPER_URL</key><string>${AIKOS_TTS_WHISPER_URL:-}</string>
     <key>PATH</key><string>/opt/homebrew/bin:/usr/bin:/bin</string>
   </dict>
   <key>RunAtLoad</key><true/>
@@ -54,7 +56,10 @@ cat > "$PLIST" <<EOF
 EOF
 uid=$(id -u)
 launchctl bootout "gui/$uid/$LABEL" 2>/dev/null || true
-launchctl bootstrap "gui/$uid" "$PLIST"
+for i in 1 2 3 4 5; do   # right after bootout launchd may still be stopping the old one
+  launchctl bootstrap "gui/$uid" "$PLIST" 2>/dev/null && break
+  sleep 2
+done
 for i in $(seq 90); do
   curl -fsS http://127.0.0.1:10201/v1/health >/dev/null 2>&1 && { curl -fsS http://127.0.0.1:10201/v1/health; echo; exit 0; }
   sleep 2
