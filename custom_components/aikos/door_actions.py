@@ -232,9 +232,14 @@ class DoorActions:
 
     async def _prepare_note(self, note: Note) -> None:
         name = await self._speech_file(note.message, note.voice, "note")
-        if self.state.note is note and name:   # still the same waiting note
+        if not name:
+            return
+        if self.state.note is note:   # still the same waiting note
             note.audio = name
             self._changed()
+        elif self.state.note is None or not self.state.note.audio:
+            # delivered or withdrawn before its speech was ready: nobody will play this file (a newer note's own file stays)
+            await self._remove_speech("note")
 
     async def _drop_note_audio(self) -> None:
         if self.state.note is not None and self.state.note.audio:

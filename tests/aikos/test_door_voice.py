@@ -134,3 +134,32 @@ async def test_a_note_replaced_or_withdrawn_takes_its_speech_with_it(hass: HomeA
     assert not any((media / "aikos").glob("speech-note-*"))
     await radar(hass, "on")
     assert shown == [] and played == []
+
+
+async def test_a_note_delivered_before_its_speech_is_ready_leaves_no_file(hass: HomeAssistant, media, door, monkeypatch):
+    """Regression (ha-dev 21.10.): the radar saw someone 5 s after the note was sent, before its speech was made; the
+    late file stayed in the folder."""
+    import asyncio
+
+    from custom_components.aikos import door_voice
+    shown, spoken, played = door
+    gate = asyncio.Event()
+    calls = []
+
+    async def slow(hass_, engine, text, voice):
+        calls.append(text)
+        await gate.wait()
+        return "mp3", b"ID3 late"
+    monkeypatch.setattr(door_voice, "synthesize", slow)
+    await setup(hass)
+    await hass.services.async_call(DOMAIN, "door_say", {"message": "Bin gleich da", "voice": "v1"}, blocking=True,
+                                   return_response=True)
+    hass.states.async_set(SOMEONE, "on")                                    # someone comes while the speech is made
+    for _ in range(50):                                                     # (not block_till_done: the speech waits on purpose)
+        if shown:
+            break
+        await asyncio.sleep(0.01)
+    assert [c.data["message"] for c in shown] == ["Bin gleich da"]
+    gate.set()
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert not any((media / "aikos").glob("speech-*"))
