@@ -2,7 +2,7 @@
 # (nftables) decides who reaches what: Docker-published ports would bypass it.
 #   app    127.0.0.1:8780 only (reached through Caddy)
 #   rqlite <node>:4001 HTTPS API, <node>:4002 Raft (mutual TLS between the nodes)
-#   caddy  :80, :443 for the domain; <node>:8780 serves only /api/v1/health for peers and keepalived
+#   caddy  :80, :443 for the domain; http://<node> (port 80, by address) serves only /api/v1/health for the peers
 # Variables come from /etc/aikos/cluster.env and /etc/aikos/app-image.env (written by apply.py and the deployer).
 name: aikos
 services:

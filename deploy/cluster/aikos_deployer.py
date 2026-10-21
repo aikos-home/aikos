@@ -179,7 +179,12 @@ def main(argv: list[str] | None = None) -> int:
 
     state = State.load()
     local = "http://127.0.0.1:8780/api/v1/health"
-    target = resolve_digest()
+    try:
+        target = resolve_digest()
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError) as e:
+        LOG.warning("cannot read %s:%s from the registry (%s); the running version stays", IMAGE, TAG,
+                    (getattr(e, "stderr", "") or str(e)).strip()[-200:])
+        return 0
     action = decide(state, target, health(local) is not None)
     if action != "deploy":
         if action == "skip-bad":
@@ -198,7 +203,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     try:
         peers = [ip for ip in args.peers.split(",") if ip]
-        sick = [ip for ip in peers if health(f"http://{ip}:8780/api/v1/health") is None]
+        sick = [ip for ip in peers if health(f"http://{ip}/api/v1/health") is None]
         if state.current and sick:
             LOG.warning("peers not healthy (%s); not taking this node down now", ",".join(sick))
             return 0

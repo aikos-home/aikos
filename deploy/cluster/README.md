@@ -19,7 +19,7 @@ phone ─► reverse proxy (or DNS straight to the virtual address) ─► virtu
 |---|---|---|
 | app | container, image pinned by digest, started only by the rollout agent | `127.0.0.1:8780` |
 | rqlite 10.5.2 | container | `<node>:4001` HTTPS API (users with rights), `<node>:4002` Raft (mutual TLS, own CA) |
-| Caddy 2.10.2 | container | `:80`, `:443` for the domain; `<node>:8780` only `/api/v1/health` (peers, keepalived) |
+| Caddy 2.10.2 | container | `:80`, `:443` for the domain; `http://<node>/api/v1/health` (by address, for the peers) |
 | keepalived | host package | unicast VRRP to the two peers, moves the virtual address to a healthy node, `nopreempt` |
 | `aikos-deployer.timer` | systemd, every minute | rolls out new images (below) |
 | `aikos-db-backup.timer` | systemd, hourly at :05 | consistent copy of the database to `/var/backups/aikos/aikos-app.sqlite` |

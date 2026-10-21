@@ -22,9 +22,9 @@
 	}
 }
 
-# This node's health for keepalived, the rollout and the peers: one path, plain HTTP, on the node's own address.
-http://{$NODE_IP}:8780 {
-	bind {$NODE_IP}
+# This node's health for the rollout agents of the peers: one path, plain HTTP, addressed by the node's own address
+# (port 80 is open in the house network; the domain's HTTPS redirect on :80 answers only for the domain name).
+http://{$NODE_IP} {
 	handle /api/v1/health {
 		reverse_proxy 127.0.0.1:8780
 	}
