@@ -103,3 +103,13 @@ def test_lock_statement_lets_only_one_node_in():
     assert take("aikos-2", 1100) == 0
     assert take("aikos-1", 1200) == 1
     assert take("aikos-3", 2000) == 1  # aikos-1 held it until 1800
+
+
+def test_heartbeat_never_reports_down_for_a_rollout():
+    import aikos_heartbeat as hb
+    assert hb.node_verdict(200, {"ok": True, "commit": "abcdef1234567", "ha_connected": True}, False)[0] == "up"
+    assert hb.node_verdict(200, {"ok": True, "commit": "x", "ha_connected": False}, False) == ("up", "ok x, HA away")
+    assert hb.node_verdict(0, {}, True) is None  # rolling: skip the beat, no down
+    assert hb.node_verdict(503, {"ok": False, "db": False}, True) is None
+    assert hb.node_verdict(0, {}, False) == ("down", "app does not answer")
+    assert hb.node_verdict(503, {"ok": False, "db": False}, False) == ("down", "database not reachable")

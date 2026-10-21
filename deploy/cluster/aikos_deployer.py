@@ -36,6 +36,7 @@ SIGNER = os.environ.get("AIKOS_SIGNER",
 ISSUER = "https://token.actions.githubusercontent.com"
 STATE = Path(os.environ.get("AIKOS_DEPLOYER_STATE", "/var/lib/aikos/deployer/state.json"))
 IMAGE_ENV = Path("/etc/aikos/app-image.env")
+ROLLOUT_FLAG = Path("/run/aikos/rollout")
 COMPOSE = ["docker", "compose", "--project-name", "aikos", "--env-file", "/etc/aikos/cluster.env",
            "--env-file", str(IMAGE_ENV), "-f", "/opt/aikos/compose.yaml"]
 LOCK_TTL_S = 600
@@ -201,6 +202,8 @@ def main(argv: list[str] | None = None) -> int:
     if not lock.acquire():
         LOG.info("another node is rolling out; next minute")
         return 0
+    ROLLOUT_FLAG.parent.mkdir(parents=True, exist_ok=True)
+    ROLLOUT_FLAG.write_text(target, encoding="utf-8")  # the heartbeat skips beats instead of reporting down
     try:
         peers = [ip for ip in args.peers.split(",") if ip]
         sick = [ip for ip in peers if health(f"http://{ip}/api/v1/health") is None]
@@ -223,6 +226,7 @@ def main(argv: list[str] | None = None) -> int:
             wait_healthy(local, "")
         return 1
     finally:
+        ROLLOUT_FLAG.unlink(missing_ok=True)
         try:
             lock.release()
         except RuntimeError as e:

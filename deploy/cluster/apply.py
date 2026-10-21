@@ -153,7 +153,7 @@ def main(argv: list[str] | None = None) -> int:
         crt, key = node_cert_for(ssh, n, sec, args.rotate_certs)
         for f in node_files(inv, n, sec, crt, key, ha_token, iface):
             ssh.put(n.ip, f.path, f.content, f.mode, f.owner)
-        ssh.run(n.ip, "sudo systemctl daemon-reload && sudo systemctl enable --now aikos-db-backup.timer >/dev/null")
+        ssh.run(n.ip, "sudo systemctl daemon-reload && sudo systemctl enable --now aikos-db-backup.timer aikos-heartbeat.timer >/dev/null")
     print("database and Caddy on all nodes")
     for n in inv.nodes:
         compose(ssh, n.ip, "up", "-d", "--remove-orphans", "rqlite", "caddy")

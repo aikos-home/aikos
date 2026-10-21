@@ -67,7 +67,7 @@ def cluster_env(inv: Inventory, node: Node) -> str:
         "PEER_IPS": ",".join(p.ip for p in peers),
         "PEERS_RAFT": ",".join(f"{n.ip}:4002" for n in inv.nodes),
         "DB_NODES": ",".join(f"{n.ip}:4001" for n in [node, *peers]),
-        "DOMAIN": inv.domain, "TRUSTED_PROXIES": inv.trusted_proxies or "127.0.0.1",
+        "DOMAIN": inv.domain, "VIP": inv.vip, "TRUSTED_PROXIES": inv.trusted_proxies or "127.0.0.1",
     })
 
 
@@ -134,7 +134,8 @@ def node_files(inv: Inventory, node: Node, sec: dict, node_cert: str, node_key: 
         File("/usr/local/lib/aikos/check-health", kit("check-health"), "0755"),
         File("/usr/local/lib/aikos/aikos_deployer.py", kit("aikos_deployer.py"), "0755"),
         File("/usr/local/lib/aikos/aikos_db_backup.py", kit("aikos_db_backup.py"), "0755"),
+        File("/usr/local/lib/aikos/aikos_heartbeat.py", kit("aikos_heartbeat.py"), "0755"),
         *[File(f"/etc/systemd/system/{u}", kit(f"systemd/{u}"))
           for u in ("aikos-deployer.service", "aikos-deployer.timer", "aikos-db-backup.service",
-                    "aikos-db-backup.timer")],
+                    "aikos-db-backup.timer", "aikos-heartbeat.service", "aikos-heartbeat.timer")],
     ]

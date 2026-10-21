@@ -1,0 +1,9 @@
+[Unit]
+Description=aikos heartbeat to the house monitor (one run)
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/aikos/cluster.env
+ExecStart=/usr/bin/python3 /usr/local/lib/aikos/aikos_heartbeat.py
+TimeoutStartSec=20s

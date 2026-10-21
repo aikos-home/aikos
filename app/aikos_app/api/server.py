@@ -43,6 +43,7 @@ def write_setup_code(c: AppContext) -> Path | None:
     if code is None:
         return None
     path = c.settings.data_dir / SETUP_CODE_FILE
+    path.parent.mkdir(parents=True, exist_ok=True)  # with rqlite nothing else creates the data folder
     path.write_text(code + "\n", encoding="utf-8")
     try:
         os.chmod(path, 0o600)
