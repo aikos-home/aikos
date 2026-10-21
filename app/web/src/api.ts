@@ -71,6 +71,7 @@ const MESSAGES: Record<string, string> = {
   cannot_disable_self: "Du kannst dich nicht selbst sperren.",
   bad_origin: "Anfrage von einer fremden Seite abgelehnt.",
   network: "Keine Verbindung zu aikos.",
+  bad_subscription: "Dieses Gerät lässt sich nicht für Benachrichtigungen anmelden.",
   no_register: "Dafür braucht Home Assistant die aikos-Integration ab 0.8.0.",
 };
 
@@ -127,6 +128,11 @@ export const api = {
   doorStatus: () => call<DoorStatus>("GET", "/api/v1/door/status"),
   doorMessages: () => call<DoorMessage[]>("GET", "/api/v1/door/messages"),
   deleteMessage: (id: string) => call<unknown>("DELETE", `/api/v1/door/messages/${encodeURIComponent(id)}`),
+  pushKey: () => call<{ key: string }>("GET", "/api/v1/push/key"),
+  pushSubscribe: (subscription: PushSubscriptionJSON, label: string) =>
+    call<{ ok: boolean }>("POST", "/api/v1/push/subscription", { ...subscription, label }),
+  pushUnsubscribe: (endpoint: string) => call<{ ok: boolean }>("DELETE", "/api/v1/push/subscription", { endpoint }),
+  pushTest: () => call<{ sent: number }>("POST", "/api/v1/push/test"),
   messageHeard: (id: string) => call<unknown>("POST", `/api/v1/door/messages/${encodeURIComponent(id)}/heard`),
 };
 

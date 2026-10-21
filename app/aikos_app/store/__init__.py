@@ -1,4 +1,5 @@
-"""The app's own small database: accounts, passkeys, sessions, sign-up flows, invites, audit log. Nothing else.
+"""The app's own small database: accounts, passkeys, sessions, sign-up flows, invites, audit log, push subscriptions.
+Nothing else.
 
 Home Assistant data never lands here (rule A16): deleting this database loses accounts and passkeys, never door data.
 The database is a single SQLite file on one machine, or an rqlite cluster across the three aikos VMs (backends.py).
@@ -17,7 +18,7 @@ from .backends import Backend, DatabaseError, Result, SqliteBackend, Statement, 
 
 __all__ = ["Database", "DatabaseError", "Result", "b64d", "b64e", "new_token", "now", "token_hash"]
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 SCHEMA_MIN = 2
 """The oldest app schema that can still use a database of SCHEMA_VERSION. Additive changes (new tables or columns the old
 code never reads) keep it, so a rollback to the previous image still starts during a rolling update."""
@@ -78,6 +79,18 @@ _SCHEMA = [
       target TEXT NOT NULL DEFAULT '',
       ok INTEGER NOT NULL,
       ip TEXT NOT NULL DEFAULT '')""",
+    # schema 3 (step 2): push; additive, so SCHEMA_MIN stays 2
+    """CREATE TABLE IF NOT EXISTS push_subs(
+      id INTEGER PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      endpoint TEXT NOT NULL UNIQUE,
+      p256dh TEXT NOT NULL,
+      auth TEXT NOT NULL,
+      label TEXT NOT NULL DEFAULT '',
+      created_at INTEGER NOT NULL,
+      last_ok_at INTEGER)""",
+    "CREATE TABLE IF NOT EXISTS push_sent(key TEXT PRIMARY KEY, at INTEGER NOT NULL)",
+    "CREATE INDEX IF NOT EXISTS push_subs_user ON push_subs(user_id)",
     "CREATE INDEX IF NOT EXISTS credentials_user ON credentials(user_id)",
     "CREATE INDEX IF NOT EXISTS sessions_user ON sessions(user_id)",
 ]

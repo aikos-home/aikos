@@ -11,10 +11,12 @@ from ..auth.service import AuthService
 from ..config import Settings
 from ..ha.client import HaClient
 from ..ha.door import DoorMessages
+from ..push.door_push import DoorPush
 from ..roles import Cap, can
 from ..store import Database
 from ..store.accounts import Accounts, User
 from ..store.audit import Audit
+from ..store.push import Pushes
 from ..store.sessions import Sessions
 
 SESSION_COOKIE = "aikos_session"
@@ -31,6 +33,9 @@ class AppContext:
     auth: AuthService
     ha: HaClient
     door: DoorMessages
+    pushes: Pushes
+    door_push: DoorPush
+    push_public_key: str
 
 
 CTX = web.AppKey("aikos_ctx", AppContext)
