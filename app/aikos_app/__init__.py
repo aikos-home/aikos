@@ -5,4 +5,4 @@ what Home Assistant cannot: accounts, passkeys, sessions, roles, push subscripti
 way from a phone to Home Assistant and enforces who may see and do what.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

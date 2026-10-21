@@ -5,7 +5,7 @@ Assistant stays the system of record for entities, devices, states, events, soun
 way to them. It signs people in with passkeys, knows who may see and do what, and is the single path from a phone to
 Home Assistant. The phone never gets a Home Assistant token, address or link.
 
-Version **0.1.0** (step 1: sign-in, roles, door messages). Python 3.12+ (aiohttp, py_webauthn); PWA in TypeScript
+Version **0.2.0** (step 1: sign-in, roles, door messages; step 2: message register, delete, forward by hand). Python 3.12+ (aiohttp, py_webauthn); PWA in TypeScript
 (Preact, Vite).
 
 Runs on one machine (SQLite) or on three nodes with a replicated database and rollouts of signed images
@@ -32,7 +32,7 @@ HTTP API under `/api/v1`, described in [`aikos_app/api/openapi.json`](aikos_app/
 | Invites | `POST /api/v1/invites/info`, `POST /api/v1/invites/start`, `POST /api/v1/invites/finish` |
 | Me | `GET /api/v1/me`, `GET /api/v1/me/passkeys`, `POST /api/v1/me/passkeys/start` and `/finish`, `DELETE /api/v1/me/passkeys/{id}` |
 | People (superadmin) | `GET /api/v1/people`, `POST /api/v1/people/invites`, `POST /api/v1/people/{id}/device-invite`, `POST /api/v1/people/{id}/disable` |
-| Door | `GET /api/v1/door/status`, `GET /api/v1/door/messages`, `GET /api/v1/door/messages/{id}/audio` (Range supported) |
+| Door | `GET /api/v1/door/status`, `GET /api/v1/door/messages`, `GET /api/v1/door/messages/{id}/audio` (Range supported; `?share=1` = as a file to forward, recorded), `POST /api/v1/door/messages/{id}/heard`, `DELETE /api/v1/door/messages/{id}` |
 | Other | `GET /api/v1/health` (200 with `ok`, `version`, `commit`, `db`, `ha_connected`; 503 without its database), `GET /.well-known/assetlinks.json` |
 
 **Sessions:** an `HttpOnly`, `Secure`, `SameSite=Strict` cookie for the PWA. A native app sends
@@ -40,13 +40,19 @@ HTTP API under `/api/v1`, described in [`aikos_app/api/openapi.json`](aikos_app/
 
 **Errors:** `{"error": "<code>"}` with a stable code, e.g. `not_signed_in` (401), `forbidden` (403), `not_found` (404,
 also for a message that exists but is not yours), `invalid_code`, `invite_invalid`, `passkey_failed`,
-`unknown_passkey`, `flow_expired` (400), `already_set_up` (409), `slow_down` (429), `ha_unreachable` (503).
+`unknown_passkey`, `flow_expired` (400), `already_set_up` (409), `slow_down` (429), `ha_unreachable`, `no_register` (503).
 
 ## Roles
 
 Fixed in [`aikos_app/roles.py`](aikos_app/roles.py): `superadmin` (everything, including people), `adult` (door,
 messages for themselves and for everyone, quiet hours, history, own room), `child` (own messages, own room). A message
 for a person is visible to that person and the superadmin only; to everyone else it does not exist.
+
+**Deleting a message** (A38) is for good, sound and text in Home Assistant: the recipient and the superadmin; a message for
+everyone: every adult and the superadmin. Recorded in the audit log.
+
+**Forwarding** (A37) happens only when a resident taps "Teilen": the phone fetches the MP3 through the app (recorded as
+`message.share`) and hands it with the text to the app the person picks. The service itself never sends sound anywhere.
 
 ## Sign-in
 
@@ -65,13 +71,16 @@ only allow passkeys over HTTPS or on `localhost`.
 
 One connection (WebSocket API) with a **fixed list of commands** that a non-admin user may run: `get_states`,
 `subscribe_entities`, `history/history_during_period`, `media_source/browse_media`, `media_source/resolve_media`,
-`call_service` (only for allowed domains; none in step 1). Anything else is refused inside the app. So the app's Home
-Assistant account should be a normal user, not an admin.
+`call_service` (only `aikos.door_messages`, `aikos.door_message_delete`, `aikos.door_message_heard`). Anything else is
+refused inside the app. So the app's Home Assistant account should be a normal user, not an admin.
 
-Door messages are the audio files in the local media folder `AIKOS_APP_DOOR_MEDIA_DIR` (default `aikos_door`). Until the
-aikos integration keeps a message register, two optional entities add metadata: `AIKOS_APP_INTERIM_LAST_MESSAGE_ENTITY`
-(state = file name of the last saved message; attributes `seconds`, `time`, `recipient`) and
-`AIKOS_APP_INTERIM_MESSAGE_TEXT_ENTITY` (state = recognised text, cleared when a recording starts).
+Door messages come from the aikos integration's **message register** (aikos 0.8.0+, `sensor.aikos_door_messages`):
+file, time, seconds, recipient, recognised text, speaker, who heard it. The sound files are in the local media folder
+`AIKOS_APP_DOOR_MEDIA_DIR` (default `aikos_door`). Without the register (older aikos) the list is the audio files in that
+folder; deleting and "heard" then answer `no_register`. Messages the register adopted from the folder (older ones, no text)
+and the folder list can get metadata from two optional interim entities: `AIKOS_APP_INTERIM_LAST_MESSAGE_ENTITY` (state =
+file name of the last saved message; attributes `seconds`, `time`, `recipient`) and `AIKOS_APP_INTERIM_MESSAGE_TEXT_ENTITY`
+(state = recognised text, cleared when a recording starts).
 
 ## Configuration (environment)
 

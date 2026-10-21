@@ -25,8 +25,12 @@ ALLOWED_COMMANDS = frozenset({
     "media_source/resolve_media",
     "call_service",
 })
-ALLOWED_SERVICE_DOMAINS: frozenset[str] = frozenset()
-"""Service domains the app may call. Empty in step 1: the app only reads."""
+ALLOWED_SERVICES = frozenset({
+    ("aikos", "door_messages"),
+    ("aikos", "door_message_delete"),
+    ("aikos", "door_message_heard"),
+})
+"""The services the app may call, each behind one endpoint that checks the person's rights first (rule G2)."""
 
 MEDIA_PATH_PREFIX = "/media/local/"
 COMMAND_TIMEOUT_S = 15
@@ -91,11 +95,22 @@ class HaClient:
         return self._states.get(entity_id)
 
     # commands
-    async def command(self, type_: str, **payload: Any) -> Any:
+    @staticmethod
+    def check(type_: str, payload: dict[str, Any]) -> None:
+        """Refuse anything outside the fixed lists before it leaves the app."""
         if type_ not in ALLOWED_COMMANDS:
             raise HaError(f"command not allowed: {type_}")
-        if type_ == "call_service" and payload.get("domain") not in ALLOWED_SERVICE_DOMAINS:
-            raise HaError(f"service domain not allowed: {payload.get('domain')}")
+        if type_ == "call_service" and (payload.get("domain"), payload.get("service")) not in ALLOWED_SERVICES:
+            raise HaError(f"service not allowed: {payload.get('domain')}.{payload.get('service')}")
+
+    async def call_service(self, domain: str, service: str, data: dict[str, Any] | None = None, *,
+                           response: bool = False) -> Any:
+        result = await self.command("call_service", domain=domain, service=service, service_data=data or {},
+                                    return_response=response)
+        return (result or {}).get("response") if response else None
+
+    async def command(self, type_: str, **payload: Any) -> Any:
+        self.check(type_, payload)
         if not self._connected.is_set():
             try:
                 await asyncio.wait_for(self._connected.wait(), CONNECT_WAIT_S)

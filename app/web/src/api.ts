@@ -17,7 +17,14 @@ export interface DoorMessage {
   seconds: number | null;
   text: string;
   recipient: string;
-  audio: string;
+  speaker: string;
+  heard_by: string[];
+  /** I have heard it (kept in Home Assistant). */
+  heard: boolean;
+  /** A38: recipient or superadmin; for everyone: adults too. */
+  may_delete: boolean;
+  audio_missing: boolean;
+  audio: string | null;
 }
 
 export interface DoorStatus {
@@ -64,6 +71,7 @@ const MESSAGES: Record<string, string> = {
   cannot_disable_self: "Du kannst dich nicht selbst sperren.",
   bad_origin: "Anfrage von einer fremden Seite abgelehnt.",
   network: "Keine Verbindung zu aikos.",
+  no_register: "Dafür braucht Home Assistant die aikos-Integration ab 0.8.0.",
 };
 
 export class ApiError extends Error {
@@ -118,6 +126,8 @@ export const api = {
   disablePerson: (userId: number) => call<{ ok: boolean }>("POST", `/api/v1/people/${userId}/disable`),
   doorStatus: () => call<DoorStatus>("GET", "/api/v1/door/status"),
   doorMessages: () => call<DoorMessage[]>("GET", "/api/v1/door/messages"),
+  deleteMessage: (id: string) => call<unknown>("DELETE", `/api/v1/door/messages/${encodeURIComponent(id)}`),
+  messageHeard: (id: string) => call<unknown>("POST", `/api/v1/door/messages/${encodeURIComponent(id)}/heard`),
 };
 
 export const can = (user: User, cap: string) => user.capabilities.includes(cap);

@@ -148,3 +148,6 @@ code.small { font-size: 11px; color: var(--muted); }
 }
 .tabbar button.active { color: var(--accent); }
 .tabbar .icon { width: 22px; height: 22px; }
+.card .actions { margin-top: 4px; flex-wrap: wrap; gap: 4px; }
+.card .actions .icon { width: 16px; height: 16px; }
+.card .actions button.primary { min-height: 34px; padding: 4px 12px; }

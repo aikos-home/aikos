@@ -73,3 +73,16 @@ def may_see_message(role: Role | str, own_names: list[str], recipient: str) -> b
     if not recipient.strip():
         return role != Role.CHILD or CHILD_SEES_MESSAGES_FOR_EVERYONE
     return any(_same_name(recipient, n) for n in own_names if n)
+
+
+def may_delete_message(role: Role | str, own_names: list[str], recipient: str) -> bool:
+    """Rule A38: the recipient and the superadmin; a message for everyone: every adult and the superadmin. Deleting is for
+    good (sound and text in Home Assistant)."""
+    role = Role(role)
+    if can(role, Cap.MESSAGES_ALL):
+        return True
+    if not can(role, Cap.MESSAGES_OWN):
+        return False
+    if not recipient.strip():
+        return role == Role.ADULT
+    return any(_same_name(recipient, n) for n in own_names if n)
