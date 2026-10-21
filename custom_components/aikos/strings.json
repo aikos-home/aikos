@@ -26,6 +26,9 @@
       },
       "bell_muted": {
         "name": "Bell muted"
+      },
+      "parcel_expected": {
+        "name": "Parcel expected"
       }
     },
     "switch": {
@@ -85,7 +88,10 @@
           "call_archive": "Call archive (developers)",
           "front_door": "Front door sensor",
           "tts_engine": "Voice service (TTS)",
-          "parcel_sensor": "Parcel expected (sensor)"
+          "parcel_sensor": "Parcel expected (sensor)",
+          "parcel_mail_user": "Parcel mails: mailbox",
+          "parcel_mail_password": "Parcel mails: app password",
+          "parcel_mail_server": "Parcel mails: IMAP server"
         },
         "data_description": {
           "doorbell": "The doorbell's event (or a binary sensor that turns on when pressed).",
@@ -94,9 +100,18 @@
           "call_archive": "Every call (start with firmware versions, every message, end) as JSON lines in aikos_archive/calls.jsonl in the configuration folder. Stays until you delete it.",
           "front_door": "The door contact the devices follow (opening the front door ends a call). aikos debounces it by 2 s.",
           "tts_engine": "Reads notes and the greeting at the door in the residents' own voices. Use a local service (e.g. aikos TTS through Wyoming). Empty = text is only shown.",
-          "parcel_sensor": "On while a delivery is expected today (e.g. from the delivery mails). Then whoever comes close to the door is taken for the courier and hears the parcel sentence."
+          "parcel_sensor": "On while a delivery is expected today. Empty = aikos' own sensor from the parcel mails below.",
+          "parcel_mail_user": "The address of a mailbox that gets the carriers' notices (Amazon, DHL, DPD, Hermes, GLS, UPS). aikos reads only sender, subject and date of today's carrier mails, every 3 minutes, and marks nothing as read. Empty = off.",
+          "parcel_mail_password": "An app password of that mailbox (not its normal password). Empty = keep the stored one.",
+          "parcel_mail_server": "IMAP over TLS, port 993."
         }
       }
+    },
+    "error": {
+      "mail_login": "The mailbox refused the login. Is the app password right?",
+      "mail_connect": "The IMAP server can't be reached.",
+      "mail_search": "The mailbox didn't answer as expected.",
+      "mail_password": "Please enter the app password."
     }
   },
   "services": {

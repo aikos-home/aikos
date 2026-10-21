@@ -1,5 +1,5 @@
 """Quiet hours active right now (switches exactly at start and end, without polling); the front door (front_door.py); mic
-problems (mic_problem.py, W3); the bell mute (door_entities.py)."""
+problems (mic_problem.py, W3); the bell mute (door_entities.py); a parcel expected today (parcel_mail.py)."""
 from __future__ import annotations
 
 from datetime import datetime
@@ -12,6 +12,7 @@ from homeassistant.helpers.event import async_track_point_in_time
 from homeassistant.util import dt as dt_util
 
 from . import AikosConfigEntry
+from .const import PARCEL_EXPECTED
 from .door_entities import BellMuted
 from .entity import AikosEntity
 from .front_door import FrontDoor
@@ -25,7 +26,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: AikosConfigEntry, async_
                         MicProblem(entry, "mic_problem", "binary_sensor.aikos_mic_problem", "aikos_mic_check", announce=True),
                         MicProblem(entry, "mic_problem_test", "binary_sensor.aikos_mic_problem_test", "aikos_mic_check_test",
                                    announce=False),
-                        BellMuted(entry, "bell_muted", "binary_sensor.aikos_bell_muted")])
+                        BellMuted(entry, "bell_muted", "binary_sensor.aikos_bell_muted"),
+                        ParcelExpected(entry, "parcel_expected", PARCEL_EXPECTED)])
+
+
+class ParcelExpected(AikosEntity, BinarySensorEntity):
+    """On while a carrier's mail says a parcel comes today and no "delivered" followed. Attributes: `carriers`, `soon`
+    ("wird gleich zugestellt"), `window` ("13:45–15:45" or ""), `checked` (last read), `error` (login / connect / search),
+    `configured`. No subjects, no items."""
+
+    @property
+    def is_on(self) -> bool:
+        return self._entry.runtime_data.parcel_mail.state.expected
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        p = self._entry.runtime_data.parcel_mail
+        w = p.state.window
+        return {"carriers": list(p.state.carriers), "soon": p.state.soon,
+                "window": f"{w[0].strftime('%H:%M')}–{w[1].strftime('%H:%M')}" if w else "", "checked": p.checked,
+                "error": p.error, "configured": p.configured}
+
+    async def async_added_to_hass(self) -> None:
+        self.async_on_remove(self._entry.runtime_data.parcel_mail.add_listener(self.async_write_ha_state))
 
 
 class QuietHoursActive(AikosEntity, BinarySensorEntity):

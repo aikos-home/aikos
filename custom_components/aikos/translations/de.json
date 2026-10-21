@@ -26,6 +26,9 @@
       },
       "bell_muted": {
         "name": "Klingel stumm"
+      },
+      "parcel_expected": {
+        "name": "Paket erwartet"
       }
     },
     "switch": {
@@ -85,7 +88,10 @@
           "call_archive": "Gesprächsarchiv (Entwicklung)",
           "front_door": "Haustürsensor",
           "tts_engine": "Sprachdienst (TTS)",
-          "parcel_sensor": "Paket erwartet (Sensor)"
+          "parcel_sensor": "Paket erwartet (Sensor)",
+          "parcel_mail_user": "Paket-Mails: Postfach",
+          "parcel_mail_password": "Paket-Mails: App-Passwort",
+          "parcel_mail_server": "Paket-Mails: IMAP-Server"
         },
         "data_description": {
           "doorbell": "Das Event der Klingel (oder ein Binärsensor, der beim Drücken angeht).",
@@ -94,9 +100,18 @@
           "call_archive": "Jedes Gespräch (Beginn mit Firmware-Versionen, jede Nachricht, Ende) als JSON-Zeilen in aikos_archive/calls.jsonl im Konfigurationsordner. Bleibt, bis du es löschst.",
           "front_door": "Der Türkontakt, dem die Geräte folgen (Haustür öffnen beendet ein Gespräch). aikos entprellt ihn um 2 s.",
           "tts_engine": "Liest Notizen und die Begrüßung an der Tür in der eigenen Stimme der Bewohner. Nur einen lokalen Dienst wählen (z. B. aikos TTS über Wyoming). Leer = Text wird nur angezeigt.",
-          "parcel_sensor": "An, solange heute eine Lieferung erwartet wird (z. B. aus den Zustell-Mails). Dann gilt, wer an die Tür kommt, als Bote und hört den Paket-Satz."
+          "parcel_sensor": "An, solange heute eine Lieferung erwartet wird. Leer = aikos' eigener Sensor aus den Paket-Mails unten.",
+          "parcel_mail_user": "Die Adresse eines Postfachs, in das die Zustell-Mails kommen (Amazon, DHL, DPD, Hermes, GLS, UPS). aikos liest alle 3 Minuten nur Absender, Betreff und Datum der heutigen Paketdienst-Mails und markiert nichts als gelesen. Leer = aus.",
+          "parcel_mail_password": "Ein App-Passwort dieses Postfachs (nicht das normale Passwort). Leer = das gespeicherte bleibt.",
+          "parcel_mail_server": "IMAP über TLS, Port 993."
         }
       }
+    },
+    "error": {
+      "mail_login": "Das Postfach hat die Anmeldung abgelehnt. Stimmt das App-Passwort?",
+      "mail_connect": "Der IMAP-Server ist nicht erreichbar.",
+      "mail_search": "Das Postfach hat nicht wie erwartet geantwortet.",
+      "mail_password": "Bitte das App-Passwort eintragen."
     }
   },
   "services": {

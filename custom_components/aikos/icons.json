@@ -18,6 +18,12 @@
         "state": {
           "on": "mdi:bell-off"
         }
+      },
+      "parcel_expected": {
+        "default": "mdi:package-variant",
+        "state": {
+          "on": "mdi:truck-delivery"
+        }
       }
     },
     "switch": {

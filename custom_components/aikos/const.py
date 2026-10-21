@@ -23,6 +23,12 @@ OPT_TTS = "tts_engine"
 # The door announcements (sprachausgabe S14): a binary sensor or input boolean that is on while a delivery is expected
 # today. Then whoever comes close is taken for the courier and hears the parcel sentence.
 OPT_PARCEL = "parcel_sensor"
+# Parcel mails (sprachausgabe S15): one mailbox (IMAP over TLS, an app password) whose carrier mails tell whether a parcel
+# comes today. aikos reads only sender, subject and date of today's carrier mails. Empty user = off.
+OPT_MAIL_SERVER = "parcel_mail_server"
+OPT_MAIL_USER = "parcel_mail_user"
+OPT_MAIL_PASSWORD = "parcel_mail_password"
+PARCEL_EXPECTED = "binary_sensor.aikos_parcel_expected"
 
 # Call log sources. Live: the transcriber's sensors and the talk computer's call sensor (ids as the devices and the
 # transcriber create them). Test: the bench stand-ins from the homeassistant/ package, so tests never touch the live log.
