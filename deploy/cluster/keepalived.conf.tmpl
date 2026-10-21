@@ -1,0 +1,39 @@
+# aikos: the virtual address follows a healthy node. Unicast VRRP between the three nodes only (no multicast, so it
+# cannot meet another keepalived on the same network). nopreempt: a node that comes back does not take the address
+# away again (one move per failure, not two).
+global_defs {
+    router_id ${NODE_ID}
+    script_user aikos
+    enable_script_security
+}
+
+vrrp_script aikos_health {
+    script "/usr/local/lib/aikos/check-health"
+    interval 2
+    timeout 3
+    fall 2
+    rise 2
+}
+
+vrrp_instance aikos {
+    state BACKUP
+    nopreempt
+    interface ${IFACE}
+    virtual_router_id ${VRID}
+    priority ${PRIORITY}
+    advert_int 1
+    unicast_src_ip ${NODE_IP}
+    unicast_peer {
+${PEER_LINES}
+    }
+    authentication {
+        auth_type PASS
+        auth_pass ${VRRP_PASS}
+    }
+    virtual_ipaddress {
+        ${VIP}/${PREFIX} dev ${IFACE}
+    }
+    track_script {
+        aikos_health
+    }
+}

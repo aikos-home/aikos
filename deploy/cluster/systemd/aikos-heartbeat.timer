@@ -1,0 +1,10 @@
+[Unit]
+Description=aikos heartbeat, every 30 s (half the monitor window)
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=30s
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

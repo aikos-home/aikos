@@ -124,10 +124,12 @@ async def test_a16_data_stays_in_home_assistant(tmp_path, aiohttp_client):
     """Wiping the app's database loses accounts only; the messages come back from Home Assistant."""
     ha = FakeHa()
     door_data(ha)
-    first = Household(await aiohttp_client(create_app(make_settings(tmp_path / "a"), ha=ha)), make_settings(tmp_path / "a"))
+    sa = make_settings(tmp_path / "a")  # once: with rqlite every call empties the shared database
+    first = Household(await aiohttp_client(create_app(sa, ha=ha)), sa)
     _, m1 = await first.setup(SoftAuthenticator(ORIGIN))
     before = await ids(first, m1)
-    second = Household(await aiohttp_client(create_app(make_settings(tmp_path / "b"), ha=ha)), make_settings(tmp_path / "b"))
+    sb = make_settings(tmp_path / "b")
+    second = Household(await aiohttp_client(create_app(sb, ha=ha)), sb)
     _, m2 = await second.setup(SoftAuthenticator(ORIGIN))
     assert await ids(second, m2) == before and len(before) == 3
 

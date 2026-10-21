@@ -28,7 +28,8 @@ SETUP_CODE_FILE = "setup-code.txt"
 
 
 def build_context(settings: Settings, ha: HaClient | None = None) -> AppContext:
-    db = Database(settings.data_dir / "aikos-app.sqlite3")
+    db = Database.open(settings.db_url, settings.db_user, settings.db_password, settings.db_ca_file,
+                       default_file=settings.data_dir / "aikos-app.sqlite3")
     accounts, sessions, audit = Accounts(db), Sessions(db), Audit(db)
     passkeys = Passkeys(settings.rp_id, settings.rp_name, settings.origin)
     auth = AuthService(accounts, sessions, Flows(db), audit, passkeys)
@@ -42,6 +43,7 @@ def write_setup_code(c: AppContext) -> Path | None:
     if code is None:
         return None
     path = c.settings.data_dir / SETUP_CODE_FILE
+    path.parent.mkdir(parents=True, exist_ok=True)  # with rqlite nothing else creates the data folder
     path.write_text(code + "\n", encoding="utf-8")
     try:
         os.chmod(path, 0o600)

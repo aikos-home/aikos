@@ -1,0 +1,8 @@
+[Unit]
+Description=aikos app database backup (consistent copy for the house backup)
+After=docker.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/aikos/cluster.env
+ExecStart=/usr/bin/python3 /usr/local/lib/aikos/aikos_db_backup.py

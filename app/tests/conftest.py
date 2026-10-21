@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -14,9 +15,24 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from aikos_app.api.server import SETUP_CODE_FILE, create_app  # noqa: E402
 from aikos_app.config import Settings  # noqa: E402
 from aikos_app.ha.client import HaClient, HaError  # noqa: E402
+from aikos_app.store import Database  # noqa: E402
 from softauthn import SoftAuthenticator  # noqa: E402
 
 ORIGIN = "http://localhost:8780"
+# Run the whole suite against a real rqlite with AIKOS_TEST_DB=rqlite://host:4001 (CI does, in a service container).
+TEST_DB = os.environ.get("AIKOS_TEST_DB", "")
+TEST_DB_USER = os.environ.get("AIKOS_TEST_DB_USER", "")
+TEST_DB_PASSWORD = os.environ.get("AIKOS_TEST_DB_PASSWORD", "")
+_TABLES = ["audit", "sessions", "credentials", "flows", "invites", "setup_codes", "users"]
+
+
+def fresh_db(tmp_path: Path) -> Database:
+    """An empty database: a new SQLite file, or the shared rqlite with every table emptied."""
+    if not TEST_DB:
+        return Database(tmp_path / "store.sqlite3")
+    db = Database.open(TEST_DB, TEST_DB_USER, TEST_DB_PASSWORD)
+    db.batch([(f"DELETE FROM {t}", ()) for t in _TABLES])
+    return db
 SIGNED = "/media/local/door_test/{}?authSig=SIGNATURE-THAT-MUST-NOT-LEAK"
 
 
@@ -83,8 +99,11 @@ class FakeHa(HaClient):
 def make_settings(tmp_path: Path, **kw) -> Settings:
     base = dict(public_url=ORIGIN, data_dir=tmp_path / "data", web_dir=tmp_path / "web", door_media_dir="door_test",
                 interim_last_message_entity="sensor.aikos_test_last_message",
-                interim_message_text_entity="input_text.aikos_test_message_text")
+                interim_message_text_entity="input_text.aikos_test_message_text",
+                db_url=TEST_DB, db_user=TEST_DB_USER, db_password=TEST_DB_PASSWORD)
     base.update(kw)
+    if TEST_DB:
+        fresh_db(tmp_path).close()
     return Settings(**base)
 
 

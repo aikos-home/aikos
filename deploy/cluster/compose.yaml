@@ -1,0 +1,54 @@
+# aikos app on one node of the three-node cluster. Every service uses the host network, so the host firewall
+# (nftables) decides who reaches what: Docker-published ports would bypass it.
+#   app    127.0.0.1:8780 only (reached through Caddy)
+#   rqlite <node>:4001 HTTPS API, <node>:4002 Raft (mutual TLS between the nodes)
+#   caddy  :80, :443 for the domain; http://<node> (port 80, by address) serves only /api/v1/health for the peers
+# Variables come from /etc/aikos/cluster.env and /etc/aikos/app-image.env (written by apply.py and the deployer).
+name: aikos
+services:
+  rqlite:
+    image: rqlite/rqlite:10.5.2@sha256:73cc238054ece2df08a65747a549062bfd454d6bdcdbbafe2a98fb3897723fff
+    network_mode: host
+    restart: unless-stopped
+    entrypoint: ["rqlited"]
+    command:
+      - -node-id=${NODE_ID}
+      - -http-addr=${NODE_IP}:4001
+      - -raft-addr=${NODE_IP}:4002
+      - -http-cert=/certs/node.crt
+      - -http-key=/certs/node.key
+      - -node-cert=/certs/node.crt
+      - -node-key=/certs/node.key
+      - -node-ca-cert=/certs/ca.crt
+      - -node-verify-client
+      - -auth=/secrets/rqlite-auth.json
+      - -join=${PEERS_RAFT}
+      - -join-as=cluster
+      - -bootstrap-expect=3
+      - -fk
+      - /rqlite/file/data
+    volumes:
+      - /var/lib/aikos/rqlite:/rqlite/file
+      - /etc/aikos/certs:/certs:ro
+      - /etc/aikos/secrets/rqlite-auth.json:/secrets/rqlite-auth.json:ro
+  app:
+    image: ${APP_IMAGE:-ghcr.io/aikos-home/aikos-app:main}
+    network_mode: host
+    restart: unless-stopped
+    env_file: [/etc/aikos/app.env]
+    volumes:
+      - /var/lib/aikos/app:/data
+      - /etc/aikos/secrets/app:/secrets:ro
+      - /etc/aikos/certs/ca.crt:/certs/ca.crt:ro
+    depends_on: [rqlite]
+  caddy:
+    image: caddy:2.10.2@sha256:c3d7ee5d2b11f9dc54f947f68a734c84e9c9666c92c88a7f30b9cba5da182adb
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      - AIKOS_DOMAIN=${DOMAIN}
+      - NODE_IP=${NODE_IP}
+      - TRUSTED_PROXIES=${TRUSTED_PROXIES}
+    volumes:
+      - /etc/aikos/Caddyfile:/etc/caddy/Caddyfile:ro
+      - /var/lib/aikos/caddy:/data

@@ -16,7 +16,12 @@ OPENAPI = Path(__file__).with_name("openapi.json")
 
 @routes.get("/api/v1/health")
 async def health(request: web.Request) -> web.Response:
-    return web.json_response({"ok": True, "version": __version__, "ha_connected": ctx(request).ha.connected})
+    """Ready = the service runs and reaches its database. Home Assistant being away does not make a node unhealthy
+    (all three would drop out together); it is reported separately."""
+    c = ctx(request)
+    db_ok = c.db.ping()
+    body = {"ok": db_ok, "version": __version__, "commit": c.settings.commit, "db": db_ok, "ha_connected": c.ha.connected}
+    return web.json_response(body, status=200 if db_ok else 503)
 
 
 @routes.get("/api/v1/openapi.json")
