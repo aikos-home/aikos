@@ -33,7 +33,21 @@
       },
       "call_log_test": {
         "default": "mdi:message-text-clock"
+      },
+      "door_messages": {
+        "default": "mdi:message-audio"
       }
+    }
+  },
+  "services": {
+    "door_messages": {
+      "service": "mdi:message-audio"
+    },
+    "door_message_delete": {
+      "service": "mdi:delete"
+    },
+    "door_message_heard": {
+      "service": "mdi:ear-hearing"
     }
   }
 }

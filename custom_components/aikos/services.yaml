@@ -1,0 +1,23 @@
+# The door message register (for the aikos app). Who may do what is decided by the app (aikos-app A15, A38).
+door_messages:
+door_message_delete:
+  fields:
+    id:
+      required: true
+      example: nachricht-20261021-084700
+      selector:
+        text:
+    by:
+      selector:
+        text:
+door_message_heard:
+  fields:
+    id:
+      required: true
+      example: nachricht-20261021-084700
+      selector:
+        text:
+    by:
+      required: true
+      selector:
+        text:

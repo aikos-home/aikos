@@ -1,7 +1,7 @@
 # aikos integration for Home Assistant
 
-The household logic of aikos, installed via HACS. Version **0.7.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
-front door (0.5.0, tag `aikos-v0.5.0`) and the mic health warning (0.7.0). More blocks follow (where the bell
+The household logic of aikos, installed via HACS. Version **0.8.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
+front door (0.5.0, tag `aikos-v0.5.0`), the mic health warning (0.7.0) and the door message register (0.8.0). More blocks follow (where the bell
 rings, presence, alarm, pairing of devices); each comes as a new version.
 
 ## Install
@@ -102,6 +102,34 @@ event `aikos_mic_check` (option `AIKOS_MIC_CHECK=1` there) after every recording
 - `binary_sensor.aikos_mic_problem_test` takes only `aikos_mic_check_test` (bench); it never notifies.
 - In memory: after a restart it starts clean and finds a broken mic again within two recordings.
 
+### Door message register (0.8.0, for the aikos app)
+
+Every "Nachricht hinterlassen" at the door, kept until someone deletes it (aikos-app A27). Always on; it only listens, nothing
+else changes. Stored in Home Assistant (`.storage/aikos.door_messages`, in every backup); the sound stays where the door's
+recorder puts it, `<local media>/aikos_door/` (Media → My media).
+
+| Source (the door's contracts) | Used for |
+|---|---|
+| Event `esphome.aikos_door_message {recipient, source}` (screen, when a recording starts; `""` = everyone) | whom the message is for (holds 5 min, used once) |
+| `binary_sensor.aikos_intercom_talk_message_recording` | the recording's start and end |
+| `sensor.talk_transcript_door` (attributes `message`/`text`, `speaker`) | the words, while recording and up to 30 s after its end; later words update the saved message |
+| Event `aikos_door_message_saved {file, seconds, recipient}` (recorder) | the message; `recipient` only if the screen named nobody. `file` must be a plain `….mp3` name |
+| Event `aikos_door_message_failed` | forgets the screen's recipient |
+
+| Entity / service | What |
+|---|---|
+| `sensor.aikos_door_messages` | State = number of messages. Attributes `revision` (changes with every change: new message, late words, heard, deleted), `newest` (id), `newest_time` |
+| `aikos.door_messages` (response only) | `{"messages": [...]}`, newest first. Per message: `id` (file name without `.mp3`), `file`, `time` (ISO, UTC), `seconds`, `recipient`, `text`, `speaker`, `heard_by` (names), `adopted`, `file_missing` |
+| `aikos.door_message_delete {id, by}` | Deletes the MP3, then the entry; response `{"deleted": id}`; logbook entry "… gelöscht (by)" |
+| `aikos.door_message_heard {id, by}` | Adds `by` to `heard_by` (once per name) |
+
+- **Who may see, hear or delete** a message is the aikos app's decision (A15, A38): it is the residents' only way in. The services
+  need no admin rights (the app's service account is no admin).
+- **Older messages:** recorder files (`nachricht-*.mp3`) nobody told the register about are taken in when it starts or lists
+  (`adopted: true`, time = file time, no text, no recipient). Other files in the folder (greetings) are no messages.
+- **A file deleted outside** (media browser): the entry stays with `file_missing: true`; nothing is deleted automatically.
+- No signed Home Assistant link and no sound ever goes into the register or the entity.
+
 ## Errors
 
 | Case | What happens |
@@ -112,6 +140,9 @@ event `aikos_mic_check` (option `AIKOS_MIC_CHECK=1` there) after every recording
 | The archive file can't be written | Logged; calls and everything else go on |
 | Second "Add integration" | Refused: aikos is set up once |
 | Integration removed | Its entities go away; nothing else in Home Assistant changes |
+| A door message's MP3 can't be deleted | The service fails, the entry stays (nothing half-deleted) |
+| Unknown message id for delete/heard | The service fails with "Es gibt keine Türnachricht …" |
+| The recorder names an unusable file | Warning in the log; nothing is registered |
 
 ## Structure
 
@@ -130,6 +161,9 @@ event `aikos_mic_check` (option `AIKOS_MIC_CHECK=1` there) after every recording
 | `front_door.py` | The debounced front door |
 | `mic_health.py` | When mic verdicts become a warning (no Home Assistant code) |
 | `mic_problem.py` | The mic problem sensors, notification and push |
+| `door_messages.py` | The door message register's rules (recipient, words, heard, storage form), no Home Assistant code |
+| `message_register.py` | Listens to the door, keeps the register in HA's storage, deletes the MP3 |
+| `services.py` | The register's services |
 | `config_flow.py`, `__init__.py` | Setting up and removing aikos |
 
 ## Tests
@@ -139,6 +173,8 @@ event `aikos_mic_check` (option `AIKOS_MIC_CHECK=1` there) after every recording
 
 ## History
 
+- 0.8.0: door message register for the aikos app (`sensor.aikos_door_messages`, `aikos.door_messages`, `aikos.door_message_delete`,
+  `aikos.door_message_heard`); takes over what the door's proof of concept wrote into helpers (words, recipient, last message).
 - 0.7.0: W3 mic health warning (`binary_sensor.aikos_mic_problem`, notification, push) from the transcriber's `aikos_mic_check`.
 - Docs (after 0.6.0): the Call archive and Front door sections and the Errors heading were lost from this README in 0.3.0–0.5.0
   (an edit replaced the heading the later inserts looked for); restored.

@@ -1,4 +1,5 @@
-"""The call log sensors: `sensor.aikos_call_log` (live) and `sensor.aikos_call_log_test` (bench, test entities only).
+"""The call log sensors: `sensor.aikos_call_log` (live) and `sensor.aikos_call_log_test` (bench, test entities only); the door
+message register's `sensor.aikos_door_messages`.
 
 Contract for the devices (unchanged from the former package): attributes `call_id`, `active`, `last_id`, `messages`,
 `messages_json` (newest 10, JSON text; per message `id`, `side` door/room, `who`, `text`; new since 0.6.0: `tr`, `tr_lang`),
@@ -34,6 +35,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: AikosConfigEntry, async_
                       new_call_button=None, announce=True),
         CallLogSensor(entry, "call_log_test", "sensor.aikos_call_log_test", TEST_TRANSCRIPT_ROOM, TEST_TRANSCRIPT_DOOR, TEST_CALL,
                       new_call_button=TEST_NEW_CALL, announce=False),
+        DoorMessagesSensor(entry),
     ])
 
 
@@ -123,3 +125,25 @@ class CallLogSensor(AikosEntity, RestoreEntity, SensorEntity):
             lang = f" ({m['lang']})" if m["lang"] else ""
             self.hass.async_create_task(self.hass.services.async_call("logbook", "log", {
                 "name": "aikos Gespräch", "message": f"{m['who']}{lang}: {m['text']}", "entity_id": self.entity_id}))
+
+
+class DoorMessagesSensor(AikosEntity, SensorEntity):
+    """State = number of door messages. `revision` changes with every change (new, words, heard, deleted), so a client
+    without admin rights sees it through the state stream; the messages themselves come from `aikos.door_messages`."""
+
+    def __init__(self, entry: AikosConfigEntry) -> None:
+        super().__init__(entry, "door_messages", "sensor.aikos_door_messages")
+        self._register = entry.runtime_data.door_messages
+
+    @property
+    def native_value(self) -> int:
+        return len(self._register.rules)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        newest = next(iter(self._register.rules.listing()), None)
+        return {"revision": self._register.rules.revision, "newest": newest.id if newest else "",
+                "newest_time": newest.time if newest else ""}
+
+    async def async_added_to_hass(self) -> None:
+        self.async_on_remove(self._register.add_listener(self.async_write_ha_state))

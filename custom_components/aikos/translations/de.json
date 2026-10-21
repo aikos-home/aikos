@@ -44,6 +44,9 @@
       },
       "call_log_test": {
         "name": "Gesprächsverlauf Test"
+      },
+      "door_messages": {
+        "name": "Türnachrichten"
       }
     }
   },
@@ -67,6 +70,48 @@
           "front_door": "Der Türkontakt, dem die Geräte folgen (Haustür öffnen beendet ein Gespräch). aikos entprellt ihn um 2 s."
         }
       }
+    }
+  },
+  "services": {
+    "door_messages": {
+      "name": "Türnachrichten",
+      "description": "Alle an der Tür hinterlassenen Nachrichten, neueste zuerst (Datei, Zeit, Sekunden, Empfänger, erkannter Text, Sprecher, wer sie gehört hat)."
+    },
+    "door_message_delete": {
+      "name": "Türnachricht löschen",
+      "description": "Löscht eine Türnachricht samt Tondatei endgültig.",
+      "fields": {
+        "id": {
+          "name": "Nachricht",
+          "description": "Kennung der Nachricht (ihr Dateiname ohne .mp3)."
+        },
+        "by": {
+          "name": "Von",
+          "description": "Wer sie löscht (fürs Logbuch)."
+        }
+      }
+    },
+    "door_message_heard": {
+      "name": "Türnachricht gehört",
+      "description": "Vermerkt, dass ein Bewohner die Nachricht gehört hat.",
+      "fields": {
+        "id": {
+          "name": "Nachricht",
+          "description": "Kennung der Nachricht (ihr Dateiname ohne .mp3)."
+        },
+        "by": {
+          "name": "Von",
+          "description": "Wer sie gehört hat."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "aikos ist nicht eingerichtet."
+    },
+    "unknown_message": {
+      "message": "Es gibt keine Türnachricht {id}."
     }
   }
 }
