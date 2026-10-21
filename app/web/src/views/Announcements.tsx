@@ -50,7 +50,7 @@ function Editor({ an, done }: { an: DoorAnnouncements; done: () => void }) {
   const changed = SENTENCES.some((s) => texts[s.key] !== an[s.key])
     || an.zones.some((z) => (places[z.id] ?? "") !== (an.places[z.id] ?? ""));
   const badWhere = !!texts.away_places && !texts.away_places.includes("{wo}");
-  const save = () => a.run(() => api.putAnnouncements({ ...texts, places }), "Gespeichert. Die Sätze werden jetzt in deiner Stimme vorbereitet.");
+  const save = () => a.run(() => api.putAnnouncements({ ...texts, places }), an.voice || level > 0 ? "Gespeichert. Die Sätze werden jetzt vorbereitet." : "Gespeichert.");
   const setDisclosure = (v: number) => {
     setLevel(v);
     a.run(() => api.putAnnouncements({ disclosure: v }), `Stufe ${v} gilt.`);
