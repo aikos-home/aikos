@@ -53,9 +53,10 @@ def to_reference(src: Path, dst: Path, ffmpeg: str = "ffmpeg") -> None:
 
 
 class VoiceStore:
-    def __init__(self, root: Path, convert=to_reference) -> None:
+    def __init__(self, root: Path, convert=to_reference, on_change=None) -> None:
         self.root = root
         self._convert = convert
+        self._on_change = on_change or (lambda voice_id: None)   # a new or deleted voice: its old takes go
         root.mkdir(parents=True, exist_ok=True)
         os.chmod(root, 0o700)
 
@@ -109,6 +110,7 @@ class VoiceStore:
                                            encoding="utf-8")
             shutil.rmtree(d, ignore_errors=True)
             tmp.rename(d)
+            self._on_change(voice_id)
             return Voice(voice_id, name, created, seconds)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -118,4 +120,5 @@ class VoiceStore:
         if not d.exists():
             return False
         shutil.rmtree(d)
+        self._on_change(voice_id)
         return True

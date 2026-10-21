@@ -1,0 +1,53 @@
+"""Sentences already said, per voice: a checked take is kept, so the same sentence plays at once the next time (the quick
+replies, the announcements). The key holds the voice's recording time, so a new recording never plays old takes; deleting
+a voice deletes its takes. At most KEEP takes per voice, the least recently used go first.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import shutil
+from pathlib import Path
+
+KEEP = 400
+
+
+class SpeechCache:
+    def __init__(self, root: Path) -> None:
+        self.root = root
+        root.mkdir(parents=True, exist_ok=True)
+
+    def _path(self, voice_id: str, ref_mtime: float, sentence: str, rate: int) -> Path:
+        key = hashlib.sha256(f"{ref_mtime:.3f}\n{rate}\n{' '.join(sentence.split())}".encode()).hexdigest()[:32]
+        return self.root / voice_id / f"{key}.pcm"
+
+    def get(self, voice_id: str, ref_mtime: float, sentence: str, rate: int) -> bytes | None:
+        p = self._path(voice_id, ref_mtime, sentence, rate)
+        try:
+            data = p.read_bytes()
+        except OSError:
+            return None
+        p.touch()   # used: kept longer
+        return data
+
+    def put(self, voice_id: str, ref_mtime: float, sentence: str, rate: int, pcm: bytes) -> None:
+        p = self._path(voice_id, ref_mtime, sentence, rate)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        tmp = p.with_suffix(".tmp")
+        tmp.write_bytes(pcm)
+        tmp.replace(p)
+        self._prune(p.parent)
+
+    def drop(self, voice_id: str) -> None:
+        shutil.rmtree(self.root / voice_id, ignore_errors=True)
+
+    def count(self, voice_id: str) -> int:
+        d = self.root / voice_id
+        return len(list(d.glob("*.pcm"))) if d.is_dir() else 0
+
+    @staticmethod
+    def _prune(folder: Path) -> None:
+        files = sorted(folder.glob("*.pcm"), key=lambda f: f.stat().st_mtime)
+        for f in files[:max(0, len(files) - KEEP)]:
+            f.unlink(missing_ok=True)
+

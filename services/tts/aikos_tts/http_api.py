@@ -85,6 +85,28 @@ def create_app(store: VoiceStore, engine: Engine, token: str, allowed: Callable[
             raise _error(404, "not_found")
         return web.Response(status=204)
 
+    @routes.post("/v1/prepare")
+    async def prepare(request: web.Request) -> web.Response:
+        """Say these texts once now, in the background, so they play at once later (quick replies, announcements)."""
+        try:
+            body = await request.json()
+            texts = [" ".join(str(t).split()) for t in body.get("texts") or []][:50]
+            ref = store.reference(str(body.get("voice") or ""))
+        except (ValueError, VoiceError, AttributeError):
+            raise _error(400, "bad_request") from None
+        if ref is None:
+            raise _error(404, "voice")
+        texts = [t for t in texts if 0 < len(t) <= SPEAK_MAX]
+
+        def run() -> None:
+            for t in texts:
+                try:
+                    engine.synthesize(t, ref)
+                except Exception as e:  # one sentence that can't be said must not stop the others
+                    _LOGGER.warning("not prepared: %s", e)
+        asyncio.get_running_loop().run_in_executor(None, run)
+        return web.json_response({"queued": len(texts)}, status=202)
+
     @routes.post("/v1/speak")
     async def speak(request: web.Request) -> web.Response:
         try:

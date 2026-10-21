@@ -3,13 +3,17 @@ the house's voice service and nowhere else; the app keeps no copy."""
 
 from __future__ import annotations
 
+import asyncio
+
 from aiohttp import web
 
+from ..ha.door_actions import QUICK_REPLIES
 from ..roles import Cap
 from ..voice import VoiceError
 from .context import api_error, client_ip, ctx, require
 
 routes = web.RouteTableDef()
+_BACKGROUND: set[asyncio.Task] = set()   # kept until done (a task nobody holds may be collected)
 
 AUDIO_TYPES = ("audio/webm", "audio/ogg", "audio/mp4", "audio/mpeg", "audio/wav", "audio/x-wav", "audio/aac")
 AUDIO_MAX = 900 * 1024
@@ -50,7 +54,11 @@ async def enrol(request: web.Request) -> web.Response:
         v = await ctx(request).voices.enrol(user, audio)
     except VoiceError as e:
         raise _fail(e) from None
-    ctx(request).audit.log("voice.enrol", True, user.id, ip=client_ip(request))
+    c = ctx(request)
+    c.audit.log("voice.enrol", True, user.id, ip=client_ip(request))
+    task = asyncio.get_running_loop().create_task(c.voices.prepare(user, list(QUICK_REPLIES)))  # play at once afterwards
+    _BACKGROUND.add(task)
+    task.add_done_callback(_BACKGROUND.discard)
     return web.json_response({"seconds": v.get("seconds"), "created": v.get("created")})
 
 

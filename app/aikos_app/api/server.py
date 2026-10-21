@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from pathlib import Path
@@ -14,10 +15,12 @@ from ..config import Settings
 from ..ha.client import HaClient
 from ..ha.door import QUIET_SWITCH, REGISTER_ENTITY, DoorMessages
 from ..ha.door_actions import ENTITIES as DOOR_ACTION_ENTITIES
+from ..ha.door_actions import QUICK_REPLIES
 from ..ha.door_actions import DoorActions
 from ..push.door_push import DoorPush
 from ..push.sender import PushSender
 from ..push.webpush import new_vapid_key, vapid_public
+from ..roles import Cap, can
 from ..store import Database
 from ..store.accounts import Accounts
 from ..store.audit import Audit
@@ -47,6 +50,15 @@ def build_context(settings: Settings, ha: HaClient | None = None) -> AppContext:
                          settings.entity_someone_at_door)
     return AppContext(settings, db, accounts, sessions, audit, auth, ha, door, pushes, door_push, vapid_public(vapid),
                       DoorActions(ha), Voices(settings.tts_url, settings.tts_token))
+
+
+async def prepare_quick_replies(c: AppContext) -> None:
+    """After a start: the quick replies in every own voice, made in advance (the voice service keeps them)."""
+    if not c.voices.enabled:
+        return
+    for user in c.accounts.list_users():
+        if not user.disabled and can(user.role, Cap.DOOR_ACT) and await c.voices.for_speech(user):
+            await c.voices.prepare(user, list(QUICK_REPLIES))
 
 
 def write_setup_code(c: AppContext) -> Path | None:
@@ -96,6 +108,8 @@ def create_app(settings: Settings, ha: HaClient | None = None) -> web.Applicatio
         app.add_routes(module.routes)
     app.router.add_get("/{tail:.*}", _spa(settings.web_dir or DEFAULT_WEB_DIR))
 
+    background: list[asyncio.Task] = []   # best-effort work after the start (kept so it is not collected)
+
     async def on_startup(_app: web.Application) -> None:
         if not settings.secure_context:
             _LOGGER.warning("public URL %s is neither HTTPS nor localhost: browsers will refuse passkeys",
@@ -107,6 +121,7 @@ def create_app(settings: Settings, ha: HaClient | None = None) -> web.Applicatio
                     REGISTER_ENTITY, QUIET_SWITCH, *DOOR_ACTION_ENTITIES])
         c.door_push.attach()
         await c.ha.start()
+        background.append(asyncio.create_task(prepare_quick_replies(c)))
 
     async def on_cleanup(_app: web.Application) -> None:
         await c.door_push.stop()

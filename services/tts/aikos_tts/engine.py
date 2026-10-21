@@ -13,6 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
+from .cache import SpeechCache
 from .verify import Verdict, WhisperChecker
 
 SENTENCE = re.compile(r"(?<=[.!?…])\s+")
@@ -53,6 +54,7 @@ class Engine:
     def __init__(self, checker: WhisperChecker | None = None) -> None:
         self._lock = threading.Lock()
         self.checker = checker
+        self.cache: SpeechCache | None = None
 
     def synthesize(self, text: str, reference: Path) -> bytes:
         parts = sentences(text)
@@ -68,6 +70,17 @@ class Engine:
         return to_pcm16(np.concatenate(pieces))
 
     def _take(self, sentence: str, reference: Path) -> np.ndarray:
+        if self.cache is None:
+            return self._make(sentence, reference)
+        voice, mtime = reference.parent.name, reference.stat().st_mtime
+        hit = self.cache.get(voice, mtime, sentence, self.rate)
+        if hit is not None:
+            return np.frombuffer(hit, dtype="<i2").astype(np.float32) / 32767.0
+        samples = self._make(sentence, reference)
+        self.cache.put(voice, mtime, sentence, self.rate, to_pcm16(samples))
+        return samples
+
+    def _make(self, sentence: str, reference: Path) -> np.ndarray:
         if self.checker is None:
             return self._generate(sentence, reference, TEMPERATURES[0])
         last = ""

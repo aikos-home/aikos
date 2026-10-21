@@ -5,7 +5,7 @@ Assistant stays the system of record for entities, devices, states, events, soun
 way to them. It signs people in with passkeys, knows who may see and do what, and is the single path from a phone to
 Home Assistant. The phone never gets a Home Assistant token, address or link.
 
-Version **0.5.1** (step 1: sign-in, roles, door messages; step 2: message register, delete, forward by hand, push; step 3: door actions, own voices). Python 3.12+ (aiohttp, py_webauthn); PWA in TypeScript
+Version **0.5.2** (step 1: sign-in, roles, door messages; step 2: message register, delete, forward by hand, push; step 3: door actions, own voices). Python 3.12+ (aiohttp, py_webauthn); PWA in TypeScript
 (Preact, Vite).
 
 Runs on one machine (SQLite) or on three nodes with a replicated database and rollouts of signed images
