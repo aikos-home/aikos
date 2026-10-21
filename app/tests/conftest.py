@@ -23,7 +23,7 @@ ORIGIN = "http://localhost:8780"
 TEST_DB = os.environ.get("AIKOS_TEST_DB", "")
 TEST_DB_USER = os.environ.get("AIKOS_TEST_DB_USER", "")
 TEST_DB_PASSWORD = os.environ.get("AIKOS_TEST_DB_PASSWORD", "")
-_TABLES = ["audit", "sessions", "credentials", "flows", "invites", "setup_codes", "users"]
+_TABLES = ["audit", "sessions", "credentials", "flows", "invites", "setup_codes", "push_subs", "push_sent", "users"]
 
 
 def fresh_db(tmp_path: Path) -> Database:
