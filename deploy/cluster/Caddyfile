@@ -1,0 +1,34 @@
+{
+	admin localhost:2019
+	skip_install_trust
+	servers {
+		# Only the reverse proxy in front of the house may name the client (X-Real-IP below takes it from here).
+		trusted_proxies static {$TRUSTED_PROXIES}
+		trusted_proxies_strict
+	}
+}
+
+# The app for people. Until the certificate for the domain is settled (feature file aikos-app §2.3a), Caddy uses its
+# own CA here and the house's reverse proxy terminates the public certificate in front of it.
+{$AIKOS_DOMAIN} {
+	tls internal
+	encode zstd gzip
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000"
+	}
+	reverse_proxy 127.0.0.1:8780 {
+		header_up X-Real-IP {client_ip}
+	}
+}
+
+# This node's health for keepalived, the rollout and the peers: one path, plain HTTP, on the node's own address.
+http://{$NODE_IP}:8780 {
+	bind {$NODE_IP}
+	handle /api/v1/health {
+		reverse_proxy 127.0.0.1:8780
+	}
+	handle {
+		respond 404
+	}
+}

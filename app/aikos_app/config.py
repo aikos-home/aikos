@@ -19,6 +19,13 @@ class Settings:
     trust_proxy: bool = False
     """Behind the reverse proxy: take the client address from X-Forwarded-For (for the brake and the audit log)."""
     data_dir: Path = Path("data")
+    db_url: str = ""
+    """Empty = SQLite file in the data folder. `rqlites://a:4001,b:4001,c:4001` = rqlite cluster over HTTPS."""
+    db_user: str = ""
+    db_password: str = field(default="", repr=False)
+    db_ca_file: str = ""
+    commit: str = ""
+    """The git commit this build came from (baked into the image); the rollout checks it after an update."""
     rp_name: str = "aikos"
     ha_url: str = ""
     ha_token: str = field(default="", repr=False)
@@ -70,6 +77,11 @@ def from_env(env: dict[str, str] | None = None) -> Settings:
         port=port,
         trust_proxy=e.get("AIKOS_APP_TRUST_PROXY", "") in ("1", "true", "yes"),
         data_dir=Path(e.get("AIKOS_APP_DATA_DIR", "data")),
+        db_url=e.get("AIKOS_APP_DB", ""),
+        db_user=e.get("AIKOS_APP_DB_USER", ""),
+        db_password=_read_secret(e.get("AIKOS_APP_DB_PASSWORD_FILE", "")),
+        db_ca_file=e.get("AIKOS_APP_DB_CA_FILE", ""),
+        commit=e.get("AIKOS_APP_COMMIT", ""),
         rp_name=e.get("AIKOS_APP_RP_NAME", "aikos"),
         ha_url=ha_url.rstrip("/"),
         ha_token=ha_token,

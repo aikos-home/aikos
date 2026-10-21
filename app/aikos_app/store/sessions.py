@@ -24,7 +24,7 @@ class Sessions:
         token = new_token()
         t = now()
         self.db.execute("INSERT INTO sessions(token_hash, user_id, created_at, expires_at, last_seen_at, label)"
-                        " VALUES (?,?,?,?,?,?)", (token_hash(token), user_id, t, t + SESSION_TTL_S, t, label[:120]))
+                        " VALUES (?, ?, ?, ?, ?, ?)", (token_hash(token), user_id, t, t + SESSION_TTL_S, t, label[:120]))
         return token
 
     def resolve(self, token: str) -> Session | None:
@@ -32,7 +32,8 @@ class Sessions:
         if not token:
             return None
         h = token_hash(token)
-        row = self.db.one("SELECT s.user_id, s.expires_at, s.last_seen_at FROM sessions s JOIN users u ON u.id = s.user_id"
+        row = self.db.one("SELECT s.user_id AS user_id, s.expires_at AS expires_at, s.last_seen_at AS last_seen_at"
+                          " FROM sessions s JOIN users u ON u.id = s.user_id"
                           " WHERE s.token_hash = ? AND s.expires_at > ? AND u.disabled_at IS NULL", (h, now()))
         if not row:
             return None

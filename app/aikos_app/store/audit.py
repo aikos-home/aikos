@@ -10,8 +10,8 @@ class Audit:
         self.db = db
 
     def log(self, action: str, ok: bool, user_id: int | None = None, target: str = "", ip: str = "") -> None:
-        self.db.execute("INSERT INTO audit(ts, user_id, action, target, ok, ip) VALUES (?,?,?,?,?,?)",
+        self.db.execute("INSERT INTO audit(ts, user_id, action, target, ok, ip) VALUES (?, ?, ?, ?, ?, ?)",
                         (now(), user_id, action, target[:200], 1 if ok else 0, ip[:64]))
 
     def recent(self, limit: int = 100) -> list[dict]:
-        return [dict(r) for r in self.db.query("SELECT * FROM audit ORDER BY id DESC LIMIT ?", (limit,))]
+        return self.db.query("SELECT * FROM audit ORDER BY id DESC LIMIT ?", (limit,))

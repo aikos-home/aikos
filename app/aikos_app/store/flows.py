@@ -6,7 +6,7 @@ import json
 import secrets
 from dataclasses import dataclass
 
-from . import Database, now
+from . import Database, b64d, b64e, now
 
 FLOW_TTL_S = 5 * 60
 
@@ -25,17 +25,16 @@ class Flows:
 
     def start(self, kind: str, challenge: bytes, data: dict | None = None) -> str:
         flow_id = secrets.token_urlsafe(16)
-        self.db.execute("DELETE FROM flows WHERE expires_at <= ?", (now(),))
-        self.db.execute("INSERT INTO flows(id, kind, challenge, data, expires_at) VALUES (?,?,?,?,?)",
-                        (flow_id, kind, challenge, json.dumps(data or {}), now() + FLOW_TTL_S))
+        self.db.batch([("DELETE FROM flows WHERE expires_at <= ?", (now(),)),
+                       ("INSERT INTO flows(id, kind, challenge, data, expires_at) VALUES (?, ?, ?, ?, ?)",
+                        (flow_id, kind, b64e(challenge), json.dumps(data or {}), now() + FLOW_TTL_S))])
         return flow_id
 
     def take(self, flow_id: str, kind: str) -> Flow | None:
-        """Returns the flow and deletes it in one step; a second call with the same id gets None."""
-        with self.db.tx() as c:
-            row = c.execute("SELECT * FROM flows WHERE id = ? AND kind = ? AND expires_at > ?",
-                            (flow_id, kind, now())).fetchone()
-            c.execute("DELETE FROM flows WHERE id = ?", (flow_id,))
+        """Returns the flow and deletes it; whoever deletes the row owns it, so a second call gets None."""
+        row = self.db.one("SELECT * FROM flows WHERE id = ? AND kind = ? AND expires_at > ?", (flow_id, kind, now()))
         if not row:
             return None
-        return Flow(row["id"], row["kind"], row["challenge"], json.loads(row["data"]))
+        if self.db.execute("DELETE FROM flows WHERE id = ? AND kind = ?", (flow_id, kind)).rowcount != 1:
+            return None
+        return Flow(row["id"], row["kind"], b64d(row["challenge"]), json.loads(row["data"]))
