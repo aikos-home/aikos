@@ -28,6 +28,15 @@ TEST_TRANSCRIPT_DOOR = "sensor.talk_transcript_door_test"
 TEST_CALL = "input_boolean.aikos_test_in_call"
 TEST_NEW_CALL = "input_button.aikos_test_new_call"
 
+# Door message register (aikos-app A10, A15): the door's contracts. The screen names the recipient when a recording starts
+# (screen 0.7.18), the talk computer reports the recording (0.7.23), the recorder saves the MP3 into Home Assistant's local
+# media folder below and tells it with an event. The door transcripts are LIVE_TRANSCRIPT_DOOR.
+DOOR_RECIPIENT_EVENT = "esphome.aikos_door_message"
+DOOR_MESSAGE_RECORDING = "binary_sensor.aikos_intercom_talk_message_recording"
+DOOR_SAVED_EVENT = "aikos_door_message_saved"
+DOOR_FAILED_EVENT = "aikos_door_message_failed"
+DOOR_MEDIA_FOLDER = "aikos_door"
+
 # Requirement 1: the bell doesn't ring after about 8 pm.
 DEFAULT_QUIET_ENABLED = True
 DEFAULT_QUIET_START = time(20, 0)

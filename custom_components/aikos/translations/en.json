@@ -44,6 +44,9 @@
       },
       "call_log_test": {
         "name": "Call log test"
+      },
+      "door_messages": {
+        "name": "Door messages"
       }
     }
   },
@@ -67,6 +70,48 @@
           "front_door": "The door contact the devices follow (opening the front door ends a call). aikos debounces it by 2 s."
         }
       }
+    }
+  },
+  "services": {
+    "door_messages": {
+      "name": "Door messages",
+      "description": "All messages left at the door, newest first (file, time, seconds, recipient, recognised text, speaker, who heard it)."
+    },
+    "door_message_delete": {
+      "name": "Delete door message",
+      "description": "Deletes a door message and its sound file for good.",
+      "fields": {
+        "id": {
+          "name": "Message",
+          "description": "The message's id (its file name without .mp3)."
+        },
+        "by": {
+          "name": "By",
+          "description": "Who deletes it (for the logbook)."
+        }
+      }
+    },
+    "door_message_heard": {
+      "name": "Door message heard",
+      "description": "Notes that a resident has heard the message.",
+      "fields": {
+        "id": {
+          "name": "Message",
+          "description": "The message's id (its file name without .mp3)."
+        },
+        "by": {
+          "name": "By",
+          "description": "Who heard it."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "aikos is not set up."
+    },
+    "unknown_message": {
+      "message": "There is no door message {id}."
     }
   }
 }
