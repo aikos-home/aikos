@@ -256,6 +256,7 @@ class DoorActions:
                                  audio: bytes | None = None, clear_audio: bool = False) -> Greeting:
         g = self.state.greeting
         new = Greeting(**vars(g))
+        new.managed = True
         if enabled is not None:
             new.enabled = enabled
         if text is not None:
@@ -294,6 +295,8 @@ class DoorActions:
 
     async def _sync_greeting_text(self) -> None:
         g = self.state.greeting
+        if not g.managed:  # nobody set a greeting through aikos yet: the screen keeps whatever text it has
+            return
         await self._set_text(DOOR_GREETING_TEXT, g.text if g.in_window(dt_util.now()) and g.text else "")
 
     async def _set_text(self, entity_id: str, value: str) -> None:
