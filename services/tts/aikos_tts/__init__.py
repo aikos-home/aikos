@@ -4,4 +4,4 @@ Home Assistant asks for speech over the Wyoming protocol (its standard TTS link)
 person's voice over a small HTTP API. Voices and audio never leave the machine this runs on.
 """
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"

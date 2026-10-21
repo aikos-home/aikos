@@ -5,7 +5,7 @@ Assistant stays the system of record for entities, devices, states, events, soun
 way to them. It signs people in with passkeys, knows who may see and do what, and is the single path from a phone to
 Home Assistant. The phone never gets a Home Assistant token, address or link.
 
-Version **0.6.0** (step 1: sign-in, roles, door messages; step 2: message register, delete, forward by hand, push; step 3: door actions, own voices, door announcements). Python 3.12+ (aiohttp, py_webauthn); PWA in TypeScript
+Version **0.6.1** (step 1: sign-in, roles, door messages; step 2: message register, delete, forward by hand, push; step 3: door actions, own voices, door announcements). Python 3.12+ (aiohttp, py_webauthn); PWA in TypeScript
 (Preact, Vite).
 
 Runs on one machine (SQLite) or on three nodes with a replicated database and rollouts of signed images
@@ -92,7 +92,8 @@ of them (matrix 2.4a).
 - **Bell:** mute for 1 h, 2 h, until tomorrow 7:00 or until switched off (the ring push still comes, A40); quiet hours on/off,
   start and end.
 - **A note to the door** (A11/A39): shown at once if the radar sees someone, else for the next visitor; quick replies; a waiting
-  note can be withdrawn. Read aloud in the sender's own voice (A42–A45, see below).
+  note can be withdrawn. Read aloud in the sender's own voice (A42–A45, see below); while it is typed, a pause of 0.9 s has
+  its speech made already (`POST /api/v1/door/say/draft`), so it usually plays at once when sent.
 - **Picture** (A12/A41): cropped on the phone to the door's field (fixed 492 : 536; drag, pinch or slider to zoom, grey preview),
   sent as a 984 × 1072 JPEG; aikos turns it into the door's grey PNG, which fills the field. It stays until removed. The preview comes through the app.
 - **Greeting** (A13/A26): text (≤ 120) and/or a sound recorded with the phone (≤ 20 s), always or from–until.

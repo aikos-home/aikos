@@ -4,6 +4,7 @@ Assistant and goes into the audit log."""
 
 from __future__ import annotations
 
+import asyncio
 import re
 
 from aiohttp import web
@@ -17,6 +18,7 @@ routes = web.RouteTableDef()
 _TIME = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 _ZONE = re.compile(r"^zone\.[a-z0-9_]+$")
 SENTENCE_MAX, PLACE_MAX, PLACES_MAX = 200, 40, 20
+_DRAFTS: set[asyncio.Task] = set()   # kept until done (a task nobody holds may be collected)
 PICTURE_TYPES = ("image/jpeg", "image/png", "image/webp")
 AUDIO_TYPES = ("audio/webm", "audio/ogg", "audio/mp4", "audio/mpeg", "audio/wav", "audio/x-wav", "audio/aac")
 PICTURE_MAX = 900 * 1024        # the phone shrinks the photo first; the whole request stays under the app's 1 MB
@@ -115,6 +117,22 @@ async def say(request: web.Request) -> web.Response:
     delivered = await _do(c.door_actions.say(message, user.name, await c.voices.for_speech(user)))
     _audit(request, "door.say", user.id, target=delivered)
     return web.json_response({"delivered": delivered})
+
+
+@routes.post("/api/v1/door/say/draft")
+async def say_draft(request: web.Request) -> web.Response:
+    """The note still being typed: its speech is made now, so it plays at once when it is sent (only with an own voice;
+    nothing reaches the door)."""
+    user = require(request, Cap.DOOR_ACT)
+    message = " ".join(str((await _json(request)).get("message") or "").split())
+    if not message or len(message) > 400:
+        raise api_error(400, "bad_request")
+    c = ctx(request)
+    if await c.voices.for_speech(user):
+        task = asyncio.get_running_loop().create_task(c.voices.prepare(user, [message], draft=True))
+        _DRAFTS.add(task)
+        task.add_done_callback(_DRAFTS.discard)
+    return web.Response(status=202)
 
 
 @routes.delete("/api/v1/door/say")
