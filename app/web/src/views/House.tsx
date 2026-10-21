@@ -3,6 +3,10 @@ import { useEffect, useState } from "preact/hooks";
 import { api, can, ROLE_NAMES, type Passkey, type Person, type Role, type User } from "../api";
 import { addPasskey, errorText } from "../passkey";
 import { Icon } from "./Icon";
+import { LinkPanel } from "./LinkPanel";
+
+const DEVICE_HINT = "Mit der Kamera des Handys scannen, die Seite öffnet sich, dort „Passkey anlegen“. Gilt 24 h und einmal; "
+  + "ein neuer Code macht den alten ungültig.";
 
 export function House({ user, onSignedOut }: { user: User; onSignedOut: () => void }) {
   return (
@@ -20,6 +24,7 @@ export function House({ user, onSignedOut }: { user: User; onSignedOut: () => vo
 function Profile({ user, onSignedOut }: { user: User; onSignedOut: () => void }) {
   const [keys, setKeys] = useState<Passkey[]>([]);
   const [msg, setMsg] = useState("");
+  const [phoneLink, setPhoneLink] = useState("");
   const load = () => api.passkeys().then(setKeys).catch((e) => setMsg(errorText(e)));
   useEffect(() => {
     load();
@@ -31,6 +36,14 @@ function Profile({ user, onSignedOut }: { user: User; onSignedOut: () => void })
       await addPasskey();
       setMsg("Passkey hinzugefügt.");
       load();
+    } catch (e) {
+      setMsg(errorText(e));
+    }
+  };
+  const phone = async () => {
+    setMsg("");
+    try {
+      setPhoneLink((await api.deviceInvite(user.id)).link);
     } catch (e) {
       setMsg(errorText(e));
     }
@@ -70,8 +83,11 @@ function Profile({ user, onSignedOut }: { user: User; onSignedOut: () => void })
         ))}
       </ul>
       <div class="row gap">
+        {can(user, "people.manage") && <button class="primary" onClick={phone}><Icon name="plus" /> Handy hinzufügen</button>}
         <button onClick={add}><Icon name="plus" /> Passkey für dieses Gerät</button>
       </div>
+      {phoneLink && <LinkPanel link={phoneLink} title="Passkey für dein Handy" hint={DEVICE_HINT}
+                               onClose={() => { setPhoneLink(""); load(); }} />}
       {msg && <p class="meta">{msg}</p>}
       <div class="row gap">
         <button onClick={() => out(false)}>Abmelden</button>
@@ -86,7 +102,8 @@ function People({ me }: { me: User }) {
   const [name, setName] = useState("");
   const [role, setRole] = useState<Role>("adult");
   const [haPerson, setHaPerson] = useState("");
-  const [link, setLink] = useState("");
+  const [deviceFor, setDeviceFor] = useState<{ id: number; link: string } | null>(null);
+  const [inviteLink, setInviteLink] = useState("");
   const [msg, setMsg] = useState("");
   const load = () => api.people().then(setPeople).catch((e) => setMsg(errorText(e)));
   useEffect(() => {
@@ -98,7 +115,7 @@ function People({ me }: { me: User }) {
     setMsg("");
     if (!name.trim()) return setMsg("Bitte einen Namen eingeben.");
     try {
-      setLink((await api.invite(name.trim(), role, haPerson.trim())).link);
+      setInviteLink((await api.invite(name.trim(), role, haPerson.trim())).link);
       setName("");
       setHaPerson("");
     } catch (err) {
@@ -106,8 +123,9 @@ function People({ me }: { me: User }) {
     }
   };
   const device = async (p: Person) => {
+    setMsg("");
     try {
-      setLink((await api.deviceInvite(p.id)).link);
+      setDeviceFor({ id: p.id, link: (await api.deviceInvite(p.id)).link });
     } catch (err) {
       setMsg(errorText(err));
     }
@@ -121,32 +139,29 @@ function People({ me }: { me: User }) {
       setMsg(errorText(err));
     }
   };
-  const share = async () => {
-    const canShare = "share" in navigator;
-    try {
-      if (canShare) await navigator.share({ title: "aikos", text: "Deine Einladung zu aikos", url: link });
-      else await navigator.clipboard.writeText(link);
-      setMsg(canShare ? "" : "Link kopiert.");
-    } catch {
-      // closing the share sheet is fine
-    }
-  };
 
   return (
     <section class="pad">
       <h2>Personen</h2>
       <ul class="list plain">
         {people.map((p) => (
-          <li class="row line">
-            <Icon name="user" />
-            <span class={p.disabled ? "muted strike" : ""}>{p.name}</span>
-            <span class="meta">{ROLE_NAMES[p.role]}</span>
-            <span class="grow" />
-            {!p.disabled && <button class="link" onClick={() => device(p)}>Neues Gerät</button>}
-            {!p.disabled && p.id !== me.id && <button class="link danger" onClick={() => block(p)}>Sperren</button>}
+          <li>
+            <div class="row line">
+              <Icon name="user" />
+              <span class={p.disabled ? "muted strike" : ""}>{p.name}</span>
+              <span class="meta">{ROLE_NAMES[p.role]}</span>
+              <span class="grow" />
+              {!p.disabled && <button class="link" onClick={() => device(p)}>Neues Gerät</button>}
+              {!p.disabled && p.id !== me.id && <button class="link danger" onClick={() => block(p)}>Sperren</button>}
+            </div>
+            {deviceFor?.id === p.id && (
+              <LinkPanel link={deviceFor.link} title={`Neues Gerät für ${p.name}`} hint={DEVICE_HINT}
+                         onClose={() => setDeviceFor(null)} />
+            )}
           </li>
         ))}
       </ul>
+      {msg && <p class="meta">{msg}</p>}
       <form class="stack" onSubmit={invite}>
         <h3>Einladen</h3>
         <label>Name<input value={name} onInput={(e) => setName(e.currentTarget.value)} maxLength={40} /></label>
@@ -162,14 +177,10 @@ function People({ me }: { me: User }) {
         </label>
         <button class="primary">Einladung erstellen</button>
       </form>
-      {link && (
-        <div class="note">
-          <p>Einladung (24 h gültig, einmal):</p>
-          <code class="break">{link}</code>
-          <div class="row gap"><button onClick={share}>Teilen</button></div>
-        </div>
+      {inviteLink && (
+        <LinkPanel link={inviteLink} title="Einladung" onClose={() => setInviteLink("")}
+                   hint="Mit dem Handy der Person scannen oder den Link schicken. Gilt 24 h und einmal." />
       )}
-      {msg && <p class="meta">{msg}</p>}
     </section>
   );
 }
