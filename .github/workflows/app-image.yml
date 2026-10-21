@@ -1,7 +1,9 @@
 name: app image
 # Pull requests: build the image and smoke-test it. main: also push it to GHCR and sign it (keyless, cosign).
 # The aikos VMs only run images whose signature names this workflow on main.
+# Manual run (Actions → app image → Run workflow, on main): for a push GitHub did not report (21.10.: lost after a merge).
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
@@ -42,13 +44,13 @@ jobs:
           curl -fsS http://127.0.0.1:8780/ | grep -q '<title>aikos</title>'
           test "$(docker exec app id -u)" = "10001"
           docker rm -f app
-      - if: github.event_name == 'push'
+      - if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - if: github.event_name == 'push'
+      - if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         id: push
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
@@ -60,14 +62,14 @@ jobs:
           provenance: mode=max
           sbom: true
           cache-from: type=gha
-      - if: github.event_name == 'push'
+      - if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: sigstore/cosign-installer@d58896d6a1865668819e1d91763c7751a165e159 # v3.9.2
         with:
           cosign-release: v2.6.5  # the same version the nodes verify with (deploy/cluster/apply.py)
-      - if: github.event_name == 'push'
+      - if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         name: Sign (keyless, bound to this workflow on main)
         run: cosign sign --yes "${IMAGE}@${{ steps.push.outputs.digest }}"
-      - if: github.event_name == 'push'
+      - if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         name: Point main at the signed image
         run: |
           cosign verify --certificate-identity "https://github.com/${{ github.workflow_ref }}"             --certificate-oidc-issuer https://token.actions.githubusercontent.com "${IMAGE}@${{ steps.push.outputs.digest }}" >/dev/null
