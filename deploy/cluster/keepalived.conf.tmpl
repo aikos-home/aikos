@@ -9,8 +9,8 @@ global_defs {
 
 vrrp_script aikos_health {
     script "/usr/local/lib/aikos/check-health"
-    interval 2
-    timeout 3
+    interval 1
+    timeout 2
     fall 2
     rise 2
 }

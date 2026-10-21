@@ -41,6 +41,7 @@ COMPOSE = ["docker", "compose", "--project-name", "aikos", "--env-file", "/etc/a
            "--env-file", str(IMAGE_ENV), "-f", "/opt/aikos/compose.yaml"]
 LOCK_TTL_S = 600
 HEALTH_WAIT_S = 120
+HANDOVER_WAIT_S = 15
 REVISION_LABEL = "org.opencontainers.image.revision"
 
 
@@ -152,6 +153,21 @@ def wait_healthy(url: str, commit: str, seconds: int = HEALTH_WAIT_S) -> bool:
     return False
 
 
+def holds_address(vip: str) -> bool:
+    return bool(vip) and f" {vip}/" in run(["ip", "-4", "-o", "addr"])
+
+
+def hand_over_address(vip: str, seconds: int = HANDOVER_WAIT_S) -> None:
+    """Planned rollout without a gap: with the rollout flag set, keepalived's health check fails here and a peer takes
+    the virtual address (about 2 s). Only then is the app restarted. Without a healthy peer the flag would never move
+    it, but then the rollout does not start at all (peers are checked first)."""
+    end = time.monotonic() + seconds
+    while holds_address(vip) and time.monotonic() < end:
+        time.sleep(0.5)
+    if holds_address(vip):
+        LOG.warning("still holding %s after %d s; restarting anyway", vip, seconds)
+
+
 # docker
 def run(cmd: list[str]) -> str:
     return subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=600).stdout
@@ -202,8 +218,6 @@ def main(argv: list[str] | None = None) -> int:
     if not lock.acquire():
         LOG.info("another node is rolling out; next minute")
         return 0
-    ROLLOUT_FLAG.parent.mkdir(parents=True, exist_ok=True)
-    ROLLOUT_FLAG.write_text(target, encoding="utf-8")  # the heartbeat skips beats instead of reporting down
     try:
         peers = [ip for ip in args.peers.split(",") if ip]
         sick = [ip for ip in peers if health(f"http://{ip}/api/v1/health") is None]
@@ -211,6 +225,10 @@ def main(argv: list[str] | None = None) -> int:
             LOG.warning("peers not healthy (%s); not taking this node down now", ",".join(sick))
             return 0
         LOG.info("rolling out %s", target[:19])
+        # From here this node is out: keepalived hands the address on, the heartbeat skips instead of reporting down.
+        ROLLOUT_FLAG.parent.mkdir(parents=True, exist_ok=True)
+        ROLLOUT_FLAG.write_text(target, encoding="utf-8")
+        hand_over_address(os.environ.get("VIP", ""))
         start(ref)
         commit = revision(ref)
         if wait_healthy(local, commit):

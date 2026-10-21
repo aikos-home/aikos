@@ -35,7 +35,9 @@ All containers use the host network: ports published by Docker would bypass the 
 3. A new digest is checked with `cosign verify` against exactly that workflow identity. Unsigned or foreign: marked bad.
 4. The node takes the cluster-wide lock (one row in rqlite, `INSERT … ON CONFLICT … WHERE`, 10 min lease). Only one
    node changes at a time. If one of the other nodes is not healthy, it waits: a rollout never leaves one node alone.
-5. It starts the new image and waits up to 120 s for `/api/v1/health` with `ok: true` and the commit from the image's
+5. If it holds the virtual address, it hands it over first (its health check fails while it rolls out; a peer takes
+   the address in about 2 s), so a planned rollout has no gap.
+6. It starts the new image and waits up to 120 s for `/api/v1/health` with `ok: true` and the commit from the image's
    `org.opencontainers.image.revision` label. Not healthy: back to the previous digest, the new one is marked bad.
 
 State per node: `/var/lib/aikos/deployer/state.json` (current, previous, bad). Logs: `journalctl -u aikos-deployer`.
@@ -74,7 +76,7 @@ certificates. Template for the inventory: [`cluster.example.toml`](cluster.examp
 
 | What happens | Effect |
 |---|---|
-| One node, VM or host down | keepalived moves the address in about 4 s; rqlite keeps a majority; rollouts wait until it is back |
+| One node, VM or host down | keepalived moves the address in about 2–3 s (measured 21.10. with the old 2 s interval: 4 s); rqlite keeps a majority; rollouts wait until it is back |
 | Two nodes down | rqlite has no majority: the app cannot write (no sign-in); the remaining node keeps the address only if healthy |
 | New image does not start | that node rolls back by itself, marks the digest bad; the other two never take it |
 | Registry or GitHub unreachable | nothing changes; the running version stays |

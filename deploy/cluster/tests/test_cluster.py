@@ -145,3 +145,10 @@ def test_strict_tls_handshake_with_a_node_certificate(tmp_path):
         s.send(b"x")
     t.join(2)
     lsock.close()
+
+
+def test_health_check_hands_the_address_over_during_a_rollout():
+    script = (HERE / "check-health").read_text(encoding="utf-8")
+    assert "[ -e /run/aikos/rollout ] && exit 1" in script and script.index("/run/aikos/rollout") < script.index("curl")
+    conf = files_of(0)["/etc/keepalived/keepalived.conf"].content
+    assert "interval 1" in conf and "fall 2" in conf
