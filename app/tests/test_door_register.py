@@ -136,3 +136,14 @@ async def test_without_the_register_delete_and_heard_say_so(house, fake_ha):
     assert r.status == 503 and (await r.json())["error"] == "no_register"
     r = await house.post("/api/v1/door/messages/nachricht-20261021-084735/heard", who=admin)
     assert r.status == 503
+
+
+async def test_order_follows_the_instant_not_the_text(house, fake_ha):
+    """Regression (ha-dev 21.10.): an adopted message's interim time "13:29+02:00" sorted above a newer register
+    time "12:06+00:00" because the texts were compared."""
+    fake_ha.use_register([msg("20261021-132957", adopted=True, time="2026-10-21T11:29:57+00:00"),
+                          msg("20261021-140900", time="2026-10-21T12:06:00+00:00")])
+    fake_ha.history = {"sensor.aikos_test_last_message": [
+        {"s": "nachricht-20261021-132957.mp3", "a": {"seconds": 4, "time": "2026-10-21T13:29:57+02:00"}, "lu": T0}]}
+    admin, _, _ = await people(house)
+    assert list(await listing(house, admin)) == ["nachricht-20261021-140900", "nachricht-20261021-132957"]

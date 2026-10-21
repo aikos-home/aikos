@@ -68,6 +68,16 @@ def _time_from_name(name: str) -> str:
         return ""
 
 
+def _instant(iso: str) -> float:
+    """For sorting: times come with different zones (register: UTC; interim source: local with offset; file name: local
+    without zone), so compare instants, never the text."""
+    try:
+        t = datetime.fromisoformat(iso)
+    except ValueError:
+        return 0.0
+    return (t if t.tzinfo else t.astimezone()).timestamp()
+
+
 def _seconds(value: Any) -> float | None:
     try:
         return round(float(value), 1)
@@ -90,7 +100,7 @@ class DoorMessages:
 
     async def list(self) -> list[DoorMessage]:
         out = await (self._from_register() if self.has_register else self._from_folder())
-        out.sort(key=lambda d: (d.time, d.id), reverse=True)
+        out.sort(key=lambda d: (_instant(d.time), d.id), reverse=True)
         return out
 
     async def _from_register(self) -> list[DoorMessage]:
