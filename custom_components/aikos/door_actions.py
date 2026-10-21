@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import secrets
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from datetime import datetime, time
 from pathlib import Path
 from typing import Any
@@ -21,7 +21,6 @@ from homeassistant.helpers.network import NoURLAvailableError, get_url
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
-from . import door_speaker, door_voice
 from .const import (
     DOOR_GREETING_TEXT,
     DOOR_MESSAGE_RECORDING,
@@ -29,16 +28,14 @@ from .const import (
     DOOR_SHOW_REPLY,
     DOOR_SOMEONE,
     LIVE_CALL,
-    OPT_TTS,
 )
 from .door_picture import panel_png
 from .door_rules import DoorState, Greeting, Mute, Note, check_window, clean_note, mute_until
+from .door_speech import DoorSpeech, remove, write
 
 _LOGGER = logging.getLogger(__name__)
 STORE_KEY = "aikos.door_actions"
 PICTURE_DIR = ("www", "aikos_door")             # served as /local/aikos_door without login: the picture is public anyway
-GREETING_DIR = "aikos"                          # in Home Assistant's local media (not public)
-SPEECH_PREFIX = "speech-"                        # speech made in advance, next to the greeting sound
 AUDIO_MAX = 3 * 1024 * 1024
 AUDIO_KINDS = {b"\x1aE\xdf\xa3": ".webm", b"OggS": ".ogg", b"RIFF": ".wav", b"ID3": ".mp3", b"\xff\xfb": ".mp3",
                b"\xff\xf3": ".mp3"}
@@ -53,24 +50,14 @@ def _audio_ext(data: bytes) -> str:
     raise ValueError("not a sound file")
 
 
-def _write(path: Path, data: bytes, keep_prefix: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    for old in path.parent.glob(keep_prefix + "*"):
-        if old.name != path.name:
-            old.unlink(missing_ok=True)
-    path.write_bytes(data)
-
-
-def _remove(folder: Path, prefix: str) -> None:
-    if folder.is_dir():
-        for old in folder.glob(prefix + "*"):
-            old.unlink(missing_ok=True)
-
-
 class DoorActions:
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, speech: DoorSpeech) -> None:
         self._hass = hass
         self._entry = entry
+        self._speech = speech
+        self.approach: Callable[[], Awaitable[bool]] | None = None
+        """Asked at an approach without a waiting note: True = it spoke to the visitor (the parcel announcement), so the
+        greeting sound stays quiet this time."""
         self._store: Store[dict[str, Any]] = Store(hass, 1, STORE_KEY)
         self.state = DoorState()
         self._listeners: list[Callable[[], None]] = []
@@ -170,7 +157,7 @@ class DoorActions:
             self.state.note = None
             self._changed()
             if voice:
-                self._background(self._speak_now(text, voice))
+                self._background(self._speech.say_now(text, voice))
             return "now"
         note = Note(message=text, sender=who, since=dt_util.now().isoformat(timespec="seconds"), voice=voice)
         self.state.note = note
@@ -191,47 +178,8 @@ class DoorActions:
     def _background(self, coro) -> None:
         self._entry.async_create_background_task(self._hass, coro, "aikos door speech")
 
-    def _engine(self) -> str:
-        return str(self._entry.options.get(OPT_TTS) or "")
-
-    async def _speech_file(self, text: str, voice: str, kind: str) -> str:
-        """The text in that voice as a file in the greeting folder; "" if there is no voice service or it fails."""
-        engine, folder = self._engine(), self._greeting_folder()
-        if not (engine and voice and text and folder is not None):
-            return ""
-        try:
-            ext, data = await door_voice.synthesize(self._hass, engine, text, voice)
-        except Exception as e:  # the voice service being away must never break the door: the text is shown anyway
-            _LOGGER.warning("aikos: no speech for the door: %s", e)
-            return ""
-        name = f"{SPEECH_PREFIX}{kind}-{secrets.token_hex(6)}.{ext.lstrip('.') or 'mp3'}"
-        await self._hass.async_add_executor_job(_write, folder / name, data, f"{SPEECH_PREFIX}{kind}-")
-        return name
-
-    async def _play_file(self, name: str) -> bool:
-        folder = self._greeting_folder()
-        if not name or folder is None:
-            return False
-        try:
-            await door_speaker.play(self._hass, folder / name)
-            return True
-        except (door_speaker.DoorSpeakerError, OSError) as e:
-            _LOGGER.warning("aikos: not played at the door: %s", e)
-            return False
-
-    async def _remove_speech(self, kind: str) -> None:
-        folder = self._greeting_folder()
-        if folder is not None:
-            await self._hass.async_add_executor_job(_remove, folder, f"{SPEECH_PREFIX}{kind}-")
-
-    async def _speak_now(self, text: str, voice: str) -> None:
-        name = await self._speech_file(text, voice, "now")
-        if name:
-            await self._play_file(name)
-            await self._remove_speech("now")
-
     async def _prepare_note(self, note: Note) -> None:
-        name = await self._speech_file(note.message, note.voice, "note")
+        name = await self._speech.make(note.message, note.voice, "note")
         if not name:
             return
         if self.state.note is note:   # still the same waiting note
@@ -239,11 +187,11 @@ class DoorActions:
             self._changed()
         elif self.state.note is None or not self.state.note.audio:
             # delivered or withdrawn before its speech was ready: nobody will play this file (a newer note's own file stays)
-            await self._remove_speech("note")
+            await self._speech.drop("note")
 
     async def _drop_note_audio(self) -> None:
         if self.state.note is not None and self.state.note.audio:
-            await self._remove_speech("note")
+            await self._speech.drop("note")
 
     async def _show(self, text: str, who: str) -> bool:
         if not self._hass.services.has_service("esphome", DOOR_SHOW_REPLY):
@@ -270,17 +218,19 @@ class DoorActions:
                 self.state.note = None
                 self._changed()
                 if note.audio:
-                    await self._play_file(note.audio)
-                    await self._remove_speech("note")
+                    await self._speech.play(note.audio)
+                    await self._speech.drop("note")
                 elif note.voice:
-                    await self._speak_now(note.message, note.voice)
+                    await self._speech.say_now(note.message, note.voice)
             return  # the note is this visit's message; no greeting sound on top of it
+        if self.approach is not None and await self.approach():
+            return  # the parcel announcement was this visit's sound
         g = self.state.greeting
         busy = any((s := self._hass.states.get(e)) is not None and s.state == "on" for e in (LIVE_CALL, DOOR_MESSAGE_RECORDING))
         now = dt_util.now()
         if not g.may_play(now, busy):
             return
-        if not await self._play_file(g.sound):
+        if not await self._speech.play(g.sound):
             return
         g.last_played = now.isoformat(timespec="seconds")
         self._changed()
@@ -301,23 +251,19 @@ class DoorActions:
     async def async_set_picture(self, data: bytes) -> str:
         png = await self._hass.async_add_executor_job(panel_png, data)
         name = f"foto-{secrets.token_hex(8)}.png"
-        await self._hass.async_add_executor_job(_write, self._picture_folder() / name, png, "foto-")
+        await self._hass.async_add_executor_job(write, self._picture_folder() / name, png, "foto-")
         self.state.picture = name
         await self._set_text(DOOR_PHOTO_URL, self._base_url() + self.picture_path())
         self._changed()
         return self.picture_path()
 
     async def async_clear_picture(self) -> None:
-        await self._hass.async_add_executor_job(_remove, self._picture_folder(), "foto-")
+        await self._hass.async_add_executor_job(remove, self._picture_folder(), "foto-")
         self.state.picture = ""
         await self._set_text(DOOR_PHOTO_URL, "")
         self._changed()
 
     # the greeting (A13/A26)
-    def _greeting_folder(self) -> Path | None:
-        local = self._hass.config.media_dirs.get("local")
-        return Path(local) / GREETING_DIR if local else None
-
     async def async_set_greeting(self, *, enabled: bool | None = None, text: str | None = None,
                                  start: datetime | None = None, end: datetime | None = None, clear_window: bool = False,
                                  audio: bytes | None = None, clear_audio: bool = False, voice: str | None = None) -> Greeting:
@@ -338,22 +284,22 @@ class DoorActions:
             new.end = dt_util.as_local(end).isoformat(timespec="seconds")
         check_window(datetime.fromisoformat(new.start) if new.start else None,
                      datetime.fromisoformat(new.end) if new.end else None)
-        folder = self._greeting_folder()
+        folder = self._speech.folder()
         if audio is not None:
             if folder is None:
                 raise ValueError("no local media folder")
             if len(audio) > AUDIO_MAX:
                 raise ValueError("sound file too large")
             name = f"greeting-{secrets.token_hex(6)}{_audio_ext(audio)}"
-            await self._hass.async_add_executor_job(_write, folder / name, audio, "greeting-")
+            await self._hass.async_add_executor_job(write, folder / name, audio, "greeting-")
             new.audio, new.last_played = name, ""
         elif clear_audio:
             if folder is not None:
-                await self._hass.async_add_executor_job(_remove, folder, "greeting-")
+                await self._hass.async_add_executor_job(remove, folder, "greeting-")
             new.audio = ""
         if (new.text, new.voice) != (g.text, g.voice) or not new.voice:
             new.tts_audio = ""   # the read-aloud text no longer fits: made again below
-            await self._remove_speech("greeting")
+            await self._speech.drop("greeting")
         self.state.greeting = new
         self._changed()
         await self._sync_greeting_text()
@@ -362,7 +308,7 @@ class DoorActions:
         return new
 
     async def _prepare_greeting(self, g: Greeting) -> None:
-        name = await self._speech_file(g.text, g.voice, "greeting")
+        name = await self._speech.make(g.text, g.voice, "greeting")
         if self.state.greeting is g and name:   # nobody changed the greeting meanwhile
             g.tts_audio = name
             self._changed()

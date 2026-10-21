@@ -1,5 +1,6 @@
-"""Door actions (rules A11–A14, A39–A41): bell mute and quiet hours (`bell.settings`); a note to the door, the door picture
-and the greeting (`door.act`). Every write names the acting person for Home Assistant and goes into the audit log."""
+"""Door actions (rules A11–A14, A39–A41): bell mute and quiet hours (`bell.settings`); a note to the door, the door picture,
+the greeting and the door announcements (`door.act`; sprachausgabe S10–S14). Every write names the acting person for Home
+Assistant and goes into the audit log."""
 
 from __future__ import annotations
 
@@ -7,13 +8,15 @@ import re
 
 from aiohttp import web
 
-from ..ha.door_actions import NoDoorActions, actions_state
+from ..ha.door_actions import SITUATIONS, NoDoorActions, actions_state
 from ..roles import Cap
 from .context import api_error, client_ip, ctx, current_user, require
 
 routes = web.RouteTableDef()
 
 _TIME = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+_ZONE = re.compile(r"^zone\.[a-z0-9_]+$")
+SENTENCE_MAX, PLACE_MAX, PLACES_MAX = 200, 40, 20
 PICTURE_TYPES = ("image/jpeg", "image/png", "image/webp")
 AUDIO_TYPES = ("audio/webm", "audio/ogg", "audio/mp4", "audio/mpeg", "audio/wav", "audio/x-wav", "audio/aac")
 PICTURE_MAX = 900 * 1024        # the phone shrinks the photo first; the whole request stays under the app's 1 MB
@@ -52,8 +55,8 @@ async def _do(coro):
 
 @routes.get("/api/v1/door/actions")
 async def state(request: web.Request) -> web.Response:
-    current_user(request)
-    return web.json_response(actions_state(ctx(request).ha))
+    user = current_user(request)
+    return web.json_response(actions_state(ctx(request).ha, user.ha_person))
 
 
 # bell mute and quiet hours
@@ -189,6 +192,54 @@ async def put_greeting(request: web.Request) -> web.Response:
         data["voice"] = await ctx(request).voices.for_speech(user)
     await _do(ctx(request).door_actions.set_greeting(data))
     _audit(request, "door.greeting", user.id)
+    return web.Response(status=204)
+
+
+# the door announcements
+def _sentence(value: object) -> str:
+    text = " ".join(str(value or "").split())
+    if len(text) > SENTENCE_MAX:
+        raise api_error(400, "bad_request")
+    return text
+
+
+@routes.put("/api/v1/door/announcements")
+async def put_announcements(request: web.Request) -> web.Response:
+    """Sentences, level, places; `name_me` = the caller agrees (or no longer) that the door names their own place. Nobody
+    can agree for another person."""
+    user = require(request, Cap.DOOR_ACT)
+    body = await _json(request)
+    c = ctx(request)
+    data: dict = {}
+    if "disclosure" in body:
+        level = body["disclosure"]
+        if not isinstance(level, int) or isinstance(level, bool) or not 0 <= level <= 4:
+            raise api_error(400, "bad_request")
+        data["disclosure"] = level
+    for key in (*SITUATIONS, "away_places"):
+        if key in body:
+            data[key] = _sentence(body[key])
+    if "places" in body:
+        places = body["places"]
+        if not isinstance(places, dict) or len(places) > PLACES_MAX:
+            raise api_error(400, "bad_request")
+        data["places"] = {}
+        for zone, phrase in places.items():
+            text = " ".join(str(phrase or "").split())
+            if not _ZONE.match(str(zone)) or len(text) > PLACE_MAX:
+                raise api_error(400, "bad_request")
+            data["places"][zone] = text
+    if "name_me" in body:
+        if not isinstance(body["name_me"], bool) or not user.ha_person:
+            raise api_error(400, "bad_request")
+        named = [p for p in c.door_actions.named() if p != user.ha_person]
+        data["named"] = named + [user.ha_person] if body["name_me"] else named
+    if any(k in data for k in (*SITUATIONS, "away_places")):   # the sentences are said in the voice of whoever saved them
+        data["voice"] = await c.voices.for_speech(user)
+    if not data:
+        raise api_error(400, "bad_request")
+    await _do(c.door_actions.set_announcements(data))
+    _audit(request, "door.announcements", user.id, target=",".join(sorted(data)))
     return web.Response(status=204)
 
 

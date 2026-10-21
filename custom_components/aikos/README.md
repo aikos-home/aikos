@@ -1,7 +1,7 @@
 # aikos integration for Home Assistant
 
-The household logic of aikos, installed via HACS. Version **0.10.1**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
-front door (0.5.0, tag `aikos-v0.5.0`), the mic health warning (0.7.0), the door message register (0.8.0), the door actions (0.9.0) and reading aloud in the residents' own voices (0.10.0). More blocks follow (where the bell
+The household logic of aikos, installed via HACS. Version **0.11.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
+front door (0.5.0, tag `aikos-v0.5.0`), the mic health warning (0.7.0), the door message register (0.8.0), the door actions (0.9.0), reading aloud in the residents' own voices (0.10.0) and the door announcements (0.11.0). More blocks follow (where the bell
 rings, presence, alarm, pairing of devices); each comes as a new version.
 
 ## Install
@@ -160,6 +160,27 @@ it uses the door's contracts and only writes the door entities named here.
 - **A waiting note goes first:** at that visit no greeting sound plays on top of it.
 - **The screen's greeting text** is left alone until a greeting is set through aikos once; from then on aikos owns it.
 
+### Door announcements (0.11.0, sprachausgabe S10–S14)
+
+After a ring the door says one sentence in a resident's own voice when a situation applies. The residents write the sentences
+(in the aikos app); aikos only picks which one, no model decides what is said. Default: level 0 = nothing is said.
+
+| Interface | Meaning |
+|---|---|
+| `number.aikos_door_disclosure` | 0–4, what the door may tell: 0 nothing; 1 that nobody can come or nobody is home, where to leave a parcel; 2, 3 as 1 for now; 4 also where the residents are (only residents in `named`, only zones in `places`) |
+| `aikos.door_announcements {disclosure, parcel, away, quiet, away_places, places, named, voice}` | Sets what is given (sentences ≤ 200; `away_places` needs `{wo}`, replaced by "A ist beim Laden und B ist im Studio"; `places` = zone → how the door says it, ≤ 20; `named` = person ids who agreed; `voice` = whose voice says them). Returns the settings |
+| `sensor.aikos_door_announcements` | What a ring would get now: `parcel` / `away` / `quiet` / `none`; attributes the settings, `now_text`, `ready` (sentences made in advance), `last` {situation, text, at}, `zones` and `residents` to choose from |
+| Option **Parcel expected (sensor)** | A binary sensor or input boolean, on while a delivery is expected today |
+| Event `aikos_door_announced {situation, text}`, logbook "angesagt: …" | After each announcement |
+
+- **Situations,** the first that applies and has a sentence wins: **parcel** (the parcel sensor is on; this one also speaks when
+  someone only comes close, instead of the greeting sound, S14), **away** (every resident is known to be away; unknown is not
+  away), **quiet** (bell muted or quiet hours).
+- **Made in advance:** every sentence the level allows, as it would be said now, is made when saved and again 5 s after the
+  residents move (`<local media>/aikos/speech-announce-*`). A ring before that: the sentence is made on the spot (a little later).
+- **When:** 1.5 s after the ring; not during a call or a message; a second ring within 60 s gets no second announcement. Without
+  a voice or a voice service nothing is said.
+
 ## Errors
 
 | Case | What happens |
@@ -176,6 +197,8 @@ it uses the door's contracts and only writes the door entities named here.
 | The door screen is offline when a note is sent | The note waits (`waiting`) and goes at the next visit |
 | A door text entity is unavailable | Not written; the greeting text is set again when the screen comes back |
 | The talk computer is not reachable | The greeting sound is skipped (warning in the log); it is tried at the next visit |
+| The voice service is away when an announcement is due | Nothing is said (warning in the log); the ring push goes as always |
+| `away_places` without `{wo}`, `{wo}` in another sentence, level outside 0–4 | The service fails with "Geht nicht: …"; nothing changes |
 | Not a picture / not a sound file / end before start | The service fails with "Geht nicht: …"; nothing changes |
 
 ## Structure
@@ -202,6 +225,10 @@ it uses the door's contracts and only writes the door entities named here.
 | `door_entities.py` | The door actions' entities |
 | `door_picture.py` | Photo → the panel's grey PNG (Pillow) |
 | `door_speaker.py` | A sound file to the door speaker (ffmpeg, RTP) |
+| `door_speech.py` | Speech in a resident's voice as a file, played at the door (notes, greeting, announcements) |
+| `announce_rules.py` | The announcements' rules (level, situations, places), no Home Assistant code |
+| `door_announce.py` | The announcements in Home Assistant: ring, radar, residents, made in advance |
+| `announce_entities.py`, `number.py` | The announcements' sensor and the disclosure slider |
 | `services.py` | The services for the aikos app |
 | `config_flow.py`, `__init__.py` | Setting up and removing aikos |
 
@@ -212,6 +239,8 @@ it uses the door's contracts and only writes the door entities named here.
 
 ## History
 
+- 0.11.0: door announcements after a ring in a resident's own voice (parcel, away with places, quiet), the disclosure slider
+  `number.aikos_door_disclosure` (default 0 = nothing), option "Parcel expected (sensor)".
 - 0.10.1: a note shown before its speech was ready no longer leaves the speech file behind.
 - 0.10.0: notes and the greeting read aloud in the sender's own voice through a local TTS (option "Voice service"); speech made
   in advance for waiting notes and the greeting.

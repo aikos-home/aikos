@@ -40,11 +40,29 @@ export interface DoorStatus {
   ha_connected: boolean;
 }
 
+export interface DoorAnnouncements {
+  now: "parcel" | "away" | "quiet" | "none";
+  now_text: string;
+  disclosure: number;
+  parcel: string;
+  away: string;
+  quiet: string;
+  away_places: string;
+  places: Record<string, string>;
+  voice: boolean;
+  ready: string[];
+  last: { situation?: string; text?: string; at?: string };
+  zones: { id: string; name: string }[];
+  residents: { id: string; name: string; named: boolean }[];
+  me: { resident: boolean; named: boolean };
+}
+
 export interface DoorActionsState {
   note: { message: string; sender: string; since: string } | null;
   greeting: { state: "active" | "scheduled" | "off"; enabled: boolean; text: string; start: string; end: string; audio: boolean };
   picture: boolean;
   quick: string[];
+  announcements: DoorAnnouncements | null;
 }
 
 export interface MyVoice {
@@ -120,10 +138,15 @@ async function upload<T = void>(method: string, path: string, blob: Blob): Promi
   return data as T;
 }
 
-async function binary(method: string, path: string): Promise<Blob> {
+async function binary(method: string, path: string, body?: unknown): Promise<Blob> {
   let response: Response;
   try {
-    response = await fetch(path, { method, credentials: "same-origin" });
+    response = await fetch(path, {
+      method,
+      credentials: "same-origin",
+      headers: body === undefined ? {} : { "Content-Type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
   } catch {
     throw new ApiError("network", 0);
   }
@@ -195,7 +218,9 @@ export const api = {
   myVoice: () => call<MyVoice>("GET", "/api/v1/me/voice"),
   putMyVoice: (blob: Blob) => upload<{ seconds: number; created: number }>("PUT", "/api/v1/me/voice", blob),
   deleteMyVoice: () => call<unknown>("DELETE", "/api/v1/me/voice"),
-  myVoiceSample: () => binary("POST", "/api/v1/me/voice/sample"),
+  myVoiceSample: (text?: string) => binary("POST", "/api/v1/me/voice/sample", text ? { text } : undefined),
+  putAnnouncements: (body: { disclosure?: number; parcel?: string; away?: string; quiet?: string; away_places?: string;
+    places?: Record<string, string>; name_me?: boolean }) => call<unknown>("PUT", "/api/v1/door/announcements", body),
   deleteGreetingAudio: () => call<unknown>("DELETE", "/api/v1/door/greeting/audio"),
   deleteMessage: (id: string) => call<unknown>("DELETE", `/api/v1/door/messages/${encodeURIComponent(id)}`),
   pushKey: () => call<{ key: string }>("GET", "/api/v1/push/key"),

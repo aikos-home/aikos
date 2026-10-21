@@ -1,6 +1,7 @@
 """Door actions through the aikos integration (aikos 0.9.0+; rules A11–A14, A39–A41): bell mute, quiet hours, a note to
-the door, the door picture, the greeting. Each is exactly one aikos service; the entity ids are the integration's fixed ids
-(the same in every house). The caller has checked the person's rights.
+the door, the door picture, the greeting; the door announcements (aikos 0.11.0+, sprachausgabe S10–S14). Each is exactly one
+aikos service; the entity ids are the integration's fixed ids (the same in every house). The caller has checked the person's
+rights.
 """
 
 from __future__ import annotations
@@ -15,7 +16,9 @@ QUICK_REPLIES = ("Komme sofort.", "Bitte vor die Tür legen.", "Moment bitte.")
 NOTE = "sensor.aikos_door_note"
 GREETING = "sensor.aikos_door_greeting"
 PICTURE = "sensor.aikos_door_picture"
-ENTITIES = (NOTE, GREETING, PICTURE)
+ANNOUNCE = "sensor.aikos_door_announcements"
+ENTITIES = (NOTE, GREETING, PICTURE, ANNOUNCE)
+SITUATIONS = ("parcel", "away", "quiet")
 PICTURE_PREFIX = "/local/aikos_door/"
 GREETING_FOLDER = "media-source://media_source/local/aikos"
 
@@ -28,7 +31,27 @@ def _attrs(ha: HaClient, entity_id: str) -> dict[str, Any]:
     return dict((ha.state(entity_id) or {}).get("attributes") or {})
 
 
-def actions_state(ha: HaClient) -> dict[str, Any] | None:
+def announcements_state(ha: HaClient, person: str = "") -> dict[str, Any] | None:
+    """The announcements as the app shows them; `me` = whether the caller (their Home Assistant person) is a resident and
+    has agreed that the door names their place. None without aikos 0.11.0."""
+    st = ha.state(ANNOUNCE)
+    if st is None:
+        return None
+    a = dict(st.get("attributes") or {})
+    residents = [{"id": str(r.get("id") or ""), "name": str(r.get("name") or "")} for r in a.get("residents") or []]
+    named = [str(p) for p in a.get("named") or []]
+    return {
+        "now": st.get("state") or "none", "now_text": a.get("now_text") or "",
+        "disclosure": int(a.get("disclosure") or 0), **{s: a.get(s) or "" for s in SITUATIONS},
+        "away_places": a.get("away_places") or "", "places": dict(a.get("places") or {}),
+        "voice": bool(a.get("voice")), "ready": list(a.get("ready") or []), "last": dict(a.get("last") or {}),
+        "zones": [{"id": str(z.get("id") or ""), "name": str(z.get("name") or "")} for z in a.get("zones") or []],
+        "residents": [{**r, "named": r["id"] in named} for r in residents],
+        "me": {"resident": any(r["id"] == person for r in residents) if person else False, "named": person in named},
+    }
+
+
+def actions_state(ha: HaClient, person: str = "") -> dict[str, Any] | None:
     """What the app shows of the door actions; None without aikos 0.9.0."""
     if ha.state(NOTE) is None:
         return None
@@ -43,6 +66,7 @@ def actions_state(ha: HaClient) -> dict[str, Any] | None:
                      "audio": bool(g.get("audio"))},
         "picture": bool(pic.get("path")),
         "quick": list(QUICK_REPLIES),
+        "announcements": announcements_state(ha, person),
     }
 
 
@@ -98,6 +122,15 @@ class DoorActions:
 
     async def clear_greeting_audio(self) -> None:
         await self._call("door_greeting", {"clear_audio": True}, response=True)
+
+    # the door announcements (S10–S14)
+    def named(self) -> list[str]:
+        return [str(p) for p in _attrs(self.ha, ANNOUNCE).get("named") or []]
+
+    async def set_announcements(self, data: dict[str, Any]) -> None:
+        if self.ha.state(ANNOUNCE) is None:
+            raise NoDoorActions("no door announcements")
+        await self._call("door_announcements", data, response=True)
 
     async def greeting_audio_link(self) -> str:
         name = str(_attrs(self.ha, GREETING).get("audio_file") or "")

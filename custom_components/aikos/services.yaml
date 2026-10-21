@@ -94,3 +94,34 @@ door_greeting:
     voice:
       selector:
         text:
+door_announcements:
+  fields:
+    disclosure:
+      selector:
+        number:
+          min: 0
+          max: 4
+          mode: slider
+    parcel:
+      selector:
+        text:
+    away:
+      selector:
+        text:
+    quiet:
+      selector:
+        text:
+    away_places:
+      selector:
+        text:
+    places:
+      selector:
+        object:
+    named:
+      selector:
+        entity:
+          domain: person
+          multiple: true
+    voice:
+      selector:
+        text:

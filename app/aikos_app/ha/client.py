@@ -37,6 +37,7 @@ ALLOWED_SERVICES = frozenset({
     ("aikos", "door_picture"),
     ("aikos", "door_picture_clear"),
     ("aikos", "door_greeting"),
+    ("aikos", "door_announcements"),
 })
 """The services the app may call, each behind one endpoint that checks the person's rights first (rule G2)."""
 

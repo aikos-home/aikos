@@ -1,0 +1,91 @@
+"""Speech at the door in a resident's own voice (aikos-app A42–A45, sprachausgabe S10): a text is made into a sound file
+in Home Assistant's local media folder (`<media>/aikos/speech-<kind>-…`) through the configured TTS service, and played
+through the door speaker. Used by the door actions (note, greeting) and the announcements.
+
+The voice service or the door being away never breaks anything: then there is no file, or nothing is played.
+"""
+from __future__ import annotations
+
+import logging
+import secrets
+from pathlib import Path
+
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+
+from . import door_speaker, door_voice
+from .const import OPT_TTS
+
+_LOGGER = logging.getLogger(__name__)
+FOLDER = "aikos"            # in Home Assistant's local media (not public)
+PREFIX = "speech-"          # speech made in advance, next to the greeting sound
+
+
+def write(path: Path, data: bytes, keep_prefix: str) -> None:
+    """Write the file and remove the older ones of the same kind."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    for old in path.parent.glob(keep_prefix + "*"):
+        if old.name != path.name:
+            old.unlink(missing_ok=True)
+    path.write_bytes(data)
+
+
+def remove(folder: Path, prefix: str) -> None:
+    if folder.is_dir():
+        for old in folder.glob(prefix + "*"):
+            old.unlink(missing_ok=True)
+
+
+class DoorSpeech:
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+        self._hass = hass
+        self._entry = entry
+
+    def folder(self) -> Path | None:
+        local = self._hass.config.media_dirs.get("local")
+        return Path(local) / FOLDER if local else None
+
+    def _engine(self) -> str:
+        return str(self._entry.options.get(OPT_TTS) or "")
+
+    async def make(self, text: str, voice: str, kind: str) -> str:
+        """The text in that voice as a file (its name in the folder); "" without a voice service, voice or text, or if
+        the service fails. A new file of a kind replaces the older one."""
+        engine, folder = self._engine(), self.folder()
+        if not (engine and voice and text and folder is not None):
+            return ""
+        try:
+            ext, data = await door_voice.synthesize(self._hass, engine, text, voice)
+        except Exception as e:  # the voice service being away must never break the door: the text is shown anyway
+            _LOGGER.warning("aikos: no speech for the door: %s", e)
+            return ""
+        name = f"{PREFIX}{kind}-{secrets.token_hex(6)}.{ext.lstrip('.') or 'mp3'}"
+        await self._hass.async_add_executor_job(write, folder / name, data, f"{PREFIX}{kind}-")
+        return name
+
+    async def play(self, name: str) -> bool:
+        """Play a file of the folder at the door; False if it isn't there or the door doesn't take it."""
+        folder = self.folder()
+        if not name or folder is None:
+            return False
+        try:
+            await door_speaker.play(self._hass, folder / name)
+            return True
+        except (door_speaker.DoorSpeakerError, OSError) as e:
+            _LOGGER.warning("aikos: not played at the door: %s", e)
+            return False
+
+    async def drop(self, kind: str) -> None:
+        """Remove the speech files of a kind."""
+        folder = self.folder()
+        if folder is not None:
+            await self._hass.async_add_executor_job(remove, folder, f"{PREFIX}{kind}-")
+
+    async def say_now(self, text: str, voice: str, kind: str = "now") -> bool:
+        """Make, play and remove a one-off sentence."""
+        name = await self.make(text, voice, kind)
+        if not name:
+            return False
+        played = await self.play(name)
+        await self.drop(kind)
+        return played

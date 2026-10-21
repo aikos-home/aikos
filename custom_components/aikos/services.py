@@ -3,6 +3,8 @@
 Door message register: `aikos.door_messages` returns the list; `aikos.door_message_delete` deletes a message and its MP3;
 `aikos.door_message_heard` notes who heard it (A15, A38); `by` is the resident's name for the record.
 Door actions (A11–A14, A39–A41): bell mute, quiet hours, a note to the door, the door picture, the greeting.
+Door announcements (sprachausgabe S10–S14): `aikos.door_announcements` sets the sentences, the disclosure level, the places
+that may be named and who agreed to it; only the fields given change.
 """
 from __future__ import annotations
 
@@ -17,8 +19,10 @@ from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, Supp
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
+from .announce_rules import LEVEL_MAX, PLACE_MAX, PLACES_MAX, SITUATIONS, TEXT_MAX
 from .const import DOMAIN
 from .door_actions import DoorActions
+from .door_announce import DoorAnnouncer
 from .door_picture import PictureError
 from .door_rules import GREETING_MAX, MUTE_MAX_MINUTES, NOTE_MAX, SENDER_MAX
 from .message_register import DoorMessageRegister
@@ -41,6 +45,10 @@ def _register(hass: HomeAssistant) -> DoorMessageRegister:
 
 def _door(hass: HomeAssistant) -> DoorActions:
     return _loaded(hass).door_actions
+
+
+def _announcer(hass: HomeAssistant) -> DoorAnnouncer:
+    return _loaded(hass).door_announcer
 
 
 def _invalid(reason: str) -> ServiceValidationError:
@@ -91,6 +99,15 @@ _GREETING = vol.Schema({vol.Optional("enabled"): cv.boolean,
                         vol.Optional("start"): cv.datetime, vol.Optional("end"): cv.datetime,
                         vol.Optional("clear_window", default=False): cv.boolean,
                         vol.Optional("audio"): cv.string, vol.Optional("clear_audio", default=False): cv.boolean,
+                        vol.Optional("voice"): _VOICE})
+_SENTENCE = vol.All(cv.string, vol.Length(max=TEXT_MAX))
+_ANNOUNCE = vol.Schema({vol.Optional("disclosure"): vol.All(vol.Coerce(int), vol.Range(min=0, max=LEVEL_MAX)),
+                        **{vol.Optional(s): _SENTENCE for s in SITUATIONS},
+                        vol.Optional("away_places"): _SENTENCE,
+                        vol.Optional("places"): vol.All(
+                            {vol.Match(r"^zone\.[a-z0-9_]+$"): vol.All(cv.string, vol.Length(max=PLACE_MAX))},
+                            vol.Length(max=PLACES_MAX)),
+                        vol.Optional("named"): vol.All(cv.ensure_list, [vol.Match(r"^person\.[a-z0-9_]+$")]),
                         vol.Optional("voice"): _VOICE})
 
 
@@ -145,6 +162,18 @@ async def _greeting(call: ServiceCall) -> ServiceResponse:
     return {"enabled": g.enabled, "text": g.text, "start": g.start, "end": g.end, "audio": bool(g.audio)}
 
 
+async def _announcements(call: ServiceCall) -> ServiceResponse:
+    d = call.data
+    texts = {s: d[s] for s in SITUATIONS if s in d}
+    try:
+        a = await _announcer(call.hass).async_set(disclosure=d.get("disclosure"), texts=texts or None,
+                                                  away_places=d.get("away_places"), places=d.get("places"),
+                                                  named=d.get("named"), voice=d.get("voice"))
+    except ValueError as e:
+        raise _invalid(str(e)) from None
+    return {**a.to_dict(), "voice": bool(a.voice)}
+
+
 def async_setup_services(hass: HomeAssistant) -> None:
     hass.services.async_register(DOMAIN, LIST, _list, schema=vol.Schema({}), supports_response=SupportsResponse.ONLY)
     hass.services.async_register(DOMAIN, DELETE, _delete, schema=_ONE, supports_response=SupportsResponse.OPTIONAL)
@@ -158,3 +187,4 @@ def async_setup_services(hass: HomeAssistant) -> None:
     reg(DOMAIN, "door_picture", _picture, schema=_PICTURE, supports_response=SupportsResponse.OPTIONAL)
     reg(DOMAIN, "door_picture_clear", _picture_clear, schema=vol.Schema({}))
     reg(DOMAIN, "door_greeting", _greeting, schema=_GREETING, supports_response=SupportsResponse.OPTIONAL)
+    reg(DOMAIN, "door_announcements", _announcements, schema=_ANNOUNCE, supports_response=SupportsResponse.OPTIONAL)

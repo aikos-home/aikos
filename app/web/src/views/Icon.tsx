@@ -19,6 +19,7 @@ const PATHS: Record<string, string> = {
   key: "M15 9a4 4 0 1 1-3.5 6L5 21H3v-2l6.5-6.5A4 4 0 0 1 15 9zM16 8v.01",
   user: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
   plus: "M12 5v14M5 12h14",
+  speaker: "M4 9h4l5-4v14l-5-4H4zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11",
 };
 
 export function Icon({ name }: { name: string }) {

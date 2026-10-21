@@ -1,5 +1,6 @@
 """The call log sensors: `sensor.aikos_call_log` (live) and `sensor.aikos_call_log_test` (bench, test entities only); the door
-message register's `sensor.aikos_door_messages`; the door actions' note, greeting and picture (door_entities.py).
+message register's `sensor.aikos_door_messages`; the door actions' note, greeting and picture (door_entities.py); the door
+announcements (announce_entities.py).
 
 Contract for the devices (unchanged from the former package): attributes `call_id`, `active`, `last_id`, `messages`,
 `messages_json` (newest 10, JSON text; per message `id`, `side` door/room, `who`, `text`; new since 0.6.0: `tr`, `tr_lang`),
@@ -26,6 +27,7 @@ from .const import (
     TEST_TRANSCRIPT_DOOR,
     TEST_TRANSCRIPT_ROOM,
 )
+from .announce_entities import DoorAnnouncements
 from .door_entities import DoorGreeting, DoorNote, DoorPicture
 from .entity import AikosEntity
 
@@ -39,6 +41,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: AikosConfigEntry, async_
         DoorMessagesSensor(entry),
         DoorNote(entry, "door_note", "sensor.aikos_door_note"),
         DoorGreeting(entry, "door_greeting", "sensor.aikos_door_greeting"),
+        DoorAnnouncements(entry, "door_announcements", "sensor.aikos_door_announcements"),
         DoorPicture(entry, "door_picture", "sensor.aikos_door_picture"),
     ])
 

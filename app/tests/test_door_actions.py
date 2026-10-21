@@ -131,3 +131,48 @@ async def test_status_shows_mute_end_and_quiet_switch(house, fake_ha):
     admin, _, _ = await people(house)
     s = await (await house.get("/api/v1/door/status", admin)).json()
     assert s["bell_muted"] is True and s["bell_muted_until"] == "2026-10-21T16:00:00+02:00" and s["quiet_enabled"] is False
+
+
+async def test_announcements_sentences_level_and_own_consent(house, fake_ha):
+    """S10–S14: the sentences are said in the saver's voice; each person agrees only for themselves that their place is named."""
+    door(fake_ha)
+    fake_ha.use_announcements()
+    admin, _, _ = await people(house)
+    _, sam = await house.redeem(await house.invite(admin, "Sam2", "adult", "person.aikos_test_sam"), SoftAuthenticator(ORIGIN))
+    state = (await (await house.get("/api/v1/door/actions", sam)).json())["announcements"]
+    assert state["me"] == {"resident": True, "named": False} and state["zones"] == [{"id": "zone.laden", "name": "Laden"}]
+    body = {"disclosure": 4, "away": "Wir sind nicht da.", "away_places": "Unterwegs: {wo}.", "places": {"zone.laden": "beim Laden"}}
+    r = await house.client.put("/api/v1/door/announcements", json=body, headers={**sam.headers, "Origin": ORIGIN})
+    assert r.status == 204
+    assert actions(fake_ha)[-1] == ("aikos", "door_announcements", {**body, "voice": ""})   # no own voice yet: "" = not said
+    r = await house.client.put("/api/v1/door/announcements", json={"name_me": True}, headers={**sam.headers, "Origin": ORIGIN})
+    assert r.status == 204
+    assert actions(fake_ha)[-1][2] == {"named": ["person.other", "person.aikos_test_sam"]}    # the other's consent stays as it is
+    state = (await (await house.get("/api/v1/door/actions", sam)).json())["announcements"]
+    assert state["me"]["named"] is True
+    r = await house.client.put("/api/v1/door/announcements", json={"name_me": False}, headers={**sam.headers, "Origin": ORIGIN})
+    assert actions(fake_ha)[-1][2] == {"named": ["person.other"]}
+    r = await house.client.put("/api/v1/door/announcements", json={"disclosure": 1}, headers={**admin.headers, "Origin": ORIGIN})
+    assert r.status == 204 and actions(fake_ha)[-1][2] == {"disclosure": 1}                # the level alone keeps the voice
+    assert "door.announcements" in await audit_actions(house)
+
+
+async def test_announcements_bad_input_and_who_may(house, fake_ha):
+    door(fake_ha)
+    fake_ha.use_announcements()
+    admin, _, kim = await people(house)
+    for bad in ({}, {"disclosure": 5}, {"disclosure": True}, {"away": "x" * 201}, {"places": {"person.a": "x"}},
+                {"places": {"zone.a": "x" * 41}}, {"name_me": True}):                       # admin has no HA person: can't agree
+        r = await house.client.put("/api/v1/door/announcements", json=bad, headers={**admin.headers, "Origin": ORIGIN})
+        assert r.status == 400, bad
+    r = await house.client.put("/api/v1/door/announcements", json={"disclosure": 1}, headers={**kim.headers, "Origin": ORIGIN})
+    assert r.status == 403
+
+
+async def test_without_aikos_0_11_there_are_no_announcements(house, fake_ha):
+    door(fake_ha)
+    admin, _, _ = await people(house)
+    assert (await (await house.get("/api/v1/door/actions", admin)).json())["announcements"] is None
+    r = await house.client.put("/api/v1/door/announcements", json={"disclosure": 1}, headers={**admin.headers, "Origin": ORIGIN})
+    assert r.status == 503
+
