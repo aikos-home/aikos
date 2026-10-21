@@ -1,7 +1,7 @@
 # aikos integration for Home Assistant
 
-The household logic of aikos, installed via HACS. Version **0.9.1**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
-front door (0.5.0, tag `aikos-v0.5.0`), the mic health warning (0.7.0), the door message register (0.8.0) and the door actions (0.9.0). More blocks follow (where the bell
+The household logic of aikos, installed via HACS. Version **0.10.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
+front door (0.5.0, tag `aikos-v0.5.0`), the mic health warning (0.7.0), the door message register (0.8.0), the door actions (0.9.0) and reading aloud in the residents' own voices (0.10.0). More blocks follow (where the bell
 rings, presence, alarm, pairing of devices); each comes as a new version.
 
 ## Install
@@ -152,7 +152,11 @@ it uses the door's contracts and only writes the door entities named here.
   "Es hat geklingelt (14:00) · Klingel stumm".
 - **The sound at the door:** ffmpeg decodes it, `esphome.aikos_intercom_talk_allow_tts {host, ms}` lets the door play this machine's
   RTP (L16, 16 kHz, PT 96) on UDP 5004 of the talk computer (found from its ESPHome entry `aikos-intercom-talk`). All in the house.
-- **No reading aloud yet:** text is only shown. Reading aloud comes with a local voice (aikos-app A42: no text leaves the house).
+- **Reading aloud (0.10.0, A42-A45):** aikos → Configure → **Voice service (TTS)**: a local TTS entity (the aikos TTS service on
+  the house's own machine, through the Wyoming integration). `aikos.door_say` and `aikos.door_greeting` take `voice` = the
+  sender's voice there; without a voice (or without a service) the text is only shown. A note now is read right after it is
+  shown; a waiting note and the greeting text are made in advance (`<local media>/aikos/speech-*`) and play at once when someone
+  comes. A recorded greeting sound goes before the read text. The voice service failing never breaks the door: the text is shown.
 - **A waiting note goes first:** at that visit no greeting sound plays on top of it.
 - **The screen's greeting text** is left alone until a greeting is set through aikos once; from then on aikos owns it.
 
@@ -208,6 +212,8 @@ it uses the door's contracts and only writes the door entities named here.
 
 ## History
 
+- 0.10.0: notes and the greeting read aloud in the sender's own voice through a local TTS (option "Voice service"); speech made
+  in advance for waiting notes and the greeting.
 - 0.9.1: the screen's greeting text stays as it is until a greeting is set through aikos (0.9.0 emptied it at start).
 - 0.9.0: door actions for the aikos app (bell mute with the ring push still going, quiet hours as a service, note to the door
   now or for the next visitor, door picture, greeting with window and sound); provides `binary_sensor.aikos_bell_muted`.
