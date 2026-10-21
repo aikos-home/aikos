@@ -1,0 +1,7 @@
+#!/bin/sh
+# keepalived: is this node able to serve? The app answers healthy (it reaches its database) and Caddy serves the domain.
+# Home Assistant being away is not a reason to move the address (all three nodes would see the same).
+. /etc/aikos/cluster.env
+curl -fsS --max-time 2 http://127.0.0.1:8780/api/v1/health | grep -q '"ok": true' || exit 1
+curl -fsS -o /dev/null --max-time 2 -k --resolve "${DOMAIN}:443:127.0.0.1" "https://${DOMAIN}/api/v1/health" || exit 1
+exit 0

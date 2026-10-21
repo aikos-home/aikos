@@ -65,10 +65,12 @@ def require(request: web.Request, cap: Cap) -> User:
 
 
 def client_ip(request: web.Request) -> str:
+    """Behind the local reverse proxy: X-Real-IP, which the proxy sets from its own trusted-proxy rules (a client cannot
+    choose it); else the socket address."""
     if ctx(request).settings.trust_proxy:
-        fwd = request.headers.get("X-Forwarded-For", "")
-        if fwd:
-            return fwd.split(",")[0].strip()
+        real = request.headers.get("X-Real-IP", "").strip()
+        if real:
+            return real
     return request.remote or ""
 
 

@@ -35,3 +35,10 @@ async def test_spa_fallback_and_unknown_api(house):
     assert (await house.get("/api/v1/nope")).status == 404
     assert (await house.get("/../aikos-app.sqlite3")).status in (200, 404)
     assert "CREATE TABLE" not in await (await house.get("/../data/aikos-app.sqlite3")).text()
+
+
+async def test_health_reports_commit_and_database(tmp_path, aiohttp_client, fake_ha):
+    client = await aiohttp_client(create_app(make_settings(tmp_path, commit="abc1234"), ha=fake_ha))
+    r = await client.get("/api/v1/health")
+    body = await r.json()
+    assert r.status == 200 and body["ok"] and body["db"] and body["commit"] == "abc1234"

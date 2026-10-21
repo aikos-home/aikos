@@ -10,6 +10,7 @@ Claude Code reads this file automatically. Every agent and every person working 
 | `esphome/components/` | intercom and roomkey maintainers, jointly |
 | `services/` | aikos core; the owner of each service's logic is named in its README (`services/transcriber/`: roomkey maintainers) |
 | `app/` | aikos core (the app: PWA and its service in front of Home Assistant) |
+| `deploy/cluster/` | aikos core (running the app on three nodes; house values only in a private inventory) |
 | `docs/`, `tools/`, `.github/`, `homeassistant/`, `CLAUDE.md`, `FROZEN.md`, `.gitattributes` | aikos core |
 
 Don't change another owner's part. Propose the change to them instead.

@@ -1,0 +1,10 @@
+[Unit]
+Description=aikos rollout agent (one run)
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/aikos/cluster.env
+ExecStart=/usr/bin/python3 /usr/local/lib/aikos/aikos_deployer.py
+TimeoutStartSec=15min

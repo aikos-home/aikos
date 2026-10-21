@@ -1,0 +1,35 @@
+# Inventory of one house. Copy it into a PRIVATE place (it names your addresses), never into this repository.
+# Secrets are not in here: they are generated on the nodes, or read from the files named below on the admin machine.
+
+[cluster]
+domain = "app.example.org"        # the passkey domain (RP ID); changing it later invalidates every passkey
+vip = "192.0.2.29"                # the virtual address that follows a healthy node
+prefix = 24
+vrid = 229                        # VRRP router id, unique on this network
+trusted_proxies = "192.0.2.3"     # the reverse proxy in front of the house (may name the client)
+
+[ha]
+url = "http://192.0.2.10:8123"
+token_file = "~/.aikos/ha-token"  # read here, copied to the nodes (0400, only the app can read it)
+
+[ssh]
+user = "aikos"
+key = "~/.ssh/aikos_vms_ed25519"
+
+[app]                             # optional AIKOS_APP_* settings (lower case, without the prefix)
+door_media_dir = "aikos_door"
+
+[[nodes]]
+name = "aikos-1"
+ip = "192.0.2.31"
+priority = 110
+
+[[nodes]]
+name = "aikos-2"
+ip = "192.0.2.32"
+priority = 100
+
+[[nodes]]
+name = "aikos-3"
+ip = "192.0.2.33"
+priority = 90

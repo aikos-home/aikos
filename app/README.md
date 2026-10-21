@@ -8,6 +8,10 @@ Home Assistant. The phone never gets a Home Assistant token, address or link.
 Version **0.1.0** (step 1: sign-in, roles, door messages). Python 3.12+ (aiohttp, py_webauthn); PWA in TypeScript
 (Preact, Vite).
 
+Runs on one machine (SQLite) or on three nodes with a replicated database and rollouts of signed images
+([`deploy/cluster`](../deploy/cluster/README.md)). Container image: [`Dockerfile`](Dockerfile), dependencies pinned with
+hashes in [`requirements.lock`](requirements.lock).
+
 ## What it holds, and what not
 
 | Kept here (SQLite in the data folder) | Kept in Home Assistant |
@@ -29,7 +33,7 @@ HTTP API under `/api/v1`, described in [`aikos_app/api/openapi.json`](aikos_app/
 | Me | `GET /api/v1/me`, `GET /api/v1/me/passkeys`, `POST /api/v1/me/passkeys/start` and `/finish`, `DELETE /api/v1/me/passkeys/{id}` |
 | People (superadmin) | `GET /api/v1/people`, `POST /api/v1/people/invites`, `POST /api/v1/people/{id}/device-invite`, `POST /api/v1/people/{id}/disable` |
 | Door | `GET /api/v1/door/status`, `GET /api/v1/door/messages`, `GET /api/v1/door/messages/{id}/audio` (Range supported) |
-| Other | `GET /api/v1/health`, `GET /.well-known/assetlinks.json` |
+| Other | `GET /api/v1/health` (200 with `ok`, `version`, `commit`, `db`, `ha_connected`; 503 without its database), `GET /.well-known/assetlinks.json` |
 
 **Sessions:** an `HttpOnly`, `Secure`, `SameSite=Strict` cookie for the PWA. A native app sends
 `X-Aikos-Client: native` at sign-in and gets a bearer token instead. Browser writes must carry the app's own `Origin`.
@@ -76,7 +80,10 @@ aikos integration keeps a message register, two optional entities add metadata: 
 | `AIKOS_APP_PUBLIC_URL` | `http://localhost:<port>` | address the phones open; its host is the passkey RP ID |
 | `AIKOS_APP_LISTEN`, `AIKOS_APP_PORT` | `127.0.0.1`, `8780` | where the service listens |
 | `AIKOS_APP_TRUST_PROXY` | off | take the client address from `X-Forwarded-For` (behind a reverse proxy) |
-| `AIKOS_APP_DATA_DIR` | `data` | database and setup code |
+| `AIKOS_APP_DATA_DIR` | `data` | setup code, and the SQLite database when no other is set |
+| `AIKOS_APP_DB` | SQLite file in the data folder | `rqlites://a:4001,b:4001,c:4001` = rqlite cluster over HTTPS (own node first; see `deploy/cluster`) |
+| `AIKOS_APP_DB_USER`, `AIKOS_APP_DB_PASSWORD_FILE`, `AIKOS_APP_DB_CA_FILE` | – | rqlite user, a file with its password, the cluster CA |
+| `AIKOS_APP_COMMIT` | – | the commit of the build (set in the image); shown by `/api/v1/health` |
 | `AIKOS_APP_HA_URL`, `AIKOS_APP_HA_TOKEN_FILE` | – | Home Assistant and a file with its long-lived token. As a Home Assistant add-on, `SUPERVISOR_TOKEN` is used instead |
 | `AIKOS_APP_WEB_DIR` | bundled `aikos_app/web` | the built PWA (`web/dist`) |
 | `AIKOS_APP_ASSETLINKS_FILE` | – | Digital Asset Links JSON for a later Android app |
