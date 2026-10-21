@@ -24,6 +24,22 @@
 	}
 }
 
+# The house reverse proxy may also forward plain HTTP (its usual setting: http → <virtual address>:80). Requests from
+# it are served here; anyone else asking over plain HTTP is sent to HTTPS (no redirect loop for the proxy).
+http://{$AIKOS_DOMAIN} {
+	@house_proxy remote_ip {$TRUSTED_PROXIES}
+	handle @house_proxy {
+		encode zstd gzip
+		header -Server
+		reverse_proxy 127.0.0.1:8780 {
+			header_up X-Real-IP {client_ip}
+		}
+	}
+	handle {
+		redir https://{host}{uri} 308
+	}
+}
+
 # This node's health for the rollout agents of the peers: one path, plain HTTP, addressed by the node's own address
 # (port 80 is open in the house network; the domain's HTTPS redirect on :80 answers only for the domain name).
 http://{$NODE_IP} {

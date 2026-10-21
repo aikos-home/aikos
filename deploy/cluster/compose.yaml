@@ -4,6 +4,8 @@
 #   rqlite <node>:4001 HTTPS API, <node>:4002 Raft (mutual TLS between the nodes)
 #   caddy  :80, :443 for the domain; http://<node> (port 80, by address) serves only /api/v1/health for the peers
 # Variables come from /etc/aikos/cluster.env and /etc/aikos/app-image.env (written by apply.py and the deployer).
+# Folders, not single files, are mounted: files are replaced atomically (new inode), and a single-file mount would keep
+# showing the old one until the container restarts.
 name: aikos
 services:
   rqlite:
@@ -39,7 +41,7 @@ services:
     volumes:
       - /var/lib/aikos/app:/data
       - /etc/aikos/secrets/app:/secrets:ro
-      - /etc/aikos/certs/ca.crt:/certs/ca.crt:ro
+      - /etc/aikos/certs:/certs:ro
     depends_on: [rqlite]
   caddy:
     image: caddy:2.10.2@sha256:c3d7ee5d2b11f9dc54f947f68a734c84e9c9666c92c88a7f30b9cba5da182adb
@@ -50,5 +52,5 @@ services:
       - NODE_IP=${NODE_IP}
       - TRUSTED_PROXIES=${TRUSTED_PROXIES}
     volumes:
-      - /etc/aikos/Caddyfile:/etc/caddy/Caddyfile:ro
+      - /etc/aikos/caddy:/etc/caddy:ro
       - /var/lib/aikos/caddy:/data

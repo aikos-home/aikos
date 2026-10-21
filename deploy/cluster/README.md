@@ -19,7 +19,7 @@ phone ─► house reverse proxy (public certificate) ─HTTPS─► virtual add
 |---|---|---|
 | app | container, image pinned by digest, started only by the rollout agent | `127.0.0.1:8780` |
 | rqlite 10.5.2 | container | `<node>:4001` HTTPS API (users with rights), `<node>:4002` Raft (mutual TLS, own CA) |
-| Caddy 2.10.2 | container | `:80`, `:443` for the domain; `http://<node>/api/v1/health` (by address, for the peers) |
+| Caddy 2.10.2 | container | `:80`, `:443` for the domain (plain HTTP only from the house proxy, everyone else is redirected); `http://<node>/api/v1/health` (by address, for the peers) |
 | keepalived | host package | unicast VRRP to the two peers, moves the virtual address to a healthy node, `nopreempt` |
 | `aikos-deployer.timer` | systemd, every minute | rolls out new images (below) |
 | `aikos-db-backup.timer` | systemd, hourly at :05 | consistent copy of the database to `/var/backups/aikos/aikos-app.sqlite` |
@@ -64,7 +64,7 @@ certificates. Template for the inventory: [`cluster.example.toml`](cluster.examp
 
 | Path | Owner, mode | What |
 |---|---|---|
-| `/opt/aikos/compose.yaml`, `/etc/aikos/Caddyfile` | root 0644 | from this folder |
+| `/opt/aikos/compose.yaml`, `/etc/aikos/caddy/Caddyfile` | root 0644 | from this folder (folders are mounted, not single files) |
 | `/etc/aikos/cluster.env`, `/etc/aikos/app.env` | root 0644 | node and app settings, no secrets |
 | `/etc/aikos/app-image.env` | root | the digest the rollout agent runs |
 | `/etc/aikos/certs/` | `node.key` rqlite 0400 | cluster CA certificate, this node's certificate |
