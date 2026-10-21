@@ -5,7 +5,7 @@ Assistant stays the system of record for entities, devices, states, events, soun
 way to them. It signs people in with passkeys, knows who may see and do what, and is the single path from a phone to
 Home Assistant. The phone never gets a Home Assistant token, address or link.
 
-Version **0.5.0** (step 1: sign-in, roles, door messages; step 2: message register, delete, forward by hand, push; step 3: door actions, own voices). Python 3.12+ (aiohttp, py_webauthn); PWA in TypeScript
+Version **0.5.1** (step 1: sign-in, roles, door messages; step 2: message register, delete, forward by hand, push; step 3: door actions, own voices). Python 3.12+ (aiohttp, py_webauthn); PWA in TypeScript
 (Preact, Vite).
 
 Runs on one machine (SQLite) or on three nodes with a replicated database and rollouts of signed images
@@ -93,8 +93,8 @@ of them (matrix 2.4a).
   start and end.
 - **A note to the door** (A11/A39): shown at once if the radar sees someone, else for the next visitor; quick replies; a waiting
   note can be withdrawn. Nothing is read aloud yet (A42: only a local voice, later).
-- **Picture** (A12/A41): the phone shrinks the photo (≤ 1280 px, ≤ 900 KB JPEG), aikos turns it into the door's grey PNG; it stays
-  until removed. The preview comes through the app.
+- **Picture** (A12/A41): cropped on the phone to the door's field (fixed 492 : 536; drag, pinch or slider to zoom, grey preview),
+  sent as a 984 × 1072 JPEG; aikos turns it into the door's grey PNG, which fills the field. It stays until removed. The preview comes through the app.
 - **Greeting** (A13/A26): text (≤ 120) and/or a sound recorded with the phone (≤ 20 s), always or from–until.
 
 ## Own voices

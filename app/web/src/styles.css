@@ -165,3 +165,7 @@ code.small { font-size: 11px; color: var(--muted); }
 .switch input { width: 20px; height: 20px; min-height: 0; flex: none; }
 .chip.ok { background: var(--ok-bg); color: var(--ok-text); border-color: transparent; }
 .myvoice .reading { margin: 4px 0; padding: 10px 12px; border-left: 3px solid var(--accent); background: var(--surface-2); font-size: 15px; line-height: 1.5; }
+.cropper { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.cropper .crop-frame { touch-action: none; cursor: grab; border-radius: 6px; border: 1px solid var(--border); filter: grayscale(1); background: #fff; }
+.cropper .zoom { flex-direction: row; align-items: center; gap: 8px; width: 100%; max-width: 320px; }
+.cropper .zoom input { flex: 1; min-height: 0; padding: 0; }

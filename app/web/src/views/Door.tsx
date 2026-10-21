@@ -2,7 +2,8 @@
 // next visitor), the bell (mute for a while, quiet hours), the picture on the door, the greeting for everyone who comes.
 import { useEffect, useRef, useState } from "preact/hooks";
 import { api, can, type DoorActionsState, type DoorStatus, type User } from "../api";
-import { Recorder, RECORD_MAX_S, shrinkPhoto } from "../media";
+import { Recorder, RECORD_MAX_S } from "../media";
+import { Cropper } from "./Cropper";
 import { Icon } from "./Icon";
 
 const QUICK = ["Komme sofort", "Bitte vor die Tür legen", "Moment bitte"];
@@ -168,14 +169,25 @@ function Picture({ state, done }: { state: DoorActionsState; done: () => void })
   const a = useAction(done);
   const file = useRef<HTMLInputElement>(null);
   const [version, setVersion] = useState(Date.now());
-  const choose = async (f: File | undefined) => {
-    if (!f) return;
+  const [crop, setCrop] = useState<File | null>(null);
+  const choose = (f: File | undefined) => {
+    if (file.current) file.current.value = "";
+    if (f) setCrop(f);
+  };
+  const send = async (blob: Blob) => {
+    setCrop(null);
     await a.run(async () => {
-      await api.putPicture(await shrinkPhoto(f));
+      await api.putPicture(blob);
       setVersion(Date.now());
     }, "Das Bild ist an der Tür.");
-    if (file.current) file.current.value = "";
   };
+  if (crop) {
+    return (
+      <Section icon="image" title="Bild an der Tür">
+        <Cropper file={crop} onDone={send} onCancel={() => setCrop(null)} />
+      </Section>
+    );
+  }
   return (
     <Section icon="image" title="Bild an der Tür">
       <div class="row gap picture">
@@ -183,7 +195,7 @@ function Picture({ state, done }: { state: DoorActionsState; done: () => void })
           ? <img src={`/api/v1/door/picture?v=${version}`} alt="Bild an der Tür" />
           : <span class="placeholder"><Icon name="image" /></span>}
         <div>
-          <p class="meta">Grau, wie es die Tür zeigt. Bleibt, bis du es entfernst.</p>
+          <p class="meta">Grau, wie es die Tür zeigt. Du schneidest es aufs Feld der Tür zu. Bleibt, bis du es entfernst.</p>
           <div class="row gap">
             <button disabled={a.busy} onClick={() => file.current?.click()}>{a.busy ? "Lade hoch …" : "Foto wählen"}</button>
             {state.picture && (
