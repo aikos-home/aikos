@@ -137,6 +137,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--inventory", required=True)
     ap.add_argument("--check", action="store_true", help="only check that every node is reachable with sudo")
     ap.add_argument("--rotate-certs", action="store_true", help="new node certificates from the existing CA")
+    ap.add_argument("--rotate-ca", action="store_true",
+                    help="new cluster CA and node certificates (passwords stay); restarts the database on all nodes")
     args = ap.parse_args(argv)
     inv = Inventory.from_dict(tomllib.loads(Path(args.inventory).read_text(encoding="utf-8")))
     ssh = Ssh(inv.ssh_user, inv.ssh_key)
@@ -146,6 +148,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.check:
         return 0
     sec = load_secrets(ssh, inv)
+    if args.rotate_ca:
+        sec["ca_cert"], sec["ca_key"] = pki.new_ca()
+        args.rotate_certs = True
     ha_token = Path(inv.ha_token_file).expanduser().read_text(encoding="utf-8").strip()
     for n in inv.nodes:
         print(f"{n.name}: host")
@@ -157,6 +162,8 @@ def main(argv: list[str] | None = None) -> int:
     print("database and Caddy on all nodes")
     for n in inv.nodes:
         compose(ssh, n.ip, "up", "-d", "--remove-orphans", "rqlite", "caddy")
+        if args.rotate_certs:  # rqlite reads its certificates at start; the three restart within seconds
+            compose(ssh, n.ip, "restart", "rqlite")
         # Compose does not notice a changed Caddyfile; a graceful reload picks it up without dropping connections.
         compose(ssh, n.ip, "exec", "-T", "caddy", "caddy", "reload", "--config", "/etc/caddy/Caddyfile",
                 "--adapter", "caddyfile")

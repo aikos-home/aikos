@@ -1,6 +1,7 @@
 """The cluster's own small CA: one certificate per node for rqlite (HTTPS API and Raft, mutual TLS).
 
-Certificates name the node's IP address (the app and the peers connect by address) and its host name.
+Certificates name the node's IP address (the app and the peers connect by address) and its host name. They carry key
+identifiers: Python 3.13 verifies strictly (VERIFY_X509_STRICT) and refuses a certificate without the issuer's key id.
 """
 
 from __future__ import annotations
@@ -33,6 +34,7 @@ def new_ca() -> tuple[str, str]:
             .public_key(key.public_key()).serial_number(x509.random_serial_number())
             .not_valid_before(now - dt.timedelta(minutes=5)).not_valid_after(now + dt.timedelta(days=VALID_DAYS))
             .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True)
+            .add_extension(x509.SubjectKeyIdentifier.from_public_key(key.public_key()), critical=False)
             .add_extension(x509.KeyUsage(digital_signature=True, key_cert_sign=True, crl_sign=True,
                                          content_commitment=False, key_encipherment=False, data_encipherment=False,
                                          key_agreement=False, encipher_only=False, decipher_only=False), critical=True)
@@ -53,5 +55,7 @@ def node_cert(ca_cert_pem: str, ca_key_pem: str, name: str, ip: str) -> tuple[st
             .add_extension(x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH, ExtendedKeyUsageOID.CLIENT_AUTH]),
                            critical=False)
             .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+            .add_extension(x509.SubjectKeyIdentifier.from_public_key(key.public_key()), critical=False)
+            .add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key(ca_key.public_key()), critical=False)
             .sign(ca_key, hashes.SHA256()))
     return cert.public_bytes(serialization.Encoding.PEM).decode(), _pem_key(key)

@@ -113,3 +113,35 @@ def test_heartbeat_never_reports_down_for_a_rollout():
     assert hb.node_verdict(503, {"ok": False, "db": False}, True) is None
     assert hb.node_verdict(0, {}, False) == ("down", "app does not answer")
     assert hb.node_verdict(503, {"ok": False, "db": False}, False) == ("down", "database not reachable")
+
+
+def test_strict_tls_handshake_with_a_node_certificate(tmp_path):
+    """What Python 3.13 on the nodes does: verify strictly (VERIFY_X509_STRICT), by IP address. Regression: certificates
+    without key identifiers were refused there ("Missing Authority Key Identifier")."""
+    import socket
+    import ssl
+    import threading
+    ca_cert, ca_key = pki.new_ca()
+    crt, key = pki.node_cert(ca_cert, ca_key, "aikos-1", "127.0.0.1")
+    (tmp_path / "ca.crt").write_text(ca_cert)
+    (tmp_path / "n.crt").write_text(crt)
+    (tmp_path / "n.key").write_text(key)
+    server = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    server.load_cert_chain(tmp_path / "n.crt", tmp_path / "n.key")
+    client = ssl.create_default_context(cafile=str(tmp_path / "ca.crt"))
+    client.verify_flags |= ssl.VERIFY_X509_STRICT
+    lsock = socket.create_server(("127.0.0.1", 0))
+    port = lsock.getsockname()[1]
+
+    def serve():
+        conn, _ = lsock.accept()
+        with server.wrap_socket(conn, server_side=True) as s:
+            s.recv(1)
+
+    t = threading.Thread(target=serve, daemon=True)
+    t.start()
+    with socket.create_connection(("127.0.0.1", port)) as raw, client.wrap_socket(raw, server_hostname="127.0.0.1") as s:
+        assert s.version() and s.getpeercert()["subject"]
+        s.send(b"x")
+    t.join(2)
+    lsock.close()
