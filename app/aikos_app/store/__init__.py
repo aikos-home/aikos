@@ -18,6 +18,9 @@ from .backends import Backend, DatabaseError, Result, SqliteBackend, Statement, 
 __all__ = ["Database", "DatabaseError", "Result", "b64d", "b64e", "new_token", "now", "token_hash"]
 
 SCHEMA_VERSION = 2
+SCHEMA_MIN = 2
+"""The oldest app schema that can still use a database of SCHEMA_VERSION. Additive changes (new tables or columns the old
+code never reads) keep it, so a rollback to the previous image still starts during a rolling update."""
 
 _SCHEMA = [
     "CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY, value TEXT NOT NULL)",
@@ -124,12 +127,14 @@ class Database:
         if has_meta:
             row = self.one("SELECT value FROM meta WHERE key = 'schema'")
             version = int(row["value"]) if row else 0
-            if version > SCHEMA_VERSION:
+            need = self.one("SELECT value FROM meta WHERE key = 'schema_min'")
+            if (int(need["value"]) if need else version) > SCHEMA_VERSION:
                 raise DatabaseError(f"database schema {version} is newer than this app ({SCHEMA_VERSION})")
-            if version == SCHEMA_VERSION:
-                return
+            if version >= SCHEMA_VERSION:
+                return  # the same, or newer and still compatible (a rollback): never step a schema back
         self.backend.batch([(sql, ()) for sql in _SCHEMA]
-                           + [("INSERT OR REPLACE INTO meta(key, value) VALUES ('schema', ?)", (str(SCHEMA_VERSION),))])
+                           + [("INSERT OR REPLACE INTO meta(key, value) VALUES ('schema', ?)", (str(SCHEMA_VERSION),)),
+                              ("INSERT OR REPLACE INTO meta(key, value) VALUES ('schema_min', ?)", (str(SCHEMA_MIN),))])
 
     def _migrate_local_v1(self) -> None:
         conn = self.backend.raw()
