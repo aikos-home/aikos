@@ -67,6 +67,8 @@ class Greeting:
     audio: str = ""
     """File name of the recorded sound in the greeting folder; "" = none."""
     last_played: str = ""
+    managed: bool = False
+    """Set once through aikos: from then on aikos owns the screen's greeting text (before that it leaves it alone)."""
 
     def in_window(self, now: datetime) -> bool:
         if not self.enabled or not (self.text or self.audio):

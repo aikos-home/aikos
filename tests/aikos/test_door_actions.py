@@ -184,6 +184,16 @@ async def test_picture_becomes_a_grey_png_under_local_until_removed(hass: HomeAs
 
 
 # the greeting (A13/A26)
+async def test_aikos_leaves_the_screen_greeting_alone_until_one_is_set_through_it(hass: HomeAssistant, media, door):
+    """Regression (before ha-dev, 21.10.): 0.9.0 emptied the screen's greeting text at start although nobody had set one."""
+    _, texts = door
+    hass.states.async_set(GREETING_TEXT, "Ein Text von vorher")
+    await setup(hass)
+    assert hass.states.get(GREETING_TEXT).state == "Ein Text von vorher" and texts == []
+    await call(hass, "door_greeting", {"enabled": False}, response=True)
+    assert hass.states.get(GREETING_TEXT).state == ""                         # now aikos owns it: greeting off = no text
+
+
 WAV = base64.b64encode(b"RIFF\x24\x00\x00\x00WAVEfmt " + b"\x00" * 40).decode()
 
 

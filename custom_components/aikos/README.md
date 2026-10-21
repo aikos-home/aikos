@@ -1,6 +1,6 @@
 # aikos integration for Home Assistant
 
-The household logic of aikos, installed via HACS. Version **0.9.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
+The household logic of aikos, installed via HACS. Version **0.9.1**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
 front door (0.5.0, tag `aikos-v0.5.0`), the mic health warning (0.7.0), the door message register (0.8.0) and the door actions (0.9.0). More blocks follow (where the bell
 rings, presence, alarm, pairing of devices); each comes as a new version.
 
@@ -154,6 +154,7 @@ it uses the door's contracts and only writes the door entities named here.
   RTP (L16, 16 kHz, PT 96) on UDP 5004 of the talk computer (found from its ESPHome entry `aikos-intercom-talk`). All in the house.
 - **No reading aloud yet:** text is only shown. Reading aloud comes with a local voice (aikos-app A42: no text leaves the house).
 - **A waiting note goes first:** at that visit no greeting sound plays on top of it.
+- **The screen's greeting text** is left alone until a greeting is set through aikos once; from then on aikos owns it.
 
 ## Errors
 
@@ -207,6 +208,7 @@ it uses the door's contracts and only writes the door entities named here.
 
 ## History
 
+- 0.9.1: the screen's greeting text stays as it is until a greeting is set through aikos (0.9.0 emptied it at start).
 - 0.9.0: door actions for the aikos app (bell mute with the ring push still going, quiet hours as a service, note to the door
   now or for the next visitor, door picture, greeting with window and sound); provides `binary_sensor.aikos_bell_muted`.
 - 0.8.0: door message register for the aikos app (`sensor.aikos_door_messages`, `aikos.door_messages`, `aikos.door_message_delete`,
