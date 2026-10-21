@@ -1,5 +1,5 @@
 """Setting up aikos (one click) and its options: doorbell, residents and their phones for the ring push; the front door
-sensor; the call archive.
+sensor; the call archive; the voice service that reads at the door.
 
 Daily settings such as quiet hours are entities of the "aikos" device, not options.
 """
@@ -12,9 +12,9 @@ from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResu
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 
-from .const import DOMAIN, OPT_ARCHIVE, OPT_DOORBELL, OPT_FRONT_DOOR, OPT_NOTIFY, OPT_RESIDENTS
+from .const import DOMAIN, OPT_ARCHIVE, OPT_DOORBELL, OPT_FRONT_DOOR, OPT_NOTIFY, OPT_RESIDENTS, OPT_TTS
 
-ENTITY_OPTIONS = (OPT_DOORBELL, OPT_RESIDENTS, OPT_NOTIFY, OPT_FRONT_DOOR)
+ENTITY_OPTIONS = (OPT_DOORBELL, OPT_RESIDENTS, OPT_NOTIFY, OPT_FRONT_DOOR, OPT_TTS)
 
 
 class AikosConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -54,6 +54,8 @@ class AikosOptionsFlow(OptionsFlow):
                                               mode=selector.SelectSelectorMode.DROPDOWN)),
             vol.Optional(OPT_FRONT_DOOR, description={"suggested_value": options.get(OPT_FRONT_DOOR)}): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain=["binary_sensor", "input_boolean"])),
+            vol.Optional(OPT_TTS, description={"suggested_value": options.get(OPT_TTS)}): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="tts")),
             vol.Optional(OPT_ARCHIVE, default=bool(options.get(OPT_ARCHIVE, False))): selector.BooleanSelector(),
         })
         return self.async_show_form(step_id="init", data_schema=schema)

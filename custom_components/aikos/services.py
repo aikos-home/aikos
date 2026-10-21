@@ -81,14 +81,17 @@ async def _heard(call: ServiceCall) -> None:
 _MUTE = vol.Schema({vol.Exclusive("minutes", "how"): vol.All(vol.Coerce(int), vol.Range(min=1, max=MUTE_MAX_MINUTES)),
                     vol.Exclusive("until_time", "how"): cv.time, vol.Exclusive("forever", "how"): cv.boolean})
 _QUIET = vol.Schema({vol.Optional("enabled"): cv.boolean, vol.Optional("start"): cv.time, vol.Optional("end"): cv.time})
+_VOICE = vol.All(cv.string, vol.Match(r"^$|^[a-z0-9][a-z0-9_-]{0,39}$"))
 _SAY = vol.Schema({vol.Required("message"): vol.All(cv.string, vol.Length(min=1, max=NOTE_MAX)),
-                   vol.Optional("sender", default=""): vol.All(cv.string, vol.Length(max=SENDER_MAX))})
+                   vol.Optional("sender", default=""): vol.All(cv.string, vol.Length(max=SENDER_MAX)),
+                   vol.Optional("voice", default=""): _VOICE})
 _PICTURE = vol.Schema({vol.Required("image"): cv.string})
 _GREETING = vol.Schema({vol.Optional("enabled"): cv.boolean,
                         vol.Optional("text"): vol.All(cv.string, vol.Length(max=GREETING_MAX)),
                         vol.Optional("start"): cv.datetime, vol.Optional("end"): cv.datetime,
                         vol.Optional("clear_window", default=False): cv.boolean,
-                        vol.Optional("audio"): cv.string, vol.Optional("clear_audio", default=False): cv.boolean})
+                        vol.Optional("audio"): cv.string, vol.Optional("clear_audio", default=False): cv.boolean,
+                        vol.Optional("voice"): _VOICE})
 
 
 async def _mute(call: ServiceCall) -> None:
@@ -109,13 +112,14 @@ async def _quiet(call: ServiceCall) -> None:
 
 async def _say(call: ServiceCall) -> ServiceResponse:
     try:
-        return {"delivered": await _door(call.hass).async_say(call.data["message"], call.data["sender"])}
+        return {"delivered": await _door(call.hass).async_say(call.data["message"], call.data["sender"],
+                                                               call.data["voice"])}
     except ValueError as e:
         raise _invalid(str(e)) from None
 
 
 async def _say_cancel(call: ServiceCall) -> ServiceResponse:
-    return {"cancelled": _door(call.hass).cancel_note()}
+    return {"cancelled": await _door(call.hass).async_cancel_note()}
 
 
 async def _picture(call: ServiceCall) -> ServiceResponse:
@@ -135,7 +139,7 @@ async def _greeting(call: ServiceCall) -> ServiceResponse:
         g = await _door(call.hass).async_set_greeting(
             enabled=d.get("enabled"), text=d.get("text"), start=d.get("start"), end=d.get("end"),
             clear_window=d["clear_window"], audio=_b64(d["audio"], 3 * 1024 * 1024) if "audio" in d else None,
-            clear_audio=d["clear_audio"])
+            clear_audio=d["clear_audio"], voice=d.get("voice"))
     except ValueError as e:
         raise _invalid(str(e)) from None
     return {"enabled": g.enabled, "text": g.text, "start": g.start, "end": g.end, "audio": bool(g.audio)}

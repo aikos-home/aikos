@@ -2,8 +2,8 @@
 
 - Bell mute: for some minutes, until a time of day (the next one), or until switched off. Muted = the bell rings nowhere in
   the house; the door behaves as in quiet hours and the ring push still goes to the phones.
-- A note to the door: shown (later also read aloud) right away if someone is at the door, else it waits for the next
-  visitor and is gone after that.
+- A note to the door: shown right away if someone is at the door, else it waits for the next visitor and is gone after that.
+  Read aloud in the sender's own voice if they have one (A45); a waiting note's speech is made in advance.
 - The greeting: text and/or a recorded sound, for everyone who comes, within its time window, once per visit.
 - The picture: a grey PNG for the door's welcome page, until it is removed.
 """
@@ -47,6 +47,10 @@ class Note:
     message: str
     sender: str
     since: str
+    voice: str = ""
+    """The sender's voice at the TTS service; "" = shown only (A45)."""
+    audio: str = ""
+    """The speech made in advance (file in the greeting folder); "" = none (yet)."""
 
 
 def clean_note(message: str, sender: str) -> tuple[str, str]:
@@ -67,6 +71,10 @@ class Greeting:
     audio: str = ""
     """File name of the recorded sound in the greeting folder; "" = none."""
     last_played: str = ""
+    voice: str = ""
+    """Whose voice reads the text when there is no recorded sound (the person who saved it, A45)."""
+    tts_audio: str = ""
+    """The text read aloud in that voice, made in advance (file in the greeting folder)."""
     managed: bool = False
     """Set once through aikos: from then on aikos owns the screen's greeting text (before that it leaves it alone)."""
 
@@ -77,9 +85,14 @@ class Greeting:
             return False
         return not (self.end and now >= datetime.fromisoformat(self.end))
 
+    @property
+    def sound(self) -> str:
+        """What plays at an approach: the recorded sound, else the text read aloud; "" = nothing (text shown only)."""
+        return self.audio or (self.tts_audio if self.text else "")
+
     def may_play(self, now: datetime, in_call: bool) -> bool:
         """The sound at an approach: within the window, not during a call or a message, once per visit."""
-        if in_call or not self.in_window(now) or not self.audio:
+        if in_call or not self.in_window(now) or not self.sound:
             return False
         return not (self.last_played and now - datetime.fromisoformat(self.last_played) < GREETING_PAUSE)
 
@@ -118,7 +131,7 @@ class DoorState:
         try:
             s.mute = Mute(**{k: v for k, v in part("mute").items() if k in ("on", "until")})
             note = part("note")
-            s.note = Note(**{k: str(note.get(k, "")) for k in ("message", "sender", "since")}) if note else None
+            s.note = Note(**{k: str(note.get(k, "")) for k in ("message", "sender", "since", "voice", "audio")}) if note else None
             s.greeting = Greeting(**{k: v for k, v in part("greeting").items() if k in Greeting.__dataclass_fields__})
             s.picture = str((d or {}).get("picture") or "")
         except (TypeError, ValueError):

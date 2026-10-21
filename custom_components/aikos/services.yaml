@@ -57,6 +57,9 @@ door_say:
     sender:
       selector:
         text:
+    voice:
+      selector:
+        text:
 door_say_cancel:
 door_picture:
   fields:
@@ -88,3 +91,6 @@ door_greeting:
     clear_audio:
       selector:
         boolean:
+    voice:
+      selector:
+        text:
