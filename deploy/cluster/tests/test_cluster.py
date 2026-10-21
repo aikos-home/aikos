@@ -167,3 +167,19 @@ def test_house_proxy_may_use_plain_http_without_a_loop():
     block = caddy[caddy.index("http://{$AIKOS_DOMAIN}"):]
     assert "@house_proxy remote_ip {$TRUSTED_PROXIES}" in block and "reverse_proxy 127.0.0.1:8780" in block
     assert "redir https://{host}{uri} 308" in block
+
+
+def test_unsigned_yet_is_waiting_not_bad(monkeypatch):
+    """Regression 21.10.: a node saw the new digest before the workflow had signed it and marked it bad for good."""
+    import subprocess
+
+    def fails(stderr):
+        def run(cmd):
+            raise subprocess.CalledProcessError(1, cmd, stderr=stderr)
+        return run
+    monkeypatch.setattr(dep, "run", fails("Error: no signatures found"))
+    assert dep.signature("ghcr.io/x@sha256:abc") == "missing"
+    monkeypatch.setattr(dep, "run", fails("Error: no matching signatures: none of the expected identities matched"))
+    assert dep.signature("ghcr.io/x@sha256:abc") == "bad"
+    monkeypatch.setattr(dep, "run", lambda cmd: "")
+    assert dep.signature("ghcr.io/x@sha256:abc") == "ok"

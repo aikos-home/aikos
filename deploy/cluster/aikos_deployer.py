@@ -84,13 +84,18 @@ def resolve_digest(image: str = IMAGE, tag: str = TAG) -> str:
     return json.loads(out).get("digest", "")
 
 
-def signature_ok(ref: str) -> bool:
+def signature(ref: str) -> str:
+    """'ok', 'missing' (not signed yet: wait, never run it) or 'bad' (signed by someone else or broken: never)."""
     try:
         run(["cosign", "verify", "--certificate-identity", SIGNER, "--certificate-oidc-issuer", ISSUER, ref])
-        return True
+        return "ok"
     except subprocess.CalledProcessError as e:
-        LOG.error("signature check failed for %s: %s", ref, (e.stderr or "")[-300:])
-        return False
+        err = (e.stderr or "")[-300:]
+        if "no signatures found" in err:
+            LOG.info("%s is not signed (yet); waiting", ref.rsplit("@", 1)[-1][:19])
+            return "missing"
+        LOG.error("signature check failed for %s: %s", ref, err)
+        return "bad"
 
 
 # cluster lock in rqlite
@@ -208,7 +213,10 @@ def main(argv: list[str] | None = None) -> int:
             LOG.info("main points to %s, marked bad; waiting for a newer build", target[:19])
         return 0
     ref = f"{IMAGE}@{target}"
-    if not signature_ok(ref):
+    verdict = signature(ref)
+    if verdict == "missing":
+        return 0
+    if verdict == "bad":
         state.bad.append(target)
         state.save()
         return 1

@@ -54,9 +54,8 @@ jobs:
         with:
           context: app
           push: true
-          tags: |
-            ${{ env.IMAGE }}:main
-            ${{ env.IMAGE }}:sha-${{ github.sha }}
+          # only the commit tag here; `main` moves after the signature exists (the nodes follow `main`)
+          tags: ${{ env.IMAGE }}:sha-${{ github.sha }}
           build-args: AIKOS_APP_COMMIT=${{ github.sha }}
           provenance: mode=max
           sbom: true
@@ -68,3 +67,8 @@ jobs:
       - if: github.event_name == 'push'
         name: Sign (keyless, bound to this workflow on main)
         run: cosign sign --yes "${IMAGE}@${{ steps.push.outputs.digest }}"
+      - if: github.event_name == 'push'
+        name: Point main at the signed image
+        run: |
+          cosign verify --certificate-identity "https://github.com/${{ github.workflow_ref }}"             --certificate-oidc-issuer https://token.actions.githubusercontent.com "${IMAGE}@${{ steps.push.outputs.digest }}" >/dev/null
+          docker buildx imagetools create --tag "${IMAGE}:main" "${IMAGE}@${{ steps.push.outputs.digest }}"
