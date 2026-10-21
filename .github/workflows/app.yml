@@ -1,0 +1,25 @@
+name: app checks
+on:
+  push:
+    paths:
+      - "app/**"
+      - ".github/workflows/app.yml"
+  pull_request:
+jobs:
+  app-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # A fake Home Assistant and a software passkey; nothing talks to a real house.
+      - run: python -m pip install -e "app[test]"
+      - run: python -m pytest app/tests -q
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+        working-directory: app/web
+      - run: npm run build
+        working-directory: app/web
