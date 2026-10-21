@@ -124,3 +124,13 @@ def test_old_local_file_is_converted(tmp_path):
     assert token_hash("old-session") == b64e(hashlib.sha256(b"old-session").digest())
     db.close()
     Database(path).close()  # opening again is a no-op
+
+
+def test_a_new_device_link_voids_the_older_ones(db):
+    acc = Accounts(db)
+    user = acc.create_user_with_credential(b"a" * 32, "Alex", "superadmin", "", cred(1))
+    first, _ = acc.create_invite(user.name, user.role, "", user.id, user_id=user.id)
+    second, _ = acc.create_invite(user.name, user.role, "", user.id, user_id=user.id)
+    other, _ = acc.create_invite("Sam", "adult", "", user.id)
+    assert acc.open_invite(first) is None and acc.open_invite(second) is not None
+    assert acc.open_invite(other) is not None  # invites for new people are not touched

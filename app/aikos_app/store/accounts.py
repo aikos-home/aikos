@@ -137,9 +137,13 @@ class Accounts:
                       user_id: int | None = None) -> tuple[str, Invite]:
         token = new_token()
         expires = now() + INVITE_TTL_S
-        res = self.db.execute("INSERT INTO invites(token_hash, name, role, ha_person, user_id, created_by, created_at,"
-                              " expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                              (token_hash(token), name, role, ha_person, user_id, created_by, now(), expires))
+        statements = []
+        if user_id is not None:  # a new device link voids the older open ones of the same person
+            statements.append(("UPDATE invites SET used_at = ? WHERE user_id = ? AND used_at IS NULL", (now(), user_id)))
+        statements.append(("INSERT INTO invites(token_hash, name, role, ha_person, user_id, created_by, created_at,"
+                           " expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                           (token_hash(token), name, role, ha_person, user_id, created_by, now(), expires)))
+        res = self.db.batch(statements)[-1]
         return token, Invite(res.lastrowid, name, role, ha_person, user_id, expires)
 
     def open_invite(self, token: str) -> Invite | None:
