@@ -73,6 +73,13 @@ class FakeHa(HaClient):
             "enabled": False, "text": "", "start": "", "end": "", "audio": False, "audio_file": ""}}
         self.states["sensor.aikos_door_picture"] = {"state": "none", "attributes": {"path": ""}}
 
+    def use_announcements(self) -> None:
+        """aikos 0.11.0: the door announcements' sensor."""
+        self.states["sensor.aikos_door_announcements"] = {"state": "none", "attributes": {
+            "disclosure": 0, "parcel": "", "away": "", "quiet": "", "away_places": "", "places": {}, "named": ["person.aikos_test_other"],
+            "voice": False, "now_text": "", "ready": [], "last": {}, "zones": [{"id": "zone.aikos_test_laden", "name": "Laden"}],
+            "residents": [{"id": "person.aikos_test_sam", "name": "Sam"}, {"id": "person.aikos_test_other", "name": "Other"}]}}
+
     def use_register(self, messages: list[dict[str, Any]]) -> None:
         self.register = messages
         self.states["sensor.aikos_door_messages"] = {"state": str(len(messages)), "attributes": {}}
@@ -131,6 +138,8 @@ class FakeHa(HaClient):
             return {"context": {}, "response": {"delivered": "now" if someone else "waiting"}}
         if service == "door_picture":
             self.states["sensor.aikos_door_picture"] = {"state": "shown", "attributes": {"path": "/local/aikos_door/foto-ab.png"}}
+        if service == "door_announcements":
+            self.states["sensor.aikos_door_announcements"]["attributes"].update(data)
         if service == "door_greeting" and "audio" in data:
             self.states["sensor.aikos_door_greeting"]["attributes"].update(audio=True, audio_file="greeting-1.webm")
         return {"context": {}, "response": {}}

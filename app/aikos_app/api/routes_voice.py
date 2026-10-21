@@ -76,8 +76,18 @@ async def delete(request: web.Request) -> web.Response:
 @routes.post("/api/v1/me/voice/sample")
 async def sample(request: web.Request) -> web.Response:
     user = require(request, Cap.DOOR_ACT)
+    text = f"Hallo, hier spricht {user.name}. So klinge ich an der Haustür."
+    if request.can_read_body and request.content_type == "application/json":   # a sentence of one's own, e.g. an announcement
+        try:
+            body = await request.json()
+        except ValueError:
+            raise api_error(400, "bad_request") from None
+        own = " ".join(str((body or {}).get("text") or "").split()) if isinstance(body, dict) else ""
+        if len(own) > 200:
+            raise api_error(400, "bad_request")
+        text = own or text
     try:
-        wav = await ctx(request).voices.sample(user, f"Hallo, hier spricht {user.name}. So klinge ich an der Haustür.")
+        wav = await ctx(request).voices.sample(user, text)
     except VoiceError as e:
         raise _fail(e) from None
     return web.Response(body=wav, content_type="audio/wav", headers={"Cache-Control": "private, no-store"})

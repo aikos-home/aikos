@@ -1,9 +1,12 @@
 // Tür: what a resident does at the door (A11–A14, A39–A41), as collapsible sections: a note to the door (now, or for the
-// next visitor), the bell (mute for a while, quiet hours), the picture on the door, the greeting for everyone who comes.
+// next visitor), the bell (mute for a while, quiet hours), the picture on the door, the greeting for everyone who comes,
+// the announcements after a ring (sprachausgabe S10–S14).
 import { useEffect, useRef, useState } from "preact/hooks";
 import { api, can, type DoorActionsState, type DoorStatus, type User } from "../api";
 import { Recorder, RECORD_MAX_S } from "../media";
+import { Announcements } from "./Announcements";
 import { Cropper } from "./Cropper";
+import { dayHm, hm, Section, useAction } from "./DoorParts";
 import { Icon } from "./Icon";
 
 const MUTE_FOR: { label: string; body: { minutes?: number; until_time?: string; forever?: boolean } }[] = [
@@ -13,16 +16,6 @@ const MUTE_FOR: { label: string; body: { minutes?: number; until_time?: string; 
   { label: "bis ich ausschalte", body: { forever: true } },
 ];
 
-const hm = (iso: string) => {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
-};
-const dayHm = (iso: string) => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const today = new Date().toDateString() === d.toDateString();
-  return today ? `heute ${hm(iso)}` : `${d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })} ${hm(iso)}`;
-};
 // <input type="datetime-local"> works in local time without zone
 const toLocalInput = (iso: string) => {
   const d = new Date(iso);
@@ -57,38 +50,9 @@ export function Door({ user, status, refresh }: Props) {
       {can(user, "bell.settings") && <Bell status={status} done={after} />}
       {can(user, "door.act") && <Picture state={state} done={after} />}
       {can(user, "door.act") && <Greeting state={state} done={after} />}
+      {can(user, "door.act") && <Announcements state={state} done={after} />}
     </div>
   );
-}
-
-function Section({ icon, title, extra, children }: { icon: string; title: string; extra?: preact.ComponentChildren;
-  children: preact.ComponentChildren }) {
-  return (
-    <details class="section" open>
-      <summary><Icon name={icon} /><span>{title}</span><span class="grow" />{extra}</summary>
-      <div class="body">{children}</div>
-    </details>
-  );
-}
-
-function useAction(done: () => void) {
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState("");
-  // fn may return the message to show (e.g. "now" or "waiting"); otherwise `ok` is shown
-  const run = async (fn: () => Promise<unknown>, ok = "") => {
-    setBusy(true);
-    setMsg("");
-    try {
-      const said = await fn();
-      setMsg(typeof said === "string" ? said : ok);
-      done();
-    } catch (e) {
-      setMsg((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
-  return { busy, msg, setMsg, run };
 }
 
 function Say({ state, status, done }: { state: DoorActionsState; status: DoorStatus | null; done: () => void }) {

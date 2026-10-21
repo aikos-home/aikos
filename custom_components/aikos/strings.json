@@ -62,6 +62,14 @@
       },
       "door_picture": {
         "name": "Door picture"
+      },
+      "door_announcements": {
+        "name": "Door announcements"
+      }
+    },
+    "number": {
+      "door_disclosure": {
+        "name": "Door disclosure"
       }
     }
   },
@@ -76,7 +84,8 @@
           "notify_targets": "Phones (notify services)",
           "call_archive": "Call archive (developers)",
           "front_door": "Front door sensor",
-          "tts_engine": "Voice service (TTS)"
+          "tts_engine": "Voice service (TTS)",
+          "parcel_sensor": "Parcel expected (sensor)"
         },
         "data_description": {
           "doorbell": "The doorbell's event (or a binary sensor that turns on when pressed).",
@@ -84,7 +93,8 @@
           "notify_targets": "Where the push goes, e.g. the mobile app service mobile_app_<phone>.",
           "call_archive": "Every call (start with firmware versions, every message, end) as JSON lines in aikos_archive/calls.jsonl in the configuration folder. Stays until you delete it.",
           "front_door": "The door contact the devices follow (opening the front door ends a call). aikos debounces it by 2 s.",
-          "tts_engine": "Reads notes and the greeting at the door in the residents' own voices. Use a local service (e.g. aikos TTS through Wyoming). Empty = text is only shown."
+          "tts_engine": "Reads notes and the greeting at the door in the residents' own voices. Use a local service (e.g. aikos TTS through Wyoming). Empty = text is only shown.",
+          "parcel_sensor": "On while a delivery is expected today (e.g. from the delivery mails). Then whoever comes close to the door is taken for the courier and hears the parcel sentence."
         }
       }
     }
@@ -233,6 +243,44 @@
         "voice": {
           "name": "Voice",
           "description": "The sender's voice at the voice service; empty = shown only."
+        }
+      }
+    },
+    "door_announcements": {
+      "name": "Door announcements",
+      "description": "The sentences the door says after a ring, in a resident's own voice, and how much it may tell (0 = nothing … 4 = also where the residents are). Only the fields given change.",
+      "fields": {
+        "disclosure": {
+          "name": "Disclosure",
+          "description": "0 nothing, 1 nobody can come / where to leave a parcel, 4 also where the residents are."
+        },
+        "parcel": {
+          "name": "Parcel",
+          "description": "Said when a delivery is expected today (also when someone just comes close)."
+        },
+        "away": {
+          "name": "Away",
+          "description": "Said when every resident is away."
+        },
+        "quiet": {
+          "name": "Quiet",
+          "description": "Said when the bell is muted or it is quiet hours."
+        },
+        "away_places": {
+          "name": "Away with places",
+          "description": "From level 4: the away sentence with {wo} for where the residents are."
+        },
+        "places": {
+          "name": "Places",
+          "description": "Zone → how the door says it, e.g. a shop zone: \"beim Laden\". Zones not listed are never named."
+        },
+        "named": {
+          "name": "Named residents",
+          "description": "Whose place may be told (each person agrees for themselves)."
+        },
+        "voice": {
+          "name": "Voice",
+          "description": "The voice that says the sentences; empty = nothing is said."
         }
       }
     }

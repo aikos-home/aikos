@@ -54,6 +54,14 @@
       },
       "door_picture": {
         "default": "mdi:image"
+      },
+      "door_announcements": {
+        "default": "mdi:account-voice"
+      }
+    },
+    "number": {
+      "door_disclosure": {
+        "default": "mdi:shield-account"
       }
     }
   },
@@ -90,6 +98,9 @@
     },
     "door_greeting": {
       "service": "mdi:hand-wave"
+    },
+    "door_announcements": {
+      "service": "mdi:account-voice"
     }
   }
 }

@@ -62,6 +62,14 @@
       },
       "door_picture": {
         "name": "Bild an der Tür"
+      },
+      "door_announcements": {
+        "name": "Tür-Ansagen"
+      }
+    },
+    "number": {
+      "door_disclosure": {
+        "name": "Tür-Preisgabe"
       }
     }
   },
@@ -76,7 +84,8 @@
           "notify_targets": "Handys (Notify-Dienste)",
           "call_archive": "Gesprächsarchiv (Entwicklung)",
           "front_door": "Haustürsensor",
-          "tts_engine": "Sprachdienst (TTS)"
+          "tts_engine": "Sprachdienst (TTS)",
+          "parcel_sensor": "Paket erwartet (Sensor)"
         },
         "data_description": {
           "doorbell": "Das Event der Klingel (oder ein Binärsensor, der beim Drücken angeht).",
@@ -84,7 +93,8 @@
           "notify_targets": "Wohin der Push geht, z. B. der Dienst der Handy-App mobile_app_<handy>.",
           "call_archive": "Jedes Gespräch (Beginn mit Firmware-Versionen, jede Nachricht, Ende) als JSON-Zeilen in aikos_archive/calls.jsonl im Konfigurationsordner. Bleibt, bis du es löschst.",
           "front_door": "Der Türkontakt, dem die Geräte folgen (Haustür öffnen beendet ein Gespräch). aikos entprellt ihn um 2 s.",
-          "tts_engine": "Liest Notizen und die Begrüßung an der Tür in der eigenen Stimme der Bewohner. Nur einen lokalen Dienst wählen (z. B. aikos TTS über Wyoming). Leer = Text wird nur angezeigt."
+          "tts_engine": "Liest Notizen und die Begrüßung an der Tür in der eigenen Stimme der Bewohner. Nur einen lokalen Dienst wählen (z. B. aikos TTS über Wyoming). Leer = Text wird nur angezeigt.",
+          "parcel_sensor": "An, solange heute eine Lieferung erwartet wird (z. B. aus den Zustell-Mails). Dann gilt, wer an die Tür kommt, als Bote und hört den Paket-Satz."
         }
       }
     }
@@ -233,6 +243,44 @@
         "voice": {
           "name": "Stimme",
           "description": "Die Stimme des Absenders beim Sprachdienst; leer = nur anzeigen."
+        }
+      }
+    },
+    "door_announcements": {
+      "name": "Tür-Ansagen",
+      "description": "Die Sätze, die die Tür nach dem Klingeln in der eigenen Stimme eines Bewohners sagt, und wie viel sie verraten darf (0 = nichts … 4 = auch, wo die Bewohner sind). Nur angegebene Felder ändern sich.",
+      "fields": {
+        "disclosure": {
+          "name": "Preisgabe",
+          "description": "0 nichts, 1 niemand kann kommen / wohin mit dem Paket, 4 auch, wo die Bewohner sind."
+        },
+        "parcel": {
+          "name": "Paket",
+          "description": "Wenn heute eine Lieferung erwartet wird (auch schon, wenn jemand nur an die Tür kommt)."
+        },
+        "away": {
+          "name": "Unterwegs",
+          "description": "Wenn alle Bewohner unterwegs sind."
+        },
+        "quiet": {
+          "name": "Ruhe",
+          "description": "Wenn die Klingel stumm ist oder Ruhezeit ist."
+        },
+        "away_places": {
+          "name": "Unterwegs mit Ort",
+          "description": "Ab Stufe 4: der Unterwegs-Satz mit {wo} für den Ort der Bewohner."
+        },
+        "places": {
+          "name": "Orte",
+          "description": "Zone → wie die Tür sie nennt, z. B. eine Laden-Zone: „beim Laden“. Andere Zonen werden nie genannt."
+        },
+        "named": {
+          "name": "Genannte Bewohner",
+          "description": "Wessen Ort genannt werden darf (jede Person stimmt selbst zu)."
+        },
+        "voice": {
+          "name": "Stimme",
+          "description": "Die Stimme, die die Sätze sagt; leer = es wird nichts gesagt."
         }
       }
     }

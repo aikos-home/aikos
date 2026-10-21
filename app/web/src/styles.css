@@ -169,3 +169,6 @@ code.small { font-size: 11px; color: var(--muted); }
 .cropper .crop-frame { touch-action: none; cursor: grab; border-radius: 6px; border: 1px solid var(--border); filter: grayscale(1); background: #fff; }
 .cropper .zoom { flex-direction: row; align-items: center; gap: 8px; width: 100%; max-width: 320px; }
 .cropper .zoom input { flex: 1; min-height: 0; padding: 0; }
+.announce { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-top: 1px solid var(--border); }
+.announce.dim { opacity: 0.55; }
+.announce .chip { white-space: normal; text-align: left; }
