@@ -157,6 +157,9 @@ def main(argv: list[str] | None = None) -> int:
     print("database and Caddy on all nodes")
     for n in inv.nodes:
         compose(ssh, n.ip, "up", "-d", "--remove-orphans", "rqlite", "caddy")
+        # Compose does not notice a changed Caddyfile; a graceful reload picks it up without dropping connections.
+        compose(ssh, n.ip, "exec", "-T", "caddy", "caddy", "reload", "--config", "/etc/caddy/Caddyfile",
+                "--adapter", "caddyfile")
     wait_database(ssh, inv, sec)
     for n in inv.nodes:
         ssh.run(n.ip, "sudo systemctl enable --now aikos-deployer.timer >/dev/null && sudo systemctl restart keepalived"
