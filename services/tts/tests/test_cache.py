@@ -64,3 +64,10 @@ async def test_prepare_says_them_in_the_background(aiohttp_client, tmp_path):
     assert cache.count("v1") == 2
     assert (await client.post("/v1/prepare", json={"voice": "nope", "texts": ["x"]},
                               headers={"Authorization": f"Bearer {TOKEN}"})).status == 404
+
+
+def test_another_model_never_plays_this_ones_takes(tmp_path):
+    cache = SpeechCache(tmp_path / "cache")
+    cache.put("v1", 1.0, "Komme sofort.", 24000, b"\x01\x00", "chatterbox")
+    assert cache.get("v1", 1.0, "Komme sofort.", 24000, "chatterbox") == b"\x01\x00"
+    assert cache.get("v1", 1.0, "Komme sofort.", 24000, "chatterbox-mlx") is None

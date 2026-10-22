@@ -5,7 +5,8 @@
 #
 # SOURCE_DIR is a copy of services/tts. Everything lives in ~/aikos/services/tts: the venv (.venv-clone), the voices (0700),
 # the token for the aikos app (token, 0600, created once) and the settings (tts.env, created once; edit the client lists
-# there: Home Assistant machines for Wyoming, the app's nodes for HTTP). Logs: ~/Library/Logs/aikos-tts.log.
+# there: Home Assistant machines for Wyoming, the app's nodes for HTTP; AIKOS_TTS_ENGINE=chatterbox-mlx runs the model on
+# MLX, about three times as fast, in its own venv .venv-mlx). Logs: ~/Library/Logs/aikos-tts.log.
 set -eu
 SRC=${1:?source dir}
 HOME_DIR="$HOME/aikos/services/tts"
@@ -15,8 +16,6 @@ LABEL=home.aikos.tts
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 
 mkdir -p "$HOME_DIR/voices" && chmod 700 "$HOME_DIR/voices"
-[ -x "$VENV/bin/python" ] || "$UV" venv -q --python 3.11 "$VENV"
-"$UV" pip install -q --python "$VENV/bin/python" "$SRC[chatterbox]"
 
 if [ ! -f "$HOME_DIR/token" ]; then
   (umask 077; "$VENV/bin/python" -c "import secrets; print(secrets.token_urlsafe(32))" > "$HOME_DIR/token")
@@ -30,6 +29,11 @@ EOF
   echo "edit $HOME_DIR/tts.env (client lists), then run this again" >&2
 fi
 . "$HOME_DIR/tts.env"
+ENGINE=${AIKOS_TTS_ENGINE:-chatterbox}
+EXTRA=chatterbox
+if [ "$ENGINE" = chatterbox-mlx ]; then VENV="$HOME_DIR/.venv-mlx"; EXTRA=mlx; fi
+[ -x "$VENV/bin/python" ] || "$UV" venv -q --python 3.11 "$VENV"
+"$UV" pip install -q --python "$VENV/bin/python" "$SRC[$EXTRA]"
 
 cat > "$PLIST" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -39,6 +43,7 @@ cat > "$PLIST" <<EOF
   <key>ProgramArguments</key><array>
     <string>$VENV/bin/python</string><string>-m</string><string>aikos_tts</string>
     <string>--voices</string><string>$HOME_DIR/voices</string>
+    <string>--engine</string><string>$ENGINE</string>
   </array>
   <key>EnvironmentVariables</key><dict>
     <key>AIKOS_TTS_TOKEN_FILE</key><string>$HOME_DIR/token</string>

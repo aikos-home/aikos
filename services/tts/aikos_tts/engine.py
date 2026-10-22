@@ -1,5 +1,7 @@
 """Speech from text in a person's voice. The model (Chatterbox multilingual, MIT licence, with its inaudible watermark that
-marks the audio as synthetic) is loaded once and kept; one synthesis at a time. Text is split into sentences so a long note
+marks the audio as synthetic) is loaded once and kept; one synthesis at a time. Two ways to run it: PyTorch on MPS
+(`chatterbox`) or Apple's MLX (`chatterbox-mlx`, about three times as fast on an M2 Max; the watermark is added here, the
+MLX port has none). Text is split into sentences so a long note
 does not run over the model's limit. With a checker, every sentence is written back and compared with the text (verify.py):
 the model only gives the voice, it never decides what is said.
 """
@@ -73,11 +75,11 @@ class Engine:
         if self.cache is None:
             return self._make(sentence, reference)
         voice, mtime = reference.parent.name, reference.stat().st_mtime
-        hit = self.cache.get(voice, mtime, sentence, self.rate)
+        hit = self.cache.get(voice, mtime, sentence, self.rate, self.name)
         if hit is not None:
             return np.frombuffer(hit, dtype="<i2").astype(np.float32) / 32767.0
         samples = self._make(sentence, reference)
-        self.cache.put(voice, mtime, sentence, self.rate, to_pcm16(samples))
+        self.cache.put(voice, mtime, sentence, self.rate, to_pcm16(samples), self.name)
         return samples
 
     def _make(self, sentence: str, reference: Path) -> np.ndarray:
@@ -104,6 +106,11 @@ class Engine:
     def _generate(self, text: str, reference: Path, temperature: float) -> np.ndarray:  # pragma: no cover - the real model
         raise NotImplementedError
 
+    def warm_up(self, reference: Path) -> None:
+        """One sentence nobody hears, right after loading: the first take after a start is slow (6 s instead of 2)."""
+        with self._lock:
+            self._generate("Hallo.", reference, TEMPERATURES[0])
+
 
 class ChatterboxEngine(Engine):
     name = "chatterbox-multilingual"
@@ -129,6 +136,34 @@ class ChatterboxEngine(Engine):
         with self._torch.inference_mode():
             wav = self.model.generate(text, language_id=self.language, temperature=temperature)
         return wav.squeeze(0).detach().cpu().numpy().astype(np.float32)
+
+
+class MlxChatterboxEngine(Engine):
+    """Chatterbox multilingual on MLX (mlx-audio). Same voices, same check; measured 22.10.: 1.5–2.6 s per sentence
+    instead of 5–8 s, 8 of 8 takes faithful at the first try."""
+
+    name = "chatterbox-mlx"
+    REPO = "mlx-community/chatterbox-multilingual-v3"
+
+    def __init__(self, language: str = "de", checker: WhisperChecker | None = None, repo: str = "") -> None:
+        super().__init__(checker)
+        import perth
+        from mlx_audio.tts.utils import load_model
+        self.model = load_model(repo or self.REPO)
+        self.rate = self.model.sample_rate
+        self.language = language
+        self._watermark = perth.PerthImplicitWatermarker()
+        self._conds: dict[Path, tuple[float, object]] = {}
+
+    def _generate(self, text: str, reference: Path, temperature: float) -> np.ndarray:  # pragma: no cover - the model
+        mtime = reference.stat().st_mtime
+        cached = self._conds.get(reference)
+        if cached is None or cached[0] != mtime:   # a re-recorded voice is picked up at once
+            self._conds[reference] = (mtime, self.model.prepare_conditionals(str(reference), self.rate, exaggeration=0.1))
+        parts = [np.asarray(r.audio, dtype=np.float32) for r in self.model.generate(
+            text, conds=self._conds[reference][1], lang_code=self.language, temperature=temperature, verbose=False)]
+        wav = np.concatenate(parts) if parts else np.zeros(0, dtype=np.float32)
+        return np.asarray(self._watermark.apply_watermark(wav, sample_rate=self.rate), dtype=np.float32)
 
 
 class FakeEngine(Engine):

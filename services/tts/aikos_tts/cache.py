@@ -1,6 +1,7 @@
 """Sentences already said, per voice: a checked take is kept, so the same sentence plays at once the next time (the quick
 replies, the announcements). The key holds the voice's recording time, so a new recording never plays old takes; deleting
-a voice deletes its takes. At most KEEP takes per voice, the least recently used go first.
+a voice deletes its takes, and another model never plays this one's takes. At most KEEP takes per voice, the least
+recently used go first.
 """
 
 from __future__ import annotations
@@ -17,12 +18,12 @@ class SpeechCache:
         self.root = root
         root.mkdir(parents=True, exist_ok=True)
 
-    def _path(self, voice_id: str, ref_mtime: float, sentence: str, rate: int) -> Path:
-        key = hashlib.sha256(f"{ref_mtime:.3f}\n{rate}\n{' '.join(sentence.split())}".encode()).hexdigest()[:32]
+    def _path(self, voice_id: str, ref_mtime: float, sentence: str, rate: int, model: str) -> Path:
+        key = hashlib.sha256(f"{ref_mtime:.3f}\n{rate}\n{model}\n{' '.join(sentence.split())}".encode()).hexdigest()[:32]
         return self.root / voice_id / f"{key}.pcm"
 
-    def get(self, voice_id: str, ref_mtime: float, sentence: str, rate: int) -> bytes | None:
-        p = self._path(voice_id, ref_mtime, sentence, rate)
+    def get(self, voice_id: str, ref_mtime: float, sentence: str, rate: int, model: str = "") -> bytes | None:
+        p = self._path(voice_id, ref_mtime, sentence, rate, model)
         try:
             data = p.read_bytes()
         except OSError:
@@ -30,8 +31,8 @@ class SpeechCache:
         p.touch()   # used: kept longer
         return data
 
-    def put(self, voice_id: str, ref_mtime: float, sentence: str, rate: int, pcm: bytes) -> None:
-        p = self._path(voice_id, ref_mtime, sentence, rate)
+    def put(self, voice_id: str, ref_mtime: float, sentence: str, rate: int, pcm: bytes, model: str = "") -> None:
+        p = self._path(voice_id, ref_mtime, sentence, rate, model)
         p.parent.mkdir(parents=True, exist_ok=True)
         tmp = p.with_suffix(".tmp")
         tmp.write_bytes(pcm)
