@@ -106,3 +106,26 @@ instead of 10 vocoder steps it is barely faster and says more nonsense, so neith
 ## Tests
 
 `pip install -e ".[test]"`, `pytest` (without the model: `FakeEngine`). CI job `tts-unit`.
+
+## Deploying a version (from `tts-v0.6.0` on)
+
+`deploy/deploy.sh <tag>` rolls one tagged version out on the Mac and rolls back by itself
+([AI host](../../docs/ai-host.md) has the rules all services follow):
+
+```sh
+git -C ~/aikos/repo fetch --tags
+git -C ~/aikos/repo show tts-v0.6.0:services/tts/deploy/deploy.sh > /tmp/tts-deploy.sh
+bash /tmp/tts-deploy.sh tts-v0.6.0
+```
+
+1. The tag's `services/tts` goes into a release folder of its own, `~/aikos/releases/tts/<tag>` (`git archive`; the
+   clone's working tree, which the transcriber runs from, is never touched).
+2. `install.sh --build-only <release>` builds the release's environment and prints its Python; the unit tests run with
+   it. Red: nothing is changed.
+3. The LaunchAgent is backed up to `~/.aikos/backup`; `install.sh <release>` writes it and starts the service.
+4. `GET /v1/health` must report the tag's version, and `POST /v1/selftest` must pass (a fixed sentence in the model's
+   built-in voice with the Whisper check; a resident's voice is never used for a test).
+
+A failure in 3–4 restores the previous LaunchAgent, and with it the previous release, and exits 1. The newest three
+releases stay. Log: `~/Library/Logs/aikos/deploy.log`. `tests/test_deploy.py` runs the whole flow, the way back included,
+with git, launchctl and curl replaced.
