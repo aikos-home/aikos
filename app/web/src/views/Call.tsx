@@ -24,7 +24,7 @@ function entriesOf(call: DoorCall): ThreadEntry[] {
   return call.messages.map((m) => ({ id: m.id, t: "", kind: m.side, who: m.who, text: m.text, spoken: null }));
 }
 
-const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s) % 60).padStart(2, "0")}`;
+const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s) % 60).padStart(2, "0")}`;
 
 function Voice({ e }: { e: ThreadEntry }) {
   const [playing, setPlaying] = useState(false);
@@ -48,7 +48,7 @@ function Voice({ e }: { e: ThreadEntry }) {
         <Icon name={playing ? "pause" : "play"} />
       </button>
       <span class={`chat-wave ${playing ? "on" : ""}`} />
-      <span class="chat-len">{e.seconds ? mmss(e.seconds) : ""}</span>
+      <span class="chat-len">{e.seconds ? mmss(Math.max(1, e.seconds)) : ""}</span>
     </span>
   );
 }
@@ -71,7 +71,7 @@ function Bubble({ e, me }: { e: ThreadEntry; me: string }) {
     : e.kind === "voice" ? (e.spoken === true ? "abgespielt ✓" : e.spoken === false ? "nicht abgespielt" : "wird abgespielt …")
     : e.kind === "room" ? "über den RoomKey" : "";
   return (
-    <li class={`chat-msg ${ours ? "ours" : "theirs"} ${e.kind}`}>
+    <li class={`chat-msg ${ours ? "ours" : "theirs"} k-${e.kind}`}>
       <span class="chat-who">{who}</span>
       {e.voice ? <Voice e={e} /> : <span class="chat-text">{e.text}</span>}
       <span class="chat-time">{[time, note].filter(Boolean).join(" · ")}</span>
