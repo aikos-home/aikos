@@ -9,8 +9,9 @@ listens, 0 = leaves). RTP L16 big-endian, PT 96, 16 kHz mono, 20 ms, from exactl
 Holding without a ring opens a call. One participant per node: the door knows one host:port.
 
 As a room key does, the node sends a copy of what is said (and the end of speech) to the transcriber's room side
-(`transcriber`, host:port), and tells aikos who holds (`aikos.app_talker {ip, name}`, aikos 0.18.0), so the transcript
-comes back named and the door's chat shows it (A49).
+(`transcriber`, host:port). While someone is in the call from the app, aikos knows who (`aikos.app_talker {ip, name}`,
+aikos 0.18.0): the transcript comes back under their name, and the door screen shows "<name> spricht gerade" (it looks the
+node's address up in `sensor.aikos_people`, which lists the app while someone is in the call; Klingelbox, CHAT 22.10.).
 """
 
 from __future__ import annotations
@@ -127,6 +128,7 @@ class TalkSession:
 
     async def open(self) -> None:
         self.bridge.session = self
+        await self._talker(self.bridge.host, self.name)
         await self.bridge.action("app_join", {"host": self.bridge.me, "ms": JOIN_MS})
         await self._state()
         loop = asyncio.get_running_loop()
@@ -175,8 +177,6 @@ class TalkSession:
         self.holding = on
         if on:
             self._first, self._buffer = True, b""
-            if self.bridge.transcriber is not None and not self._named:
-                await self._talker(self.bridge.host, self.name)
         else:
             self.bridge.send(self._rtp.packet(b"\x00", pt=PT_END))   # end of speech
         await self._state()

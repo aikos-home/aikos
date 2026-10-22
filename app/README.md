@@ -109,7 +109,7 @@ of them (matrix 2.4a).
   Since 0.9.0 the chat's microphone is that button (the owner: "live wie RoomKey"): holding it talks live while someone
   is at the door or a call runs (the first press joins the call), else it records a voice message for the next visitor.
   As a room key does, the node sends a copy of what is said to the transcriber's room side (`AIKOS_APP_TRANSCRIBER`,
-  host:port) and tells aikos who holds (`aikos.app_talker`, aikos 0.18.0), so the transcript comes back under the
+  host:port) and tells aikos who is in the call (`aikos.app_talker`, aikos 0.18.0), so the transcript comes back under the
   person's name, in the door's chat and the app's (`via: app`). Typed answers become lines of the call too (aikos 0.18.0).
 - **Announcements** (aikos 0.11.0+, sprachausgabe S10–S14): the sentences the door says after a ring (parcel expected, everybody
   away, everybody away with places, bell muted or quiet hours), with suggestions and "listen in my voice"; the slider 0–4 of what

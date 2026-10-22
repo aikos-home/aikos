@@ -150,7 +150,7 @@ visitor (`<local media>/aikos/voice-*`, the newest 20 stay so the app can play t
 The aikos app talks to the door live like a room key (A5, A49). Two things make it one in the call log:
 - **Typed answers** shown at the door during a call are a line of the call log (`side: room`, `who` = the sender,
   `dev: app`), so the door screen's chat shows them (R22: only during a call).
-- **Who talks from the app:** `aikos.app_talker {ip, name}` (set by the app while someone holds, `ip` empty = nobody)
+- **Who talks from the app:** `aikos.app_talker {ip, name}` (set by the app while someone is in the call from it, `ip` empty = nobody)
   drives `sensor.aikos_app_talker_ip_address` (state = the app node's address, friendly name "<name> IP address"). The
   transcriber names a sender by the `*_ip_address` entity with its IP, so what is said from the app comes back as
   `sensor.talk_transcript` from `<name>`, `key_id: aikos_app_talker`.

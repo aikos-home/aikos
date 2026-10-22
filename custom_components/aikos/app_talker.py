@@ -2,8 +2,8 @@
 
 The transcriber names the sender of an utterance by the `sensor.*_ip_address` entity whose state is the sender's IP (its
 friendly name without " IP address"); `sensor.aikos_app_talker_ip_address` is that entity for the app: state = the app
-node's address while someone talks from the app, friendly name "<person> IP address". The aikos app sets it with
-`aikos.app_talker {ip, name}` when someone holds, and clears it when they leave. No Home Assistant imports.
+node's address while someone is in the call from the app, friendly name "<person> IP address". The aikos app sets
+it with `aikos.app_talker {ip, name}` when someone joins, and clears it when they leave. No Home Assistant imports.
 """
 from __future__ import annotations
 
