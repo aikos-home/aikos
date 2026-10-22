@@ -1,6 +1,7 @@
 """Run the service: Wyoming for Home Assistant and HTTP for the aikos app, in one process with one model.
 
-    python -m aikos_tts --voices DIR [--wyoming tcp://0.0.0.0:10200] [--http 0.0.0.0:10201] [--engine chatterbox|fake]
+    python -m aikos_tts --voices DIR [--wyoming tcp://0.0.0.0:10200] [--http 0.0.0.0:10201]
+                        [--engine chatterbox|chatterbox-mlx|fake]
 
 Environment: AIKOS_TTS_TOKEN_FILE (the app's token), AIKOS_TTS_WYOMING_CLIENTS (Home Assistant addresses, comma-separated),
 AIKOS_TTS_HTTP_CLIENTS (the app's nodes; an empty list allows nobody), AIKOS_TTS_WHISPER_URL (a local whisper-server that
@@ -20,7 +21,7 @@ from aiohttp import web
 from wyoming.server import AsyncServer
 
 from .cache import SpeechCache
-from .engine import ChatterboxEngine, Engine, FakeEngine
+from .engine import ChatterboxEngine, Engine, FakeEngine, MlxChatterboxEngine
 from .http_api import create_app
 from .verify import WhisperChecker
 from .voices import VoiceStore
@@ -37,7 +38,9 @@ def allow_list(value: str):
 def make_engine(kind: str) -> Engine:
     url = os.environ.get("AIKOS_TTS_WHISPER_URL", "")
     checker = WhisperChecker(url) if url else None
-    return FakeEngine(checker=checker) if kind == "fake" else ChatterboxEngine(checker=checker)
+    if kind == "fake":
+        return FakeEngine(checker=checker)
+    return MlxChatterboxEngine(checker=checker) if kind == "chatterbox-mlx" else ChatterboxEngine(checker=checker)
 
 
 async def serve(args: argparse.Namespace) -> None:
@@ -65,7 +68,7 @@ def main() -> None:
     p.add_argument("--voices", required=True)
     p.add_argument("--wyoming", default="tcp://0.0.0.0:10200")
     p.add_argument("--http", default="0.0.0.0:10201")
-    p.add_argument("--engine", default="chatterbox", choices=["chatterbox", "fake"])
+    p.add_argument("--engine", default="chatterbox", choices=["chatterbox", "chatterbox-mlx", "fake"])
     args = p.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     asyncio.run(serve(args))

@@ -8,6 +8,8 @@ dependencies = ["wyoming==1.10.2", "aiohttp>=3.10", "numpy>=1.26"]
 [project.optional-dependencies]
 # the real model; the tests run without it (FakeEngine)
 chatterbox = ["chatterbox-tts==0.1.7", "setuptools<81"]
+# the same model on Apple's MLX (about three times as fast on Apple silicon); perth adds the watermark
+mlx = ["mlx-audio==0.6.1", "resemble-perth==1.0.1", "setuptools<81"]
 test = ["pytest>=8", "pytest-aiohttp>=1.0"]
 
 [tool.pytest.ini_options]
