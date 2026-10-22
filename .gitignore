@@ -8,3 +8,5 @@ secrets.yaml
 .esphome/
 # recordings never go into a repo
 *.wav
+# the voice service's test voice: made by the model's own built-in voice, nobody's recording
+!services/tts/aikos_tts/selftest_voice.wav

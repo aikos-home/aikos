@@ -1,0 +1,582 @@
+aiofiles==24.1.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+aiohappyeyeballs==2.7.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   aiohttp
+aiohttp==3.14.5
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   aikos-tts (pyproject.toml)
+    #   pytest-aiohttp
+aiosignal==1.4.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   aiohttp
+annotated-doc==0.0.5
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   fastapi
+    #   typer
+annotated-types==0.8.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   pydantic
+anyio==4.15.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+    #   httpx
+    #   starlette
+attrs==26.1.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   aiohttp
+audioread==3.1.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   librosa
+brotli==1.2.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+catalogue==2.0.10
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   srsly
+certifi==2026.10.19
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   httpcore
+    #   httpx
+    #   requests
+cffi==2.1.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   soundfile
+cfgv==3.5.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   pre-commit
+charset-normalizer==3.5.2
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   requests
+chatterbox-tts==0.1.7
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   aikos-tts (pyproject.toml)
+click==8.5.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   huggingface-hub
+    #   uvicorn
+cloudpickle==3.1.2
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   joblib
+conformer==0.3.2
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   chatterbox-tts
+decorator==5.3.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   librosa
+deprecated==1.3.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   pykakasi
+diffusers==0.29.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   chatterbox-tts
+distlib==0.4.4
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   virtualenv
+einops==0.8.2
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   conformer
+    #   s3tokenizer
+fastapi==0.157.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+ffmpy==1.0.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+filelock==4.2.4
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   diffusers
+    #   huggingface-hub
+    #   python-discovery
+    #   torch
+    #   virtualenv
+frozenlist==1.8.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   aiohttp
+    #   aiosignal
+fsspec==2026.9.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio-client
+    #   huggingface-hub
+    #   torch
+gradio==6.8.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   chatterbox-tts
+gradio-client==2.2.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+groovy==0.1.2
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+h11==0.16.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   httpcore
+    #   uvicorn
+hf-xet==1.7.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   huggingface-hub
+httpcore==1.0.9
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   httpx
+httpx==0.28.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+    #   gradio-client
+    #   huggingface-hub
+    #   safehttpx
+huggingface-hub==1.33.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   diffusers
+    #   gradio
+    #   gradio-client
+    #   tokenizers
+    #   transformers
+identify==2.6.20
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   pre-commit
+idna==3.20
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   anyio
+    #   httpx
+    #   requests
+    #   yarl
+importlib-metadata==9.0.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   diffusers
+iniconfig==2.3.1
+    # via pytest
+jaconv==0.5.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   pykakasi
+jinja2==3.1.6
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+    #   torch
+joblib==1.6.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   librosa
+    #   scikit-learn
+lazy-loader==0.6
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   librosa
+librosa==0.11.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   chatterbox-tts
+llvmlite==0.50.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   numba
+markdown-it-py==4.2.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   rich
+markupsafe==3.0.4
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+    #   jinja2
+mdurl==0.1.2
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   markdown-it-py
+ml-dtypes==0.5.4
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   onnx
+mpmath==1.3.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   sympy
+msgpack==1.2.3
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   librosa
+multidict==7.1.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   aiohttp
+    #   yarl
+narwhals==2.27.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   scikit-learn
+networkx==3.6.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   torch
+nodeenv==1.11.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   pre-commit
+numba==0.68.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   librosa
+numpy==1.26.4
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   aikos-tts (pyproject.toml)
+    #   chatterbox-tts
+    #   diffusers
+    #   gradio
+    #   librosa
+    #   ml-dtypes
+    #   numba
+    #   onnx
+    #   pandas
+    #   pyloudnorm
+    #   s3tokenizer
+    #   scikit-learn
+    #   scipy
+    #   soundfile
+    #   soxr
+    #   spacy-pkuseg
+    #   transformers
+omegaconf==2.4.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   chatterbox-tts
+onnx==1.23.2
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   s3tokenizer
+opentelemetry-api==1.45.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   fastapi
+orjson==3.13.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+packaging==26.3
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+    #   gradio-client
+    #   huggingface-hub
+    #   lazy-loader
+    #   pooch
+    #   pytest
+    #   transformers
+    #   virtualenv
+pandas==3.0.6
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+pillow==12.3.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   diffusers
+    #   gradio
+platformdirs==4.13.5
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   pooch
+    #   virtualenv
+pluggy==1.7.0
+    # via pytest
+pooch==1.9.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   librosa
+pre-commit==4.7.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   s3tokenizer
+propcache==0.5.4
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   aiohttp
+    #   yarl
+protobuf==7.36.2
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   onnx
+pycparser==3.11
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   cffi
+pydantic==2.14.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   fastapi
+    #   gradio
+pydantic-core==2.50.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   pydantic
+pydub==0.25.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+pygments==2.21.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   pytest
+    #   rich
+pykakasi==2.3.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   chatterbox-tts
+pyloudnorm==0.2.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   chatterbox-tts
+pytest==9.1.1
+    # via
+    #   aikos-tts (pyproject.toml)
+    #   pytest-aiohttp
+    #   pytest-asyncio
+pytest-aiohttp==1.1.1
+    # via aikos-tts (pyproject.toml)
+pytest-asyncio==1.4.0
+    # via pytest-aiohttp
+python-dateutil==2.9.0.post0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   pandas
+python-discovery==1.6.4
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   virtualenv
+python-multipart==0.0.32
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+pytz==2026.5
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+pyyaml==6.0.3
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+    #   huggingface-hub
+    #   omegaconf
+    #   pre-commit
+    #   transformers
+regex==2026.9.29
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   diffusers
+    #   transformers
+requests==2.34.2
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   diffusers
+    #   pooch
+resemble-perth==1.0.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   chatterbox-tts
+rich==15.0.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   typer
+s3tokenizer==0.3.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   chatterbox-tts
+safehttpx==0.1.7
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+safetensors==0.5.3
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   chatterbox-tts
+    #   diffusers
+    #   transformers
+scikit-learn==1.9.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   librosa
+scipy==1.17.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   librosa
+    #   pyloudnorm
+    #   scikit-learn
+semantic-version==2.10.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+setuptools==80.10.2
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   aikos-tts (pyproject.toml)
+shellingham==1.5.4
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   typer
+six==1.17.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   python-dateutil
+soundfile==0.14.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   librosa
+soxr==1.1.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   librosa
+spacy-pkuseg==1.0.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   chatterbox-tts
+srsly==2.5.4
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   spacy-pkuseg
+starlette==0.52.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   fastapi
+    #   gradio
+sympy==1.13.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   torch
+threadpoolctl==3.7.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   scikit-learn
+tokenizers==0.22.2
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   transformers
+tomlkit==0.13.3
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+torch==2.6.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   chatterbox-tts
+    #   conformer
+    #   s3tokenizer
+    #   torchaudio
+torchaudio==2.6.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   chatterbox-tts
+    #   s3tokenizer
+tqdm==4.70.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   huggingface-hub
+    #   s3tokenizer
+    #   transformers
+transformers==5.2.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   chatterbox-tts
+typer==0.27.3
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+    #   typer-slim
+typer-slim==0.24.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   transformers
+typing-extensions==4.16.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   aiohttp
+    #   aiosignal
+    #   anyio
+    #   fastapi
+    #   gradio
+    #   gradio-client
+    #   huggingface-hub
+    #   librosa
+    #   onnx
+    #   opentelemetry-api
+    #   pydantic
+    #   pydantic-core
+    #   pytest-asyncio
+    #   soundfile
+    #   starlette
+    #   torch
+    #   typing-inspection
+typing-inspection==0.4.4
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   fastapi
+    #   pydantic
+urllib3==2.8.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   requests
+uvicorn==0.54.0
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   gradio
+virtualenv==21.14.12
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   pre-commit
+wrapt==2.5.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   deprecated
+wyoming==1.10.2
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   aikos-tts (pyproject.toml)
+yarl==1.25.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   aiohttp
+zipp==4.1.1
+    # via
+    #   -c /tmp/tts-lock/c-chatterbox.txt
+    #   importlib-metadata

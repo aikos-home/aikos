@@ -4,7 +4,7 @@ Speech in the residents' own voices, locally. The door reads a resident's note o
 (aikos-app A42–A45). Each person records their own voice in the aikos app (Haus → Meine Stimme), so every voice is enrolled
 by its owner. Voices, text and audio never leave the machine this runs on (R11). Owner: aikos core.
 
-Version **0.5.0**. Python 3.11. Model: [Chatterbox multilingual](https://github.com/resemble-ai/chatterbox) (MIT licence),
+Version **0.6.0**. Python 3.11. Model: [Chatterbox multilingual](https://github.com/resemble-ai/chatterbox) (MIT licence),
 zero-shot voice cloning from a 8–60 s recording, German. Every generated clip carries Chatterbox's inaudible watermark,
 so it can be recognised as synthetic. A voice is never proof of identity.
 
@@ -28,7 +28,8 @@ word (before the check: 3 of 5, with babbling after the sentence); 7–25 s per 
 
 | Route | What |
 |---|---|
-| `GET /v1/health` | `{ok, version, engine, voices}`; no token needed, no secrets in it |
+| `GET /v1/health` | `{ok, version, engine, model_revision, voices, whisper}` (`whisper`: ok / unreachable / off, from the heartbeat); no token needed, no secrets in it; answers at once, also while a sentence is being made; only answers at all once the model is loaded |
+| `POST /v1/selftest` | only from this machine (loopback), no token: a fixed sentence in the built-in test voice (made by the model's own voice, nobody's) through the model and the check, not cached → `{ok, seconds, whisper_ok}`; for the deploy, never a resident's voice |
 | `GET /v1/voices` | `[{id, name, created, seconds}]` |
 | `PUT /v1/voices/{id}` | body = the recording (any format ffmpeg reads), header `X-Voice-Name` (URL-encoded). 8–60 s after cutting leading silence; replaces the voice only once the new recording is checked |
 | `DELETE /v1/voices/{id}` | the voice and its recording, for good |
@@ -37,13 +38,48 @@ word (before the check: 3 of 5, with babbling after the sentence); 7–25 s per 
 
 Voice ids: `^[a-z0-9][a-z0-9_-]{0,39}$`. The app decides who may change which voice (only the person themself).
 
-## Running it (Mac)
+## Running it
 
-`deploy/install.sh SOURCE_DIR` installs into `~/aikos/services/tts` (own venv `.venv-clone`, or `.venv-mlx` with
-`AIKOS_TTS_ENGINE=chatterbox-mlx` in `tts.env`; voices `0700`, token `0600`, settings `tts.env`) and runs it as the LaunchAgent `home.aikos.tts` (log `~/Library/Logs/aikos-tts.log`). The model loads
-once (~10 s) and stays in memory; one synthesis at a time. A short door sentence takes about 5–8 s on an M2 Max (MPS), so
-the aikos integration makes waiting notes, the greeting and the announcements in advance, and the app makes a note while it
-is being typed.
+**Engines.** `auto` (default): `chatterbox-mlx` on Apple silicon, else `chatterbox` (PyTorch on CUDA, MPS or CPU). Same
+voices, same check, same interface; only the engine changes. `AIKOS_TTS_ENGINE` in `tts.env` picks another.
+
+**One state folder** (`AIKOS_TTS_STATE_DIR`, default `~/.aikos/tts`) holds everything that must move to a new machine:
+
+| File | What |
+|---|---|
+| `voices/` (0700) | the recordings each person made of their own voice |
+| `token` (0600) | the app's token |
+| `heartbeat-url` (0600) | the house monitor's push address (Uptime Kuma); no file = no heartbeat |
+| `tts.env` | `AIKOS_TTS_ENGINE`, `AIKOS_TTS_WYOMING_CLIENTS`, `AIKOS_TTS_HTTP_CLIENTS`, `AIKOS_TTS_WHISPER_URL` |
+
+The cache (`~/Library/Caches/aikos/tts`) and the models are made again. **Models are pinned** to one commit each
+(`aikos_tts/models.py`); `python -m aikos_tts fetch` downloads them once, and the service then starts without the internet
+(`HF_HUB_OFFLINE=1`) and never picks up a changed model.
+
+**Mac:** `deploy/install.sh [--build-only] RELEASE_DIR` builds the venv inside the release (`RELEASE_DIR/.venv-<engine>`,
+from `locks/<engine>-<platform>.txt`: the versions measured on the Mac), copies an older install's state
+(`~/aikos/services/tts`) into the state folder (copied, never moved: the way back to an older version keeps working),
+fetches the models and runs the LaunchAgent `home.aikos.tts` (log `~/Library/Logs/aikos/tts.log`; no note text is ever
+logged). `--build-only` only builds the venv and prints its python as the last line. Versions are deployed with
+`deploy/deploy.sh <tag>` (tests, self test, way back; see below). The model loads once (~10 s), warms up with one unheard
+sentence and stays in memory; one synthesis at a time.
+
+**NVIDIA machine:** the same package with the `chatterbox` extra on Linux (PyTorch 2.6.0 with CUDA 12), in a container
+with `network_mode: host` (the client lists check source addresses) and the GPU, the state folder mounted. Its lock file is
+made there, from the Mac's: `uv pip compile pyproject.toml --extra chatterbox --extra test -p 3.11 -c
+locks/chatterbox-darwin-arm64.txt -o locks/chatterbox-linux-x86_64.txt` (not yet: no such machine in the house).
+
+**Heartbeat** (the transcriber's contract): every 30 s to `heartbeat-url`, "up" only while the model is loaded and the
+check's Whisper answers (without the check nothing is said), the message names the cause ("whisper check unreachable",
+"whisper check not configured").
+
+**Moving / backup:** the state folder is in the Mac's backup (Time Machine, in the house network; the owner: the voices
+need no extra encryption there). `python -m aikos_tts export FILE` packs the voices into one archive (0600), `import FILE
+[--replace]` brings them in on the new machine. Moving = state folder (or an export), install, point the service's
+name in the house DNS (`aikos-tts.<house domain>`) at the new machine.
+
+**Whisper for the check:** `AIKOS_TTS_WHISPER_URL` (the service appends `/v1/audio/transcriptions`); on the Mac through the
+aikos hub as its own client, so the check never queues in front of the door's live transcripts.
 
 **On MLX** (`chatterbox-mlx`, mlx-audio with `mlx-community/chatterbox-multilingual-v3`): measured 22.10. with a
 resident's voice, whole sentences including the Whisper check 1.9–2.2 s (before: 6–8 s), 8 of 8 takes faithful at the first
@@ -63,6 +99,9 @@ instead of 10 vocoder steps it is barely faster and says more nonsense, so neith
 | Client not in the list | Wyoming error / HTTP 403 |
 | Wrong token | HTTP 401 |
 | The model fails | The request fails; Home Assistant shows the text only (aikos keeps the door working) |
+| A sentence can't be said faithfully | Nothing is said; the log says how long it was, never the text |
+| The check's Whisper is away | Nothing new is said; the heartbeat says "whisper check unreachable" |
+| No internet at a start | Starts anyway: the pinned models come from the local cache |
 
 ## Tests
 
