@@ -21,6 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 
 TALK_DEVICE = "aikos-intercom-talk"          # the talk computer's device name (naming rule aikos-<family>-<role>)
 ALLOW_ACTION = "aikos_intercom_talk_allow_tts"
+CUE_ACTION = "aikos_intercom_talk_tts_cue"   # talk computer 0.7.26: a short soft two-tone, "speech is on its way"
 DOOR_PORT = 5004
 RATE, FRAME = 16000, 320                     # 20 ms
 LEAD = 10                                    # frames ahead (200 ms) against Wi-Fi jitter; the door buffers 1 s
@@ -91,6 +92,15 @@ async def stream(target: tuple[str, int], pcm: bytes) -> int:
         return len(frames)
     finally:
         transport.close()
+
+
+async def cue(hass: HomeAssistant) -> None:
+    """The door's own short two-tone while speech is being made (silent during a call). Best effort, never waits."""
+    if hass.services.has_service("esphome", CUE_ACTION):
+        try:
+            await hass.services.async_call("esphome", CUE_ACTION, {}, blocking=False)
+        except Exception as e:  # the cue is a nicety; the speech comes anyway
+            _LOGGER.debug("aikos: no cue at the door: %s", e)
 
 
 async def play(hass: HomeAssistant, path: Path) -> float:
