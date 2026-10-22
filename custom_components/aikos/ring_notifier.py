@@ -1,4 +1,5 @@
-"""Watches the doorbell and sends the push (quiet hours, bell muted or nobody home) to the configured notify services."""
+"""Watches the doorbell and sends the push (quiet hours, bell muted or nobody home) to the configured notify services. Every
+press is also told to listeners (`sensor.aikos_door_ring`, for the aikos app's push on every ring, aikos-app A47)."""
 from __future__ import annotations
 
 import logging
@@ -41,6 +42,13 @@ class RingNotifier:
         self._last_push: datetime | None = None
         self._unsub: Callable[[], None] | None = None
         self._doorbell: str | None = None
+        self.last_ring: datetime | None = None
+        self._listeners: list[Callable[[], None]] = []
+
+    @callback
+    def add_listener(self, update: Callable[[], None]) -> Callable[[], None]:
+        self._listeners.append(update)
+        return lambda: self._listeners.remove(update)
 
     @callback
     def start(self) -> None:
@@ -64,6 +72,9 @@ class RingNotifier:
         if not is_ring(event.data["old_state"], event.data["new_state"]):
             return
         now = dt_util.now()
+        self.last_ring = now
+        for update in list(self._listeners):
+            update()
         q = self._quiet
         quiet_active = q.enabled and is_quiet(now.time(), q.start, q.end)
         residents = [self._hass.states.get(p) for p in self._entry.options.get(OPT_RESIDENTS, [])]

@@ -1,6 +1,6 @@
 # aikos integration for Home Assistant
 
-The household logic of aikos, installed via HACS. Version **0.14.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
+The household logic of aikos, installed via HACS. Version **0.15.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
 front door (0.5.0, tag `aikos-v0.5.0`), the mic health warning (0.7.0), the door message register (0.8.0), the door actions (0.9.0), reading aloud in the residents' own voices (0.10.0), the door announcements (0.11.0) and parcels from the carriers' mails (0.12.0). More blocks follow (where the bell
 rings, presence, alarm, pairing of devices); each comes as a new version.
 
@@ -30,6 +30,9 @@ comes with a later version).
 **Settings** are stored in the integration's config entry, so they survive restarts and are in every Home Assistant backup.
 
 ### Ring push (0.2.0)
+
+`sensor.aikos_door_ring` (0.15.0, timestamp): when the doorbell was last pressed, every press whatever the push rules say
+(restored after a restart). The aikos app sends its own push on it, on every ring (aikos-app A47).
 
 Settings → Devices & services → aikos → **Configure**:
 
@@ -264,6 +267,7 @@ After a ring the door says one sentence in a resident's own voice when a situati
 
 ## History
 
+- 0.15.0: `sensor.aikos_door_ring`, the time of the last press (for the aikos app's push on every ring).
 - 0.14.0: the visit rule: a new visit only after 2 minutes without radar (greeting, waiting note, parcel announcement);
   the greeting's 10-minute pause is replaced by it.
 - 0.13.0: speech said on the spot plays sentence by sentence (the first while the next is made), after the door's cue.
