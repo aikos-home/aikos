@@ -47,15 +47,20 @@ def test_note_is_cleaned_and_never_empty():
         clean_note("   ", "Alex")
 
 
-def test_greeting_window_once_per_visit_and_not_during_a_call():
+def test_a_new_visit_only_after_two_minutes_without_radar():
+    """The owner, 22.10.: the radar lost someone sitting in front of it for 3 s and the greeting played again."""
+    from custom_components.aikos.door_rules import new_visit
+    assert new_visit(None, NOW)                                                # nobody since the start
+    assert not new_visit(NOW - timedelta(seconds=3), NOW)
+    assert not new_visit(NOW - timedelta(seconds=119), NOW)
+    assert new_visit(NOW - timedelta(minutes=2), NOW)
+
+
+def test_greeting_window_and_not_during_a_call():
     g = Greeting(enabled=True, text="Hallo", audio="greeting-1.webm", start=iso(NOW - timedelta(hours=1)),
                  end=iso(NOW + timedelta(hours=1)))
     assert g.in_window(NOW) and g.may_play(NOW, in_call=False)
     assert not g.may_play(NOW, in_call=True)
-    g.last_played = iso(NOW - timedelta(minutes=5))
-    assert not g.may_play(NOW, in_call=False)                                  # same visit
-    g.last_played = iso(NOW - timedelta(minutes=11))
-    assert g.may_play(NOW, in_call=False)
     assert not g.in_window(NOW + timedelta(hours=2)) and not g.in_window(NOW - timedelta(hours=2))
     assert g.next_change(NOW) == NOW + timedelta(hours=1)
     assert not Greeting(enabled=True, text="Hallo").may_play(NOW, False)          # text only: the screen shows it, no sound

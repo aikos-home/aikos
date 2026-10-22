@@ -169,7 +169,7 @@ async def test_a_ring_before_the_new_sentence_is_ready_says_it_anyway(hass: Home
     await save(hass, 4, away_places="Wir sind unterwegs. {wo}.", places={"zone.aikos_test_laden": "beim Laden"}, named=["person.a"])
     hass.states.async_set("person.a", "Laden", {"friendly_name": "Alex"})
     await ring(hass)                                                          # before the residents settled
-    assert played == ["Wir sind unterwegs. Alex ist beim Laden."]
+    assert played == ["Wir sind unterwegs.", "Alex ist beim Laden."]          # made on the spot: sentence by sentence
 
 
 async def test_parcel_expected_speaks_when_someone_comes_close_instead_of_the_greeting(hass: HomeAssistant, door):

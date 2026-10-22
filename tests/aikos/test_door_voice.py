@@ -163,3 +163,30 @@ async def test_a_note_delivered_before_its_speech_is_ready_leaves_no_file(hass: 
     gate.set()
     await hass.async_block_till_done(wait_background_tasks=True)
     assert not any((media / "aikos").glob("speech-*"))
+
+
+async def test_said_on_the_spot_the_door_cues_then_plays_sentence_by_sentence(hass: HomeAssistant, media, door, monkeypatch):
+    """0.13.0: the door's own cue first, then each sentence as soon as it is made; a sentence that can't be said stops
+    the rest (the text is on the screen anyway)."""
+    from custom_components.aikos import door_voice
+    shown, spoken, played = door
+    cues = async_mock_service(hass, "esphome", "aikos_intercom_talk_tts_cue")
+    order = []
+    real = door_voice.synthesize
+
+    async def synthesize(hass_, engine, text, voice):
+        order.append(("make", text, len(cues)))
+        if "kaputt" in text:
+            raise RuntimeError("not faithful")
+        return await real(hass_, engine, text, voice)
+    monkeypatch.setattr(door_voice, "synthesize", synthesize)
+    await setup(hass)
+    await radar(hass, "on")
+    await call(hass, "door_say", {"message": "Komme sofort. Bin gleich da!", "sender": "Alex", "voice": "v1"}, True)
+    assert len(cues) == 1 and order[0] == ("make", "Komme sofort.", 1)          # the cue before anything is made
+    assert played == [b"ID3 speech of Komme sofort.", b"ID3 speech of Bin gleich da!"]
+    assert not any((media / "aikos").glob("speech-now-*"))
+    played.clear()
+    await call(hass, "door_say", {"message": "Hallo. Das ist kaputt. Tschüss.", "sender": "Alex", "voice": "v1"}, True)
+    assert played == [b"ID3 speech of Hallo."]                                  # stops at the sentence that failed
+    assert [t for _, t, _ in order[-2:]] == ["Hallo.", "Das ist kaputt."]       # "Tschüss." is never made
