@@ -13,14 +13,18 @@ import urllib.request
 import wave
 from dataclasses import dataclass
 
+from .numbers import spell
+
 WORD = re.compile(r"[0-9a-zäöüß]+")
 MIN_COVERAGE = 0.85          # share of the text's words that must be heard, in order
 MAX_LEADING = 0              # words heard before the first word of the text (live: "Gah, bitte ...")
 TAIL_S = 0.25                # kept after the last word (its end is a little early)
+ONE = {"ein", "eins", "eine", "einen", "einem", "einer", "eines"}   # "1" is read one way, heard another
 
 
 def norm_words(text: str) -> list[str]:
-    return WORD.findall((text or "").lower().replace("ß", "ss"))
+    """Words for comparing: lower case, numbers written out (Whisper writes "10" one time, "zehn" the next)."""
+    return WORD.findall(spell(text or "").lower().replace("ß", "ss"))
 
 
 @dataclass(frozen=True)
@@ -31,23 +35,31 @@ class Heard:
 
 
 def join_tokens(segments: list[list[tuple[str, float, float]]]) -> list[Heard]:
-    """Whisper's "words" are tokens ("pak", "et"): a token without a leading space continues the word before it;
-    punctuation and a new segment end a word."""
-    out: list[Heard] = []
+    """Whisper's "words" are tokens ("pak", "et", "10", ".", "13"): a token without a leading space continues the word
+    before it, a new segment starts one. The heard text is then written out as a whole (numbers.py), so "10.13 Uhr" or
+    "22.10." become the same words as in the text; each word keeps the times of the token word it came from."""
+    raw: list[tuple[str, float, float]] = []
     for seg in segments:
-        open_word = False
-        for raw, start, end in seg:
-            parts = norm_words(raw)
-            if not parts:
-                open_word = False
+        first = True
+        for tok, start, end in seg:
+            if not tok.strip():
                 continue
-            for i, part in enumerate(parts):
-                if i == 0 and open_word and not raw[:1].isspace():
-                    prev = out[-1]
-                    out[-1] = Heard(prev.word + part, prev.start, end)
-                else:
-                    out.append(Heard(part, start, end))
-            open_word = True
+            if raw and not first and not tok[:1].isspace():
+                word, s0, _ = raw[-1]
+                raw[-1] = (word + tok, s0, end)
+            else:
+                raw.append((tok.strip(), start, end))
+            first = False
+    words = norm_words(" ".join(w for w, _, _ in raw))
+    each = [norm_words(w) for w, _, _ in raw]
+    out: list[Heard] = []
+    if sum(len(e) for e in each) == len(words):     # nothing written out differently in context: word by word
+        for (_, start, end), parts in zip(raw, each):
+            out += [Heard(w, start, end) for w in parts]
+        return [Heard(w, h.start, h.end) for w, h in zip(words, out)]
+    for j, w in enumerate(words):                    # else (a time, a date): the times spread over the token words
+        i = min(len(raw) - 1, j * len(raw) // max(1, len(words)))
+        out.append(Heard(w, raw[i][1], raw[i][2]))
     return out
 
 
@@ -62,7 +74,7 @@ class Verdict:
 def same_word(want: str, got: str) -> bool:
     """The text's word, as Whisper may write it: the same, or an inflected form of it ("schelm" / "schelmen", "tür" /
     "türen"): one starts with the other, at least 4 letters, at most 2 more."""
-    if want == got:
+    if want == got or {want, got} <= ONE:
         return True
     short, long_ = sorted((want, got), key=len)
     return len(short) >= 4 and len(long_) - len(short) <= 2 and long_.startswith(short)

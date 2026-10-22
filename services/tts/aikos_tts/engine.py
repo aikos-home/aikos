@@ -18,6 +18,7 @@ from pathlib import Path
 import numpy as np
 
 from .cache import SpeechCache
+from .numbers import spell
 from .verify import Verdict, WhisperChecker
 
 SENTENCE = re.compile(r"(?<=[.!?…])\s+")
@@ -67,7 +68,7 @@ class Engine:
         self.cache: SpeechCache | None = None
 
     def synthesize(self, text: str, reference: Path) -> bytes:
-        parts = sentences(text)
+        parts = sentences(spell(text))   # numbers as words first, so "am 3. Oktober" is not cut after "3."
         if not parts:
             return b""
         pause = np.zeros(int(self.rate * PAUSE_S), dtype=np.float32)
