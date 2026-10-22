@@ -63,6 +63,9 @@
       },
       "door_announcements": {
         "default": "mdi:account-voice"
+      },
+      "door_ring": {
+        "default": "mdi:doorbell"
       }
     },
     "number": {

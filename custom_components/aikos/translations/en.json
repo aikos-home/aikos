@@ -68,6 +68,9 @@
       },
       "door_announcements": {
         "name": "Door announcements"
+      },
+      "door_ring": {
+        "name": "Door ring"
       }
     },
     "number": {
