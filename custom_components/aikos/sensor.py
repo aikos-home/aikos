@@ -8,13 +8,15 @@ Contract for the devices (unchanged from the former package): attributes `call_i
 """
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.core import Event, EventStateChangedData, HomeAssistant, State, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.util import dt as dt_util
 
 from . import AikosConfigEntry
 from .call_log import CallLog
@@ -43,7 +45,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: AikosConfigEntry, async_
         DoorGreeting(entry, "door_greeting", "sensor.aikos_door_greeting"),
         DoorAnnouncements(entry, "door_announcements", "sensor.aikos_door_announcements"),
         DoorPicture(entry, "door_picture", "sensor.aikos_door_picture"),
+        DoorRing(entry, "door_ring", "sensor.aikos_door_ring"),
     ])
+
+
+class DoorRing(AikosEntity, RestoreEntity, SensorEntity):
+    """When the doorbell was last pressed (every press, whatever the push rules say): the aikos app pushes on it (A47)."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+
+    def __init__(self, entry: AikosConfigEntry, key: str, entity_id: str) -> None:
+        super().__init__(entry, key, entity_id)
+        self._restored: datetime | None = None
+
+    @property
+    def native_value(self) -> datetime | None:
+        return self._entry.runtime_data.ring_notifier.last_ring or self._restored
+
+    async def async_added_to_hass(self) -> None:
+        last = await self.async_get_last_state()
+        if last is not None and last.state not in ("unknown", "unavailable"):
+            self._restored = dt_util.parse_datetime(last.state)
+        self.async_on_remove(self._entry.runtime_data.ring_notifier.add_listener(self.async_write_ha_state))
 
 
 def _iso(state: State) -> str:

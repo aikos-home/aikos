@@ -122,3 +122,17 @@ async def test_options_keep_quiet_hours_and_can_be_cleared(hass: HomeAssistant, 
     assert "doorbell" not in entry.options and entry.options["quiet_hours_start"] == "21:00:00"
     await ring(hass, 1)
     assert a == []                                                       # no doorbell any more → no push
+
+
+async def test_every_press_is_in_the_ring_sensor_whatever_the_push_rules(hass: HomeAssistant, freezer):
+    """aikos-app A47: the app pushes on every ring, so the sensor follows every press, also by day with someone home."""
+    freezer.move_to(local(12))
+    entry, calls_a, _ = await setup(hass)
+    assert hass.states.get("sensor.aikos_door_ring").state == "unknown"
+    await ring(hass, 1)
+    def rang():
+        return dt_util.parse_datetime(hass.states.get("sensor.aikos_door_ring").state)
+    assert rang() == local(12) and calls_a == []                            # someone home by day: no HA push, still the ring
+    freezer.move_to(local(12, 0, 10))
+    await ring(hass, 2)
+    assert rang() == local(12, 0, 10)
