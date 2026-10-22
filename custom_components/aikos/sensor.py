@@ -175,13 +175,14 @@ class CallLogSensor(AikosEntity, RestoreEntity, SensorEntity):
         if self._log.add("room", stamp, {"speaker": d.get("sender") or "", "device": "app", "text": d.get("text") or ""}):
             self._state = self._log.last_time
             self.async_write_ha_state()
-            self._tell(self._log.messages[-1], via="text")
+            if self._log.added:
+                self._tell(self._log.added, via="text")
 
     @callback
     def _on_change(self, event: Event[EventStateChangedData]) -> None:
         entity_id = event.data["entity_id"]
         old, new = event.data["old_state"], event.data["new_state"]
-        before, via = self._log.last_id, ""
+        new_msg, via = None, ""
         if entity_id == self._call:
             if new is None:
                 return
@@ -202,19 +203,20 @@ class CallLogSensor(AikosEntity, RestoreEntity, SensorEntity):
             side = "door" if entity_id == self._door else "room"
             if not self._log.add(side, new.state, new.attributes):
                 return
+            new_msg = self._log.added
             via = "app" if side == "room" and new.attributes.get("key_id") == APP_TALKER_KEY else ""
         if self._log.last_time:
             self._state = self._log.last_time
         self.async_write_ha_state()
-        if self._announce and self._log.last_id and self._log.last_id != before:
-            self._tell(self._log.messages[-1], via=via)
+        if self._announce and new_msg:
+            self._tell(new_msg, via=via)
 
     @callback
     def _tell(self, m: dict[str, Any], via: str = "") -> None:
         """`via`: "app" = said live from the aikos app, "text" = typed in the app, "" = a room key or the door."""
         self.hass.bus.async_fire("aikos_call_message", {
             "call_id": self._log.call_id, "id": m["id"], "side": m["side"], "who": m["who"], "role": m["role"],
-            "text": m["text"], "urgent": m["urgent"], "lang": m["lang"], "via": via})
+            "text": m["text"], "urgent": m["urgent"], "lang": m["lang"], "via": via, "at": m.get("at") or m["t"]})
         if self.hass.services.has_service("logbook", "log"):
             lang = f" ({m['lang']})" if m["lang"] else ""
             self.hass.async_create_task(self.hass.services.async_call("logbook", "log", {

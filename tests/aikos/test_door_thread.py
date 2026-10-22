@@ -186,3 +186,12 @@ async def test_lines_from_the_app_in_the_call_log_are_not_doubled(hass: HomeAssi
     e = hass.states.get(THREAD).attributes["entries"]
     assert [(x["kind"], x["text"], x.get("via")) for x in e] == [("room", "Ich komme runter.", "app"),
                                                                  ("room", "Bin unterwegs.", None)]
+
+
+async def test_what_was_said_stands_where_it_was_said(hass: HomeAssistant, door):
+    await setup(hass)
+    hass.bus.async_fire("aikos_call_message", {"side": "room", "who": "Alex", "text": "Ja?", "at": "2026-10-22T10:00:07+00:00"})
+    hass.bus.async_fire("aikos_call_message", {"side": "door", "who": "Besucher", "text": "Ein langer Satz.",
+                                               "at": "2026-10-22T10:00:01+00:00"})
+    await settle(hass)
+    assert [t for _, _, t in entries(hass)] == ["Ein langer Satz.", "Ja?"]
