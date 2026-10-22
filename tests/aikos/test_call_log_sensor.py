@@ -102,8 +102,11 @@ async def test_the_app_as_a_room_key(hass: HomeAssistant):
     await hass.services.async_call(DOMAIN, "app_talker", {"ip": "192.0.2.7", "name": "Alex"}, blocking=True)
     talker = hass.states.get("sensor.aikos_app_talker_ip_address")
     assert talker.state == "192.0.2.7" and talker.attributes["friendly_name"] == "Alex IP address"
-    await set_state(hass, ROOM, "2026-10-02T12:00:09+02:00", text="Ich komme runter.", device="Alex",
-                    key_id="aikos_app_talker")
+    from datetime import timedelta
+
+    from homeassistant.util import dt as dt_util
+    said = (dt_util.now() + timedelta(seconds=5)).isoformat(timespec="seconds")      # after the typed answer
+    await set_state(hass, ROOM, said, text="Ich komme runter.", device="Alex", key_id="aikos_app_talker")
     m = attrs(hass, LIVE)["messages"]
     assert [(x["side"], x["who"], x["text"]) for x in m] == [("room", "Alex", "Bitte vor die Tür legen."),
                                                              ("room", "Alex", "Ich komme runter.")]

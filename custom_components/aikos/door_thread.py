@@ -14,7 +14,8 @@
 
 Unlike the call log (R22: emptied at the start and the end of a call, for the screens) the thread stays: the newest MAX
 entries, kept in HA's storage (.storage/aikos.door_thread). A gap of VISIT_GAP or more starts a new visit (`visit`
-counts up), so the app can show one visit at a time.
+counts up), so the app can show one visit at a time. What was said (door, room) gets `t` = when it was said (the call
+log's `at`) and goes in by that time, so a sentence whose text came late still stands where it was said.
 """
 from __future__ import annotations
 
@@ -28,6 +29,7 @@ from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
+from .call_log import insert_in_order
 from .const import DOOR_SAVED_EVENT
 
 STORE_KEY = "aikos.door_thread"
@@ -86,14 +88,24 @@ class DoorThread:
         return lambda: self._listeners.remove(update)
 
     @callback
-    def add(self, kind: str, who: str, text: str, **extra: Any) -> dict[str, Any]:
+    def add(self, kind: str, who: str, text: str, at: str | None = None, **extra: Any) -> dict[str, Any]:
+        """`at`: when it was said (ISO), for what was said; the entry goes in by that time. Else now, at the end."""
         now = dt_util.now()
         last = self.entries[-1] if self.entries else None
         if last is None or now - datetime.fromisoformat(last["t"]) >= VISIT_GAP:
             self.visit += 1
-        entry = {"id": secrets.token_hex(4), "t": now.isoformat(timespec="seconds"), "visit": self.visit, "kind": kind,
+        try:
+            t = datetime.fromisoformat(at).isoformat(timespec="seconds") if at else ""
+        except ValueError:
+            t = ""
+        entry = {"id": secrets.token_hex(4), "t": t or now.isoformat(timespec="seconds"), "visit": self.visit, "kind": kind,
                  "who": " ".join(str(who or "").split())[:60], "text": " ".join(str(text or "").split())[:TEXT_MAX], **extra}
-        self.entries = (self.entries + [entry])[-MAX:]
+        entries = list(self.entries)
+        if t:
+            insert_in_order(entries, entry)
+        else:
+            entries.append(entry)
+        self.entries = entries[-MAX:]
         self._changed()
         return entry
 
@@ -111,7 +123,7 @@ class DoorThread:
         side = "door" if d.get("side") == "door" else "room"
         extra = {"via": "app"} if side == "room" and d.get("via") == "app" else {}
         self.add(side, d.get("who") or ("Besucher" if side == "door" else "Haus"), d.get("text") or "",
-                 lang=str(d.get("lang") or ""), urgent=bool(d.get("urgent")), **extra)
+                 at=str(d.get("at") or "") or None, lang=str(d.get("lang") or ""), urgent=bool(d.get("urgent")), **extra)
 
     @callback
     def _on_reply(self, event: Event) -> None:

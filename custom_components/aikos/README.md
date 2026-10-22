@@ -293,6 +293,8 @@ After a ring the door says one sentence in a resident's own voice when a situati
 
 ## History
 
+- 0.18.1: the call log and the door thread are in the order things were said (`at` = the transcriber's stamp minus
+  `transcribe_s` and `duration_s`), not the order their text was ready; `aikos_call_message.at`.
 - 0.18.0: the app as a room key: typed answers are lines of the call log during a call; `aikos.app_talker` and
   `sensor.aikos_app_talker_ip_address` name what is said from the app for the transcriber; `aikos_call_message.via`.
 - 0.17.0: `sensor.aikos_door_thread`, the door's conversation as one thread that stays after the call (for the app's chat).
