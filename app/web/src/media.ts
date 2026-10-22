@@ -14,10 +14,11 @@ export class Recorder {
     return typeof MediaRecorder !== "undefined" && !!navigator.mediaDevices?.getUserMedia;
   }
 
-  async start(onDone: (blob: Blob) => void, maxS = RECORD_MAX_S): Promise<void> {
+  /** `bits`: the recording's bit rate (a voice message stays small); the browser's own without. */
+  async start(onDone: (blob: Blob) => void, maxS = RECORD_MAX_S, bits?: number): Promise<void> {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
     const mimeType = TYPES.find((t) => MediaRecorder.isTypeSupported(t));
-    this.rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    this.rec = new MediaRecorder(stream, { ...(mimeType ? { mimeType } : {}), ...(bits ? { audioBitsPerSecond: bits } : {}) });
     this.chunks = [];
     this.rec.ondataavailable = (e) => e.data.size && this.chunks.push(e.data);
     this.rec.onstop = () => {

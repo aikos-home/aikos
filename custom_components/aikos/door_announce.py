@@ -148,8 +148,8 @@ class DoorAnnouncer:
     def _busy(self) -> bool:
         return any((s := self._hass.states.get(e)) is not None and s.state == "on" for e in (LIVE_CALL, DOOR_MESSAGE_RECORDING))
 
-    def now(self) -> tuple[str, str] | None:
-        """What a ring would get right now: (situation, sentence), or None."""
+    def now(self) -> list[tuple[str, str]]:
+        """What a ring would get right now, in order: [(situation, sentence), ...]."""
         return pick(self.state, parcel=self._parcel(), muted=self._quiet_or_muted(), residents=self.residents())
 
     # settings (from the app or the number entity)
@@ -229,18 +229,23 @@ class DoorAnnouncer:
         now = dt_util.now()
         if self._busy() or not may_repeat(self._last_at, now) or not self.state.voice:
             return False
-        got = self.now()
-        if got is None or (only is not None and got[0] != only):
+        plan = [p for p in self.now() if only is None or p[0] == only]
+        if not plan:
             return False
-        situation, text = got
         self._last_at = now
-        ready = self.ready.get(situation)
-        if ready and ready[0] == text:
-            played = await self._speech.play(ready[1])
-        else:  # not made yet (the residents just moved): made now, a little later
-            played = await self._speech.say_now(text, self.state.voice, "announce-now")
-        if not played:
+        said = []
+        for situation, text in plan:
+            ready = self.ready.get(situation)
+            if ready and ready[0] == text:
+                played = await self._speech.play(ready[1])
+            else:  # not made yet (the residents just moved): made now, a little later
+                played = await self._speech.say_now(text, self.state.voice, "announce-now", cue=not said)
+            if not played:
+                break
+            said.append((situation, text))
+        if not said:
             return False
+        situation, text = "+".join(s for s, _ in said), " ".join(t for _, t in said)
         self.last = {"situation": situation, "text": text, "at": now.isoformat(timespec="seconds")}
         self._changed()
         self._hass.bus.async_fire(EVENT, {"situation": situation, "text": text})

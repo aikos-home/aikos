@@ -95,13 +95,14 @@ class DoorSpeech:
     def can_speak(self, voice: str) -> bool:
         return bool(self._engine() and voice and self.folder() is not None)
 
-    async def say_now(self, text: str, voice: str, kind: str = "now") -> bool:
-        """A one-off text: the door's cue at once, then sentence after sentence, each played while the next is made;
-        the files are removed afterwards. True if anything was played."""
+    async def say_now(self, text: str, voice: str, kind: str = "now", cue: bool = True) -> bool:
+        """A one-off text: the door's cue at once (unless something was just said), then sentence after sentence, each
+        played while the next is made; the files are removed afterwards. True if anything was played."""
         parts = sentences(text)
         if not (parts and self.can_speak(voice)):
             return False
-        await door_speaker.cue(self._hass)
+        if cue:
+            await door_speaker.cue(self._hass)
         made: asyncio.Queue[str] = asyncio.Queue()
 
         async def make_all() -> None:

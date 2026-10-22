@@ -5,7 +5,7 @@ Assistant stays the system of record for entities, devices, states, events, soun
 way to them. It signs people in with passkeys, knows who may see and do what, and is the single path from a phone to
 Home Assistant. The phone never gets a Home Assistant token, address or link.
 
-Version **0.6.1** (step 1: sign-in, roles, door messages; step 2: message register, delete, forward by hand, push; step 3: door actions, own voices, door announcements). Python 3.12+ (aiohttp, py_webauthn); PWA in TypeScript
+Version **0.7.1** (step 1: sign-in, roles, door messages; step 2: message register, delete, forward by hand, push; step 3: door actions, own voices, door announcements, the live call). Python 3.12+ (aiohttp, py_webauthn); PWA in TypeScript
 (Preact, Vite).
 
 Runs on one machine (SQLite) or on three nodes with a replicated database and rollouts of signed images
@@ -97,6 +97,15 @@ of them (matrix 2.4a).
 - **Picture** (A12/A41): cropped on the phone to the door's field (fixed 492 : 536; drag, pinch or slider to zoom, grey preview),
   sent as a 984 × 1072 JPEG; aikos turns it into the door's grey PNG, which fills the field. It stays until removed. The preview comes through the app.
 - **Greeting** (A13/A26): text (≤ 120) and/or a sound recorded with the phone (≤ 20 s), always or from–until.
+- **The live call** (A47, A48; aikos 0.15.0+): on every ring a push to everyone who may act at the door (a storm of rings
+  within 30 s is one push; one node sends). The door page shows the call live (`GET /api/v1/door/call`: the call log's
+  newest lines, door and house side, with translations; with aikos 0.17.0 the newest visit as one thread, a chat) and answers it: a quick reply or text (read in one's own voice),
+  or a voice message (A49, aikos 0.17.0+: hold the microphone, like on WhatsApp; the recording itself plays at the door,
+  now or for the next visitor; `POST /api/v1/door/say/audio`, played back in the chat through `GET /api/v1/door/voice/{name}`),
+  or live, holding the button as at a room key (`/api/v1/door/talk`, a WebSocket: the phone's microphone as 16 kHz PCM
+  while held; the node turns it into RTP for the door and passes the door's microphone back; one participant per node;
+  talk computer 0.7.24 `app_join`/`key_state`). Needs `AIKOS_APP_TALK_HOST` (the node's address, rendered by the cluster
+  kit when `door_talk_host` is set) and the door's RTP let in on UDP 5012.
 - **Announcements** (aikos 0.11.0+, sprachausgabe S10–S14): the sentences the door says after a ring (parcel expected, everybody
   away, everybody away with places, bell muted or quiet hours), with suggestions and "listen in my voice"; the slider 0–4 of what
   the door may tell. Saved sentences are said in the saver's own voice. Whether the door names one's place, each person decides

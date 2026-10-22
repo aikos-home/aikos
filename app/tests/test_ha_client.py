@@ -12,8 +12,10 @@ def test_the_list_is_exactly_the_reviewed_one():
     assert ALLOWED_SERVICES == {("aikos", s) for s in (
         "door_messages", "door_message_delete", "door_message_heard",                       # step 2: the message register
         "bell_mute", "bell_unmute", "quiet_hours", "door_say", "door_say_cancel",          # step 3: the door actions
+        "door_say_audio",                                                                  # voice messages (A49)
         "door_picture", "door_picture_clear", "door_greeting",
-        "door_announcements")}                                                              # the door announcements
+        "door_announcements")} | {("esphome", s) for s in (                          # the door announcements
+        "aikos_intercom_talk_app_join", "aikos_intercom_talk_key_state")}                  # talking from the app (A5)
 
 
 @pytest.mark.parametrize("command", ["config/auth/list", "auth/long_lived_access_token", "subscribe_events",

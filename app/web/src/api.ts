@@ -41,7 +41,7 @@ export interface DoorStatus {
 }
 
 export interface DoorAnnouncements {
-  now: "parcel" | "away" | "quiet" | "none";
+  now: string;   // "none", or the situations one after the other, e.g. "quiet+parcel" (aikos 0.16.0)
   now_text: string;
   disclosure: number;
   parcel: string;
@@ -55,6 +55,26 @@ export interface DoorAnnouncements {
   zones: { id: string; name: string }[];
   residents: { id: string; name: string; named: boolean }[];
   me: { resident: boolean; named: boolean };
+}
+
+export interface ThreadEntry {
+  id: string;
+  t: string;
+  kind: "ring" | "door" | "room" | "reply" | "voice" | "waiting" | "announce" | "message";
+  who: string;
+  text: string;
+  spoken: boolean | null;
+  voice?: string;            // a voice message's file (aikos 0.17.0): GET /api/v1/door/voice/{voice}
+  seconds?: number | null;
+}
+
+export interface DoorCall {
+  active: boolean;
+  call_id: string;
+  messages: { id: string; side: "door" | "room"; who: string; text: string; tr: string; tr_lang: string }[];
+  ring: string;
+  talk: boolean;
+  thread: { visit: number; entries: ThreadEntry[] } | null;
 }
 
 export interface DoorActionsState {
@@ -204,6 +224,7 @@ export const api = {
   doorStatus: () => call<DoorStatus>("GET", "/api/v1/door/status"),
   doorMessages: () => call<DoorMessage[]>("GET", "/api/v1/door/messages"),
   doorActions: () => call<DoorActionsState | null>("GET", "/api/v1/door/actions"),
+  doorCall: () => call<DoorCall>("GET", "/api/v1/door/call"),
   bell: (body: { minutes?: number; until_time?: string; forever?: boolean; off?: boolean }) =>
     call<unknown>("POST", "/api/v1/door/bell", body),
   quietHours: (body: { enabled?: boolean; start?: string; end?: string }) =>
@@ -211,6 +232,8 @@ export const api = {
   say: (message: string) => call<{ delivered: "now" | "waiting" }>("POST", "/api/v1/door/say", { message }),
   cancelSay: () => call<unknown>("DELETE", "/api/v1/door/say"),
   sayDraft: (message: string) => call<unknown>("POST", "/api/v1/door/say/draft", { message }),
+  sayAudio: (blob: Blob, seconds: number) =>
+    upload<{ delivered: "now" | "waiting" }>("POST", `/api/v1/door/say/audio?seconds=${seconds}`, blob),
   putPicture: (blob: Blob) => upload("PUT", "/api/v1/door/picture", blob),
   deletePicture: () => call<unknown>("DELETE", "/api/v1/door/picture"),
   putGreeting: (body: { enabled?: boolean; text?: string; start?: string; end?: string; always?: boolean }) =>

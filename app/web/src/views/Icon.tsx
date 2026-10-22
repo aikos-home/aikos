@@ -13,6 +13,7 @@ const PATHS: Record<string, string> = {
   trash: "M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3",
   pause: "M7 4h4v16H7zM14 4h4v16h-4z",
   mic: "M9 5a3 3 0 0 1 6 0v6a3 3 0 0 1-6 0zM5 11a7 7 0 0 0 14 0M12 18v3",
+  send: "M4 12 20 4l-5 16-4-7zM11 13l9-9",
   text: "M4 6h16M4 12h10M4 18h7",
   image: "M4 5h16v14H4zM4 16l5-5 4 4 2-2 5 5M15 9.5v.01",
   hand: "M12 3v9M8 6v7M16 6v7M5 10v4a7 7 0 0 0 14 0V8",

@@ -91,6 +91,8 @@ def app_env(inv: Inventory, node: Node) -> str:
     }
     if inv.tts_url:
         base.update({"AIKOS_APP_TTS_URL": inv.tts_url, "AIKOS_APP_TTS_TOKEN_FILE": "/secrets/tts-token"})
+    if inv.app.get("door_talk_host"):   # talking to the door: the door sends its mic to this node's own address
+        base.update({"AIKOS_APP_TALK_HOST": node.ip, "AIKOS_APP_TALK_PORT": "5012"})
     base.update({f"AIKOS_APP_{k.upper()}": v for k, v in inv.app.items()})
     return _env(base)
 

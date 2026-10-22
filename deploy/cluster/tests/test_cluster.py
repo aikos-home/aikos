@@ -69,6 +69,17 @@ def test_voice_service_token_only_when_configured_and_only_for_the_app():
     assert all("tts-token-value" not in x.content for p, x in f.items() if p != "/etc/aikos/secrets/app/tts-token")
 
 
+def test_talking_to_the_door_gets_each_node_its_own_address():
+    import dataclasses
+    assert "AIKOS_APP_TALK_HOST" not in env(files_of(0)["/etc/aikos/app.env"].content)       # not set up: no talking
+    inv = dataclasses.replace(INV, app={**INV.app, "door_talk_host": "192.0.2.72"})
+    for node in inv.nodes:
+        crt, key = pki.node_cert(SEC["ca_cert"], SEC["ca_key"], node.name, node.ip)
+        f = {x.path: x for x in node_files(inv, node, SEC, crt, key, "ha-token-value", "eth0")}
+        e = env(f["/etc/aikos/app.env"].content)
+        assert (e["AIKOS_APP_TALK_HOST"], e["AIKOS_APP_TALK_PORT"], e["AIKOS_APP_DOOR_TALK_HOST"]) == (node.ip, "5012", "192.0.2.72")
+
+
 def test_rqlite_users_have_only_their_rights():
     users = {u["username"]: u["perms"] for u in json.loads(files_of(0)["/etc/aikos/secrets/rqlite-auth.json"].content)}
     assert users["app"] == ["execute", "query"] and users["backup"] == ["backup"]

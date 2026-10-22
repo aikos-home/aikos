@@ -44,6 +44,11 @@ class Settings:
     tts_url: str = ""
     """The house's voice service (aikos TTS, its HTTP side), for "Meine Stimme"; empty = no own voices."""
     tts_token: str = field(default="", repr=False)
+    talk_host: str = ""
+    """This node's address in the house network, for talking to the door (A5); empty = no talking."""
+    talk_port: int = 5012
+    door_talk_host: str = ""
+    """The door's talk computer (its RTP comes only from there); empty = no talking."""
 
     @property
     def origin(self) -> str:
@@ -98,4 +103,7 @@ def from_env(env: dict[str, str] | None = None) -> Settings:
         interim_message_text_entity=e.get("AIKOS_APP_INTERIM_MESSAGE_TEXT_ENTITY", ""),
         tts_url=e.get("AIKOS_APP_TTS_URL", "").rstrip("/"),
         tts_token=_read_secret(e.get("AIKOS_APP_TTS_TOKEN_FILE", "")),
+        talk_host=e.get("AIKOS_APP_TALK_HOST", ""),
+        talk_port=int(e.get("AIKOS_APP_TALK_PORT", "5012")),
+        door_talk_host=e.get("AIKOS_APP_DOOR_TALK_HOST", ""),
     )

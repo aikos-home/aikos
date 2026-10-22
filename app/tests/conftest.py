@@ -113,6 +113,9 @@ class FakeHa(HaClient):
         raise HaError(f"unexpected {type_}")
 
     def _service(self, domain: str, service: str, data: dict[str, Any], response: bool) -> Any:
+        if domain == "esphome":   # the talk computer's actions (talking from the app)
+            self.services.append((domain, service, data))
+            return {"context": {}}
         if service not in ("door_messages", "door_message_delete", "door_message_heard"):
             return self._door_action(service, data)
         assert self.register is not None, "no register in this Home Assistant"
@@ -130,11 +133,11 @@ class FakeHa(HaClient):
 
     def _door_action(self, service: str, data: dict[str, Any]) -> Any:
         self.services.append(("aikos", service, data))
-        if service == "door_say":
+        if service in ("door_say", "door_say_audio"):
             someone = (self.states.get("binary_sensor.aikos_test_someone") or {}).get("state") == "on"
             if not someone:
                 self.states["sensor.aikos_door_note"] = {"state": "waiting", "attributes": {
-                    "message": data["message"], "sender": data["sender"], "since": "2026-10-21T15:00:00+02:00"}}
+                    "message": data.get("message", "Sprachnachricht"), "sender": data["sender"], "since": "2026-10-21T15:00:00+02:00"}}
             return {"context": {}, "response": {"delivered": "now" if someone else "waiting"}}
         if service == "door_picture":
             self.states["sensor.aikos_door_picture"] = {"state": "shown", "attributes": {"path": "/local/aikos_door/foto-ab.png"}}

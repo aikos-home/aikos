@@ -81,6 +81,29 @@ async def test_a_note_now_or_for_the_next_visitor(house, fake_ha):
         assert (await house.post("/api/v1/door/say", bad, who=sam)).status == 400
 
 
+async def test_a_voice_message_to_the_door(house, fake_ha):
+    import base64
+    door(fake_ha)
+    _, sam, kim = await people(house)
+
+    def post(body: bytes, content_type: str, who, query: str = "?seconds=4.24"):
+        return house.client.post("/api/v1/door/say/audio" + query, data=body,
+                                 headers={**who.headers, "Origin": ORIGIN, "Content-Type": content_type})
+    sound = bytes([0x1A, 0x45, 0xDF, 0xA3]) + b"voice"   # WebM magic
+    r = await post(sound, "audio/webm", sam)
+    assert r.status == 200 and (await r.json())["delivered"] == "waiting"           # nobody there: for the next visitor
+    assert actions(fake_ha)[-1] == ("aikos", "door_say_audio", {"audio": base64.b64encode(sound).decode(), "sender": "Sam",
+                                                                 "seconds": 4.2})
+    assert (await post(sound, "text/plain", sam)).status == 400
+    assert (await post(sound, "audio/webm", sam, "?seconds=lots")).status == 400
+    assert (await post(b"x" * (900 * 1024 + 1), "audio/webm", sam)).status == 400
+    assert (await post(sound, "audio/webm", kim)).status == 403                     # children have none of it
+    assert (await house.get("/api/v1/door/voice/voice-0123456789ab.webm", sam)).status == 200   # played back in the chat
+    assert (await house.get("/api/v1/door/voice/greeting-1.webm", sam)).status == 404           # only voice messages
+    assert (await house.get("/api/v1/door/voice/voice-0123456789ab.webm", kim)).status == 403
+    assert "door.say_audio" in await audit_actions(house)
+
+
 async def test_picture_upload_and_preview(house, fake_ha):
     door(fake_ha)
     admin, _, _ = await people(house)
