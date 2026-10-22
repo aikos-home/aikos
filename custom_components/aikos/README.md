@@ -145,6 +145,18 @@ stays after the call (the newest 60 entries, in HA's storage); 5 minutes without
 in the app (like on WhatsApp), the sender's own voice, played at the door now if someone is there, else for the next
 visitor (`<local media>/aikos/voice-*`, the newest 20 stay so the app can play them back).
 
+### The app as a room key (0.18.0)
+
+The aikos app talks to the door live like a room key (A5, A49). Two things make it one in the call log:
+- **Typed answers** shown at the door during a call are a line of the call log (`side: room`, `who` = the sender,
+  `dev: app`), so the door screen's chat shows them (R22: only during a call).
+- **Who talks from the app:** `aikos.app_talker {ip, name}` (set by the app while someone holds, `ip` empty = nobody)
+  drives `sensor.aikos_app_talker_ip_address` (state = the app node's address, friendly name "<name> IP address"). The
+  transcriber names a sender by the `*_ip_address` entity with its IP, so what is said from the app comes back as
+  `sensor.talk_transcript` from `<name>`, `key_id: aikos_app_talker`.
+`aikos_call_message` carries `via`: `app` (said live from the app), `text` (typed in the app) or empty (a room key, the
+door). The door thread shows `via: app` lines as `room` with `via: app` and skips `text` lines (they are its replies).
+
 ### Door actions (0.9.0, for the aikos app)
 
 What a resident does at the door from the app (aikos-app A11–A14, A39–A41). Kept in Home Assistant (`.storage/aikos.door_actions`);
@@ -281,6 +293,8 @@ After a ring the door says one sentence in a resident's own voice when a situati
 
 ## History
 
+- 0.18.0: the app as a room key: typed answers are lines of the call log during a call; `aikos.app_talker` and
+  `sensor.aikos_app_talker_ip_address` name what is said from the app for the transcriber; `aikos_call_message.via`.
 - 0.17.0: `sensor.aikos_door_thread`, the door's conversation as one thread that stays after the call (for the app's chat).
 - 0.16.0: several situations are said one after the other (the house's, then the parcel) instead of only the first; a
   second ring gets the announcement again after 15 s (was 60 s).

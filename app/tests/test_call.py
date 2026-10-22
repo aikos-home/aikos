@@ -127,7 +127,11 @@ async def test_talking_to_the_door_while_held(house, fake_ha):
     door.bind(("127.0.0.1", 0))
     door.setblocking(False)
     port = free_udp_port()
-    c.talk = TalkBridge(fake_ha, "127.0.0.1", port, "127.0.0.1", door_port=door.getsockname()[1])
+    transcriber = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    transcriber.bind(("127.0.0.1", 0))
+    transcriber.setblocking(False)
+    c.talk = TalkBridge(fake_ha, "127.0.0.1", port, "127.0.0.1", door_port=door.getsockname()[1],
+                        transcriber=f"127.0.0.1:{transcriber.getsockname()[1]}")
     await c.talk.start()
     try:
         hdr = {**sam.headers, "Origin": ORIGIN}
@@ -150,9 +154,12 @@ async def test_talking_to_the_door_while_held(house, fake_ha):
         await ws.send_bytes(pcm)
         pkt = await recv_door(door)
         assert pkt[1] == 0x80 | 96 and pkt[12:] == swap16(pcm)                          # RTP, marker, big-endian
+        assert await recv_door(transcriber) == pkt                                      # a copy, as from a room key
+        assert ("aikos", "app_talker", {"ip": "127.0.0.1", "name": "Sam"}) in fake_ha.services   # named for it
         await ws.send_str(json.dumps({"hold": False}))
         assert (await ws.receive_json(timeout=2)) == {"state": "listening"}
         assert (await recv_door(door))[1] & 0x7F == 13                                  # end of speech
+        assert (await recv_door(transcriber))[1] & 0x7F == 13
 
         door_pcm = struct.pack(">320h", *range(0, 640, 2))                              # the door's mic (BE)
         door.sendto(struct.pack("!BBHII", 0x80, 96, 1, 0, 7) + door_pcm, ("127.0.0.1", port))
@@ -166,9 +173,11 @@ async def test_talking_to_the_door_while_held(house, fake_ha):
         assert ("aikos_intercom_talk_key_state", {"host": me, "state": 0}) in talk_actions(fake_ha)
         assert ("aikos_intercom_talk_app_join", {"host": "", "ms": 0}) in talk_actions(fake_ha)
         assert c.talk.session is None
+        assert fake_ha.services[-1] == ("aikos", "app_talker", {"ip": "", "name": ""})   # nobody any more
     finally:
         c.talk.close()
         door.close()
+        transcriber.close()
 
 
 def test_rtp_from_the_door_only_audio():
@@ -194,3 +203,4 @@ async def test_voice_entries_carry_their_file_and_length_only_if_it_is_a_voice_f
     entries = (await (await house.get("/api/v1/door/call", sam)).json())["thread"]["entries"]
     assert [(e["kind"], e["voice"], e["seconds"]) for e in entries] == [
         ("voice", "voice-0123456789ab.webm", 4.2), ("waiting", "", None)]
+    assert [e["via"] for e in entries] == ["", ""]

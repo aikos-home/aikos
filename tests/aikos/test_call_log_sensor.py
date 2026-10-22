@@ -85,3 +85,29 @@ async def test_visitor_language_and_translation_reach_the_sensor(hass: HomeAssis
     assert (shown[-1]["tr"], shown[-1]["tr_lang"]) == ("I'm coming.", "en")
     await set_state(hass, CALL, "off")
     assert attrs(hass, LIVE)["visitor_language"] == ""
+
+
+async def test_the_app_as_a_room_key(hass: HomeAssistant):
+    """A49: typed answers from the app are lines of the call (only during one); what is said live from the app is named by
+    the app talker sensor the transcriber reads, and the event says where a line came from."""
+    await setup(hass)
+    events = async_capture_events(hass, "aikos_call_message")
+    hass.bus.async_fire("aikos_door_reply", {"sender": "Alex", "text": "Komme gleich."})      # no call: not a line (R22)
+    await hass.async_block_till_done()
+    await set_state(hass, CALL, "on")
+    hass.bus.async_fire("aikos_door_reply", {"sender": "Alex", "text": "Warte kurz.", "shown": False})   # waiting: not
+    hass.bus.async_fire("aikos_door_reply", {"sender": "Alex", "text": "Sprachnachricht", "voice": "voice-1.webm"})
+    hass.bus.async_fire("aikos_door_reply", {"sender": "Alex", "text": "Bitte vor die Tür legen."})
+    await hass.async_block_till_done()
+    await hass.services.async_call(DOMAIN, "app_talker", {"ip": "192.0.2.7", "name": "Alex"}, blocking=True)
+    talker = hass.states.get("sensor.aikos_app_talker_ip_address")
+    assert talker.state == "192.0.2.7" and talker.attributes["friendly_name"] == "Alex IP address"
+    await set_state(hass, ROOM, "2026-10-02T12:00:09+02:00", text="Ich komme runter.", device="Alex",
+                    key_id="aikos_app_talker")
+    m = attrs(hass, LIVE)["messages"]
+    assert [(x["side"], x["who"], x["text"]) for x in m] == [("room", "Alex", "Bitte vor die Tür legen."),
+                                                             ("room", "Alex", "Ich komme runter.")]
+    assert [(e.data["text"], e.data["via"]) for e in events] == [("Bitte vor die Tür legen.", "text"),
+                                                                 ("Ich komme runter.", "app")]
+    await hass.services.async_call(DOMAIN, "app_talker", {}, blocking=True)                    # left: nobody
+    assert hass.states.get("sensor.aikos_app_talker_ip_address").state in ("", "unknown")

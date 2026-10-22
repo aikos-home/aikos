@@ -5,7 +5,7 @@
 |-----------|----------------------------------------------------------------------------------------|
 | ring      | the doorbell (every press, as `sensor.aikos_door_ring`)                                |
 | door      | what the visitor says (the call log's door side, `aikos_call_message`)                 |
-| room      | what someone in the house says through a room key (the call log's room side)           |
+| room      | what someone in the house says through a room key, or live from the app (`via: app`; the call log's room side) |
 | reply     | a resident's answer from the app, shown at the door (`aikos_door_reply`); `spoken` says whether it was read aloud |
 | voice     | a resident's voice message from the app (recorded like on WhatsApp), played at the door; `spoken` = played  |
 | waiting   | an answer or voice message that waits for the next visitor                             |
@@ -106,9 +106,12 @@ class DoorThread:
     @callback
     def _on_call(self, event: Event) -> None:
         d = event.data
+        if d.get("via") == "text":
+            return   # a typed answer from the app: already here as its reply
         side = "door" if d.get("side") == "door" else "room"
+        extra = {"via": "app"} if side == "room" and d.get("via") == "app" else {}
         self.add(side, d.get("who") or ("Besucher" if side == "door" else "Haus"), d.get("text") or "",
-                 lang=str(d.get("lang") or ""), urgent=bool(d.get("urgent")))
+                 lang=str(d.get("lang") or ""), urgent=bool(d.get("urgent")), **extra)
 
     @callback
     def _on_reply(self, event: Event) -> None:

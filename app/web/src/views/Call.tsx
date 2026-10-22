@@ -1,8 +1,9 @@
 // Gespräch an der Tür as a chat (A47–A49; the owner: "wie so ein Chatlog", "wie bei WhatsApp"): the visit's thread from
 // the aikos integration (ring, visitor, house, answers and whether they were read aloud, voice messages, announcements,
 // messages), newest at the bottom, and a composer like a messenger's: quick replies, text (read at the door in one's own
-// voice), a voice message while the microphone is held (the recording itself plays at the door), and talking live.
-// Anyone may write at any time: without a visitor it waits for the next one.
+// voice) and the microphone. Holding it talks live, as at a room key (the owner, 22.10.: "Live wie RoomKey"): the door
+// hears it at once and its chat shows it. Only when nobody is at the door and no call runs, holding records a voice
+// message for the next visitor. Anyone may write at any time.
 import { useEffect, useRef, useState } from "preact/hooks";
 import { api, type DoorActionsState, type DoorCall, type ThreadEntry } from "../api";
 import { Recorder } from "../media";
@@ -11,8 +12,8 @@ import { dayHm, hm } from "./DoorParts";
 import { Icon } from "./Icon";
 
 const TALK_LABEL: Record<TalkState, string> = {
-  connecting: "Verbinde mit der Tür …", listening: "Du hörst die Tür. Halten zum Sprechen.", talking: "Die Tür hört dich.",
-  busy: "Aus der App spricht schon jemand.", off: "", error: "Keine Verbindung zur Tür.",
+  connecting: "Verbinde mit der Tür …", listening: "Im Gespräch: du hörst die Tür. Mikrofon halten zum Sprechen.",
+  talking: "Die Tür hört dich.", busy: "Aus der App spricht schon jemand.", off: "", error: "Keine Verbindung zur Tür.",
 };
 const VOICE_MAX_S = 45;      // the door plays at most 50 s of a sound
 const VOICE_BITS = 64000;    // 45 s stay well under the app's upload limit, also as AAC on an iPhone
@@ -69,7 +70,7 @@ function Bubble({ e, me }: { e: ThreadEntry; me: string }) {
   const note = e.kind === "waiting" ? "wartet auf den nächsten Besucher"
     : e.kind === "reply" ? (e.spoken === true ? "vorgelesen ✓" : e.spoken === false ? "nur angezeigt" : "wird vorgelesen …")
     : e.kind === "voice" ? (e.spoken === true ? "abgespielt ✓" : e.spoken === false ? "nicht abgespielt" : "wird abgespielt …")
-    : e.kind === "room" ? "über den RoomKey" : "";
+    : e.kind === "room" ? (e.via === "app" ? "live aus der App" : "über den RoomKey") : "";
   return (
     <li class={`chat-msg ${ours ? "ours" : "theirs"} k-${e.kind}`}>
       <span class="chat-who">{who}</span>
@@ -79,7 +80,7 @@ function Bubble({ e, me }: { e: ThreadEntry; me: string }) {
   );
 }
 
-export function Call({ state, me, done }: { state: DoorActionsState; me: string; done: () => void }) {
+export function Call({ state, me, here, done }: { state: DoorActionsState; me: string; here: boolean; done: () => void }) {
   const [call, setCall] = useState<DoorCall | null>(null);
   const [talkState, setTalkState] = useState<TalkState>("off");
   const [text, setText] = useState("");
@@ -118,7 +119,8 @@ export function Call({ state, me, done }: { state: DoorActionsState; me: string;
   }, [entries.length, entries[entries.length - 1]?.spoken]);
 
   if (!call) return null;
-  const live = talkState === "listening" || talkState === "talking";
+  const joined = talkState === "listening" || talkState === "talking";
+  const canTalk = call.talk && DoorTalk.supported();
 
   const send = async (job: () => Promise<unknown>) => {
     setBusy(true);
@@ -144,7 +146,30 @@ export function Call({ state, me, done }: { state: DoorActionsState; me: string;
     if (m.length >= 3) draft.current = window.setTimeout(() => api.sayDraft(m).catch(() => {}), 900);
   };
 
-  // a voice message: hold the microphone, let go to send it, slide off the button to throw it away
+  // live, as at a room key: the first press joins the call (the phone asks for the microphone once), and the talking
+  // starts as soon as the door has the app in the call; letting go ends the sentence, the call stays until hung up
+  const join = async () => {
+    talk.current = new DoorTalk((s, detail) => {
+      setTalkState(s);
+      if (detail) setMsg(detail);
+      if (s === "listening" && held.current) talk.current?.hold(true);
+      if (s === "off" || s === "error" || s === "busy") talk.current = null;
+    });
+    try {
+      await talk.current.start();
+    } catch {
+      talk.current = null;
+      setTalkState("error");
+      setMsg("Kein Zugriff aufs Mikrofon.");
+    }
+  };
+  const leave = () => {
+    talk.current?.stop();
+    talk.current = null;
+    setTalkState("off");
+  };
+
+  // a voice message (nobody at the door, no call): let go to send it, slide off the button to throw it away
   const recorded = (blob: Blob) => {
     setRecording(false);
     rec.current = null;
@@ -152,11 +177,8 @@ export function Call({ state, me, done }: { state: DoorActionsState; me: string;
     if (!keep.current || !blob.size) return;
     send(() => api.sayAudio(blob, Math.round(seconds * 10) / 10));
   };
-  const press = async (e: PointerEvent) => {
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    held.current = true;
+  const record = async () => {
     keep.current = true;
-    setMsg("");
     const r = new Recorder();
     try {
       await r.start(recorded, VOICE_MAX_S, VOICE_BITS);
@@ -175,8 +197,22 @@ export function Call({ state, me, done }: { state: DoorActionsState; me: string;
     setRecS(0);
     setRecording(true);
   };
+
+  const live = canTalk && (joined || call.active || here);
+  const press = async (e: PointerEvent) => {
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    held.current = true;
+    setMsg("");
+    if (!live) return record();
+    if (talk.current) talk.current.hold(true);
+    else await join();
+  };
   const release = (e: PointerEvent, cancel = false) => {
     held.current = false;
+    if (talk.current) {
+      talk.current.hold(false);
+      return;
+    }
     if (!rec.current) return;
     const b = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const near = e.clientX > b.left - 60 && e.clientX < b.right + 60 && e.clientY > b.top - 80 && e.clientY < b.bottom + 60;
@@ -187,28 +223,11 @@ export function Call({ state, me, done }: { state: DoorActionsState; me: string;
     rec.current.stop();
   };
 
-  const join = async () => {
-    try {
-      talk.current = new DoorTalk((s, detail) => {
-        setTalkState(s);
-        if (detail) setMsg(detail);
-      });
-      await talk.current.start();
-    } catch {
-      setTalkState("error");
-      setMsg("Kein Zugriff aufs Mikrofon.");
-    }
-  };
-  const leave = () => {
-    talk.current?.stop();
-    talk.current = null;
-    setTalkState("off");
-  };
-
   const first = entries.find((e) => e.t);
   const status = call.active ? <span class="chip ok">Gespräch läuft</span>
     : first ? <span class="chip">{`Besuch ${dayHm(first.t)}`}</span> : undefined;
-  const mic = !text.trim() && Recorder.supported();
+  const mic = !text.trim() && (live || Recorder.supported());
+  const talking = talkState === "talking";
   return (
     <section class="chat">
       <header class="chat-head"><Icon name="door" /><b>Gespräch an der Tür</b><span class="grow" />{status}</header>
@@ -226,17 +245,29 @@ export function Call({ state, me, done }: { state: DoorActionsState; me: string;
           <button class="link danger" disabled={busy} onClick={() => send(() => api.cancelSay())}>Zurücknehmen</button>
         </p>
       )}
+      {joined && (
+        <p class="chat-live-bar">
+          <span class="dot" /><span>{TALK_LABEL[talkState]}</span>
+          <button class="link danger" onClick={leave}>Auflegen</button>
+        </p>
+      )}
+      {!joined && canTalk && call.active && talkState !== "connecting" && (
+        <button class="link chat-listen" onClick={join}><Icon name="speaker" />Mithören</button>
+      )}
       <div class="chat-quick">
         {(state.quick ?? []).map((q) => <button class="chip" disabled={busy} onClick={() => say(q)}>{q.replace(/\.$/, "")}</button>)}
       </div>
       <form class="chat-compose" onSubmit={(e) => { e.preventDefault(); if (text.trim()) say(text); }}>
         {recording ? (
           <div class="chat-rec"><span class="dot" />{mmss(recS)}<span class="meta">Loslassen zum Senden · wegziehen verwirft</span></div>
+        ) : talking || (held.current && talkState === "connecting") ? (
+          <div class="chat-rec"><span class="dot" />{talking ? "Live: die Tür hört dich" : "Verbinde mit der Tür …"}</div>
         ) : (
           <input value={text} maxLength={400} placeholder="Nachricht an die Tür …" onInput={(e) => typed(e.currentTarget.value)} />
         )}
         {mic ? (
-          <button type="button" class={`primary round mic ${recording ? "on" : ""}`} aria-label="Halten für Sprachnachricht"
+          <button type="button" class={`primary round mic ${recording || talking ? "on" : ""}`}
+                  aria-label={live ? "Halten zum Sprechen" : "Halten für Sprachnachricht"}
                   disabled={busy} onPointerDown={press} onPointerUp={(e) => release(e)}
                   onPointerCancel={(e) => release(e, true)} onContextMenu={(e) => e.preventDefault()}>
             <Icon name="mic" />
@@ -245,22 +276,9 @@ export function Call({ state, me, done }: { state: DoorActionsState; me: string;
           <button class="primary round" aria-label="Senden" disabled={busy || !text.trim()}><Icon name="send" /></button>
         )}
       </form>
-      {call.talk && DoorTalk.supported() && (
-        live ? (
-          <div class="chat-talk">
-            <button class={`hold ${talkState === "talking" ? "on" : ""}`}
-                    onPointerDown={(e) => { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); talk.current?.hold(true); }}
-                    onPointerUp={() => talk.current?.hold(false)} onPointerCancel={() => talk.current?.hold(false)}
-                    onContextMenu={(e) => e.preventDefault()}>
-              <Icon name="mic" />{talkState === "talking" ? "Sprich jetzt" : "Halten zum Sprechen"}
-            </button>
-            <button class="link danger" onClick={leave}>Auflegen</button>
-          </div>
-        ) : (
-          <button class="chat-live" disabled={talkState === "connecting"} onClick={join}><Icon name="mic" />Live sprechen</button>
-        )
-      )}
-      {(talkState !== "off" || msg) && <p class="meta">{msg || TALK_LABEL[talkState]}</p>}
+      {msg ? <p class="meta">{msg}</p>
+        : !joined && <p class="meta">{live ? "Mikrofon halten: live an die Tür, wie am RoomKey."
+          : "Niemand an der Tür: Mikrofon halten nimmt eine Sprachnachricht für den nächsten Besucher auf."}</p>}
     </section>
   );
 }

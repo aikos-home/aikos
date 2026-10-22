@@ -66,6 +66,7 @@ export interface ThreadEntry {
   spoken: boolean | null;
   voice?: string;            // a voice message's file (aikos 0.17.0): GET /api/v1/door/voice/{voice}
   seconds?: number | null;
+  via?: string;              // "app" = said live from the app (aikos 0.18.0)
 }
 
 export interface DoorCall {

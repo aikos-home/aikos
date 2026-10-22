@@ -175,3 +175,14 @@ async def test_a_voice_message_must_be_sound(hass: HomeAssistant, door, media):
     with pytest.raises(ServiceValidationError):
         await voice(hass, audio=b"<html>not a sound</html>")
     assert not list((media / "aikos").glob("voice-*")) if (media / "aikos").exists() else True
+
+
+async def test_lines_from_the_app_in_the_call_log_are_not_doubled(hass: HomeAssistant, door):
+    await setup(hass)
+    hass.bus.async_fire("aikos_call_message", {"side": "room", "who": "Alex", "text": "Bitte vor die Tür.", "via": "text"})
+    hass.bus.async_fire("aikos_call_message", {"side": "room", "who": "Alex", "text": "Ich komme runter.", "via": "app"})
+    hass.bus.async_fire("aikos_call_message", {"side": "room", "who": "Küche", "text": "Bin unterwegs.", "via": ""})
+    await settle(hass)
+    e = hass.states.get(THREAD).attributes["entries"]
+    assert [(x["kind"], x["text"], x.get("via")) for x in e] == [("room", "Ich komme runter.", "app"),
+                                                                 ("room", "Bin unterwegs.", None)]
