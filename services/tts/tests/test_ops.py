@@ -155,3 +155,41 @@ def test_a_failed_sentence_leaves_its_text_out_of_the_log(tmp_path):
     with pytest.raises(SpeechError) as e:
         engine.synthesize("Der Schlüssel liegt unter der Matte.", ref)
     assert "Schlüssel" not in str(e.value) and "characters" in str(e.value)
+
+
+def test_through_the_hub_the_heartbeat_asks_the_hubs_status(monkeypatch):
+    """The hub sends paths other than the transcription to another backend (a /health would reach Ollama)."""
+    import io
+    import json as js
+    seen = []
+
+    def fake_open(url, timeout=0):
+        seen.append(url)
+        return io.BytesIO(js.dumps({"backends": {"whisper-shared": {"up": state["up"]}}}).encode())
+    state = {"up": True}
+    monkeypatch.setattr(heartbeat.urllib.request, "urlopen", fake_open)
+    assert heartbeat.whisper_state("http://127.0.0.1/c/aikos-tts", "whisper-shared") == "ok"
+    assert seen[-1] == "http://127.0.0.1/hub/v1/status"
+    state["up"] = False
+    assert heartbeat.whisper_state("http://127.0.0.1/c/aikos-tts", "whisper-shared") == "unreachable"
+    assert heartbeat.whisper_state("http://127.0.0.1/c/aikos-tts", "other") == "unreachable"
+
+
+async def test_a_sentence_whose_check_waited_too_long_is_tried_once_more(monkeypatch):
+    import urllib.error
+
+    from aikos_tts import prepare
+    calls = []
+
+    class Busy(FakeEngine):
+        def synthesize(self, text, reference):
+            calls.append(text)
+            raise urllib.error.HTTPError("http://hub", 503, "slot", {}, None)
+    monkeypatch.setattr(prepare, "RETRY_S", 0.01)
+    p = prepare.Preparer(Busy())
+    p.add("v1", Path("ref.wav"), ["Komme sofort."])
+    await p.idle()
+    import asyncio
+    await asyncio.sleep(0.05)
+    await p.idle()
+    assert calls == ["Komme sofort.", "Komme sofort."]                          # once more, then given up
