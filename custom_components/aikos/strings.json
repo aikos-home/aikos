@@ -304,6 +304,24 @@
           "description": "The voice that says the sentences; empty = nothing is said."
         }
       }
+    },
+    "door_say_audio": {
+      "name": "Voice message to the door",
+      "description": "A voice message recorded in the app, in the sender's own voice: played at the door now if someone is there, else for the next visitor.",
+      "fields": {
+        "audio": {
+          "name": "Sound",
+          "description": "The recording as base64 (WebM, Ogg, M4A, MP3, WAV; at most 3 MB)."
+        },
+        "sender": {
+          "name": "Sender",
+          "description": "Who recorded it."
+        },
+        "seconds": {
+          "name": "Length",
+          "description": "Its length in seconds (for the chat)."
+        }
+      }
     }
   },
   "exceptions": {

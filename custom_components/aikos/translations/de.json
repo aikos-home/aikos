@@ -304,6 +304,24 @@
           "description": "Die Stimme, die die Sätze sagt; leer = es wird nichts gesagt."
         }
       }
+    },
+    "door_say_audio": {
+      "name": "Sprachnachricht an die Tür",
+      "description": "Eine in der App aufgenommene Sprachnachricht in der eigenen Stimme: sofort an der Tür abgespielt, wenn jemand da ist, sonst für den nächsten Besucher.",
+      "fields": {
+        "audio": {
+          "name": "Ton",
+          "description": "Die Aufnahme als Base64 (WebM, Ogg, M4A, MP3, WAV; höchstens 3 MB)."
+        },
+        "sender": {
+          "name": "Absender",
+          "description": "Wer sie aufgenommen hat."
+        },
+        "seconds": {
+          "name": "Länge",
+          "description": "Ihre Länge in Sekunden (für den Chat)."
+        }
+      }
     }
   },
   "exceptions": {

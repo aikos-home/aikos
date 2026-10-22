@@ -37,6 +37,9 @@ _LOGGER = logging.getLogger(__name__)
 STORE_KEY = "aikos.door_actions"
 PICTURE_DIR = ("www", "aikos_door")             # served as /local/aikos_door without login: the picture is public anyway
 AUDIO_MAX = 3 * 1024 * 1024
+VOICE_PREFIX = "voice-"     # voice messages from the app (A49), next to the speech files
+VOICE_KEEP = 20
+VOICE_LABEL = "Sprachnachricht"
 AUDIO_KINDS = {b"\x1aE\xdf\xa3": ".webm", b"OggS": ".ogg", b"RIFF": ".wav", b"ID3": ".mp3", b"\xff\xfb": ".mp3",
                b"\xff\xf3": ".mp3"}
 
@@ -48,6 +51,15 @@ def _audio_ext(data: bytes) -> str:
     if data[4:8] == b"ftyp":
         return ".m4a"
     raise ValueError("not a sound file")
+
+
+def _write_voice(path: Path, data: bytes) -> None:
+    """A voice message; only the newest VOICE_KEEP stay (the app can play them back in the chat)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+    old = sorted(path.parent.glob(VOICE_PREFIX + "*"), key=lambda p: p.stat().st_mtime)
+    for p in old[:-VOICE_KEEP]:
+        p.unlink(missing_ok=True)
 
 
 class DoorActions:
@@ -169,6 +181,33 @@ class DoorActions:
             self._background(self._prepare_note(note))
         return "waiting"
 
+    async def async_say_audio(self, audio: bytes, sender: str, seconds: float | None = None) -> str:
+        """A voice message recorded in the app (A49, "wie bei WhatsApp"): the sender's own recorded voice, played at the
+        door now if someone is there ('now'), else for the next visitor ('waiting'). Returns which."""
+        folder = self._speech.folder()
+        if folder is None:
+            raise ValueError("no local media folder")
+        if len(audio) > AUDIO_MAX:
+            raise ValueError("sound file too large")
+        name = f"{VOICE_PREFIX}{secrets.token_hex(6)}{_audio_ext(audio)}"
+        await self._hass.async_add_executor_job(_write_voice, folder / name, audio)
+        _, who = clean_note(VOICE_LABEL, sender)
+        extra = {"voice": name, "seconds": round(float(seconds), 1) if seconds else None}
+        await self._drop_note_audio()
+        if self._someone_there() and await self._show(VOICE_LABEL, who, extra):
+            self.state.note = None
+            self._changed()
+            self._background(self._play_and_tell(name))
+            return "now"
+        self.state.note = Note(message=VOICE_LABEL, sender=who, since=dt_util.now().isoformat(timespec="seconds"),
+                               audio=name)
+        self._changed()
+        self._hass.bus.async_fire("aikos_door_reply", {"sender": who, "text": VOICE_LABEL, "shown": False, **extra})
+        return "waiting"
+
+    async def _play_and_tell(self, name: str) -> None:
+        self._hass.bus.async_fire("aikos_door_reply_spoken", {"ref": name, "spoken": await self._speech.play(name)})
+
     async def async_cancel_note(self) -> bool:
         had = self.state.note is not None
         await self._drop_note_audio()
@@ -200,14 +239,14 @@ class DoorActions:
             await self._speech.drop("note")
 
     async def _drop_note_audio(self) -> None:
-        if self.state.note is not None and self.state.note.audio:
-            await self._speech.drop("note")
+        if self.state.note is not None and self.state.note.audio and not self.state.note.audio.startswith(VOICE_PREFIX):
+            await self._speech.drop("note")   # a voice message's file stays: the chat can play it back
 
-    async def _show(self, text: str, who: str) -> bool:
+    async def _show(self, text: str, who: str, extra: dict | None = None) -> bool:
         if not self._hass.services.has_service("esphome", DOOR_SHOW_REPLY):
             return False
         await self._hass.services.async_call("esphome", DOOR_SHOW_REPLY, {"sender": who, "message": text}, blocking=True)
-        self._hass.bus.async_fire("aikos_door_reply", {"sender": who, "text": text})
+        self._hass.bus.async_fire("aikos_door_reply", {"sender": who, "text": text, **(extra or {})})
         if self._hass.services.has_service("logbook", "log"):
             await self._hass.services.async_call("logbook", "log", {
                 "name": "aikos Tür", "entity_id": "sensor.aikos_door_note",
@@ -232,10 +271,13 @@ class DoorActions:
     async def _someone_came(self) -> None:
         note = self.state.note
         if note is not None:
-            if await self._show(note.message, note.sender):
+            voice = note.audio.startswith(VOICE_PREFIX)
+            if await self._show(note.message, note.sender, {"voice": note.audio} if voice else None):
                 self.state.note = None
                 self._changed()
-                if note.audio:
+                if voice:
+                    await self._play_and_tell(note.audio)
+                elif note.audio:
                     self._tell_spoken(note.message, await self._speech.play(note.audio))
                     await self._speech.drop("note")
                 elif note.voice:

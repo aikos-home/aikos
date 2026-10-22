@@ -7,6 +7,7 @@ rights.
 from __future__ import annotations
 
 import base64
+import re
 from typing import Any
 
 from .client import HaClient, HaError
@@ -21,6 +22,8 @@ ENTITIES = (NOTE, GREETING, PICTURE, ANNOUNCE)
 SITUATIONS = ("parcel", "away", "quiet")
 PICTURE_PREFIX = "/local/aikos_door/"
 GREETING_FOLDER = "media-source://media_source/local/aikos"
+VOICE_FILE = re.compile(r"^voice-[0-9a-f]{12}\.(webm|ogg|m4a|mp3|wav)$")
+"""A voice message to the door (aikos 0.17.0), next to the greeting sound."""
 
 
 class NoDoorActions(HaError):
@@ -98,6 +101,18 @@ class DoorActions:
         """`voice` = the sender's own voice (read aloud in it); "" = shown only (A45)."""
         res = await self._call("door_say", {"message": message, "sender": sender, "voice": voice}, response=True)
         return str((res or {}).get("delivered") or "")
+
+    async def say_audio(self, audio: bytes, sender: str, seconds: float) -> str:
+        """A voice message, the sender's own recording (A49): 'now' or 'waiting', as `say`."""
+        res = await self._call("door_say_audio", {"audio": base64.b64encode(audio).decode("ascii"), "sender": sender,
+                                                  "seconds": seconds}, response=True)
+        return str((res or {}).get("delivered") or "")
+
+    async def voice_link(self, name: str) -> str:
+        if not VOICE_FILE.match(name):
+            return ""
+        res = await self.ha.command("media_source/resolve_media", media_content_id=f"{GREETING_FOLDER}/{name}")
+        return str(res.get("url") or "")
 
     async def cancel_note(self) -> None:
         await self._call("door_say_cancel", response=True)

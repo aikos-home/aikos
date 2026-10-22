@@ -137,9 +137,13 @@ recorder puts it, `<local media>/aikos_door/` (Media → My media).
 
 `sensor.aikos_door_thread`: everything at the door in one thread, like a chat (A49): `ring`, `door` (the visitor),
 `room` (a room key), `reply` (an answer from the app shown at the door; `spoken` true/false once it was read aloud or could
-not be), `waiting` (an answer for the next visitor), `announce`, `message` (a message was left). Unlike the call log it
+not be), `voice` (a voice message from the app; `voice` = its file, `seconds`; `spoken` = played), `waiting` (an answer or
+voice message for the next visitor), `announce`, `message` (a message was left). Unlike the call log it
 stays after the call (the newest 60 entries, in HA's storage); 5 minutes without an entry start a new `visit`. New events:
-`aikos_door_reply` gets `shown: false` for a waiting answer, `aikos_door_reply_spoken {text, spoken}`.
+`aikos_door_reply` gets `shown: false` for a waiting answer and `voice`/`seconds` for a voice message,
+`aikos_door_reply_spoken {text or ref, spoken}`. `aikos.door_say_audio {audio, sender, seconds}`: a voice message recorded
+in the app (like on WhatsApp), the sender's own voice, played at the door now if someone is there, else for the next
+visitor (`<local media>/aikos/voice-*`, the newest 20 stay so the app can play them back).
 
 ### Door actions (0.9.0, for the aikos app)
 

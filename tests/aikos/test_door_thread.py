@@ -117,3 +117,61 @@ async def test_only_the_newest_60_entries_stay(hass: HomeAssistant, door):
     await settle(hass)
     texts = [t for _, _, t in entries(hass)]
     assert len(texts) == 60 and texts[0] == "Satz 10" and texts[-1] == "Satz 69"
+
+
+WEBM = b"\x1aE\xdf\xa3" + b"\x00" * 64
+
+
+async def voice(hass, sender="Alex", seconds=4.2, audio=WEBM):
+    import base64
+    return await hass.services.async_call(DOMAIN, "door_say_audio",
+                                          {"audio": base64.b64encode(audio).decode(), "sender": sender, "seconds": seconds},
+                                          blocking=True, return_response=True)
+
+
+async def test_a_voice_message_plays_at_once_when_someone_is_there(hass: HomeAssistant, door, media, monkeypatch):
+    from custom_components.aikos import door_speaker
+    played = []
+
+    async def play(hass_, path):
+        played.append(path.name)
+        return 1.0
+    monkeypatch.setattr(door_speaker, "play", play)
+    await setup(hass)
+    hass.states.async_set(SOMEONE, "on")
+    await settle(hass)
+    assert await voice(hass) == {"delivered": "now"}
+    await settle(hass)
+    e = hass.states.get(THREAD).attributes["entries"][-1]
+    assert (e["kind"], e["who"], e["seconds"], e["spoken"]) == ("voice", "Alex", 4.2, True)
+    assert e["voice"].startswith("voice-") and e["voice"].endswith(".webm") and played == [e["voice"]]
+    assert (media / "aikos" / e["voice"]).read_bytes() == WEBM            # stays: the chat can play it back
+
+
+async def test_a_voice_message_waits_for_the_next_visitor(hass: HomeAssistant, door, media, monkeypatch):
+    from custom_components.aikos import door_speaker
+    played = []
+
+    async def play(hass_, path):
+        played.append(path.name)
+        return 1.0
+    monkeypatch.setattr(door_speaker, "play", play)
+    await setup(hass)
+    assert await voice(hass, seconds=7) == {"delivered": "waiting"}
+    await settle(hass)
+    waiting = hass.states.get(THREAD).attributes["entries"][-1]
+    assert waiting["kind"] == "waiting" and waiting["voice"].startswith("voice-") and played == []
+    assert hass.states.get("sensor.aikos_door_note").state == "waiting"
+    hass.states.async_set(SOMEONE, "on")
+    await settle(hass)
+    e = hass.states.get(THREAD).attributes["entries"][-1]
+    assert (e["kind"], e["voice"], e["spoken"]) == ("voice", waiting["voice"], True) and played == [waiting["voice"]]
+    assert hass.states.get("sensor.aikos_door_note").state != "waiting"
+
+
+async def test_a_voice_message_must_be_sound(hass: HomeAssistant, door, media):
+    from homeassistant.exceptions import ServiceValidationError
+    await setup(hass)
+    with pytest.raises(ServiceValidationError):
+        await voice(hass, audio=b"<html>not a sound</html>")
+    assert not list((media / "aikos").glob("voice-*")) if (media / "aikos").exists() else True

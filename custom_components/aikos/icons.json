@@ -113,6 +113,9 @@
     },
     "door_announcements": {
       "service": "mdi:account-voice"
+    },
+    "door_say_audio": {
+      "service": "mdi:microphone-message"
     }
   }
 }

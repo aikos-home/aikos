@@ -34,6 +34,7 @@ ALLOWED_SERVICES = frozenset({
     ("aikos", "quiet_hours"),
     ("aikos", "door_say"),
     ("aikos", "door_say_cancel"),
+    ("aikos", "door_say_audio"),
     ("aikos", "door_picture"),
     ("aikos", "door_picture_clear"),
     ("aikos", "door_greeting"),

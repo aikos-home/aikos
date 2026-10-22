@@ -94,6 +94,9 @@ _SAY = vol.Schema({vol.Required("message"): vol.All(cv.string, vol.Length(min=1,
                    vol.Optional("sender", default=""): vol.All(cv.string, vol.Length(max=SENDER_MAX)),
                    vol.Optional("voice", default=""): _VOICE})
 _PICTURE = vol.Schema({vol.Required("image"): cv.string})
+_SAY_AUDIO = vol.Schema({vol.Required("audio"): cv.string,
+                         vol.Optional("sender", default=""): vol.All(cv.string, vol.Length(max=SENDER_MAX)),
+                         vol.Optional("seconds"): vol.All(vol.Coerce(float), vol.Range(min=0, max=120))})
 _GREETING = vol.Schema({vol.Optional("enabled"): cv.boolean,
                         vol.Optional("text"): vol.All(cv.string, vol.Length(max=GREETING_MAX)),
                         vol.Optional("start"): cv.datetime, vol.Optional("end"): cv.datetime,
@@ -131,6 +134,15 @@ async def _say(call: ServiceCall) -> ServiceResponse:
     try:
         return {"delivered": await _door(call.hass).async_say(call.data["message"], call.data["sender"],
                                                                call.data["voice"])}
+    except ValueError as e:
+        raise _invalid(str(e)) from None
+
+
+async def _say_audio(call: ServiceCall) -> ServiceResponse:
+    d = call.data
+    try:
+        return {"delivered": await _door(call.hass).async_say_audio(_b64(d["audio"], 3 * 1024 * 1024), d["sender"],
+                                                                    d.get("seconds"))}
     except ValueError as e:
         raise _invalid(str(e)) from None
 
@@ -184,6 +196,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
     reg(DOMAIN, "quiet_hours", _quiet, schema=_QUIET)
     reg(DOMAIN, "door_say", _say, schema=_SAY, supports_response=SupportsResponse.OPTIONAL)
     reg(DOMAIN, "door_say_cancel", _say_cancel, schema=vol.Schema({}), supports_response=SupportsResponse.OPTIONAL)
+    reg(DOMAIN, "door_say_audio", _say_audio, schema=_SAY_AUDIO, supports_response=SupportsResponse.OPTIONAL)
     reg(DOMAIN, "door_picture", _picture, schema=_PICTURE, supports_response=SupportsResponse.OPTIONAL)
     reg(DOMAIN, "door_picture_clear", _picture_clear, schema=vol.Schema({}))
     reg(DOMAIN, "door_greeting", _greeting, schema=_GREETING, supports_response=SupportsResponse.OPTIONAL)

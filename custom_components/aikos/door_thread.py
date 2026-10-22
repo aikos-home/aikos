@@ -7,7 +7,8 @@
 | door      | what the visitor says (the call log's door side, `aikos_call_message`)                 |
 | room      | what someone in the house says through a room key (the call log's room side)           |
 | reply     | a resident's answer from the app, shown at the door (`aikos_door_reply`); `spoken` says whether it was read aloud |
-| waiting   | an answer that waits for the next visitor                                              |
+| voice     | a resident's voice message from the app (recorded like on WhatsApp), played at the door; `spoken` = played  |
+| waiting   | an answer or voice message that waits for the next visitor                             |
 | announce  | the door's announcement after a ring (`aikos_door_announced`)                          |
 | message   | the visitor left a message (`aikos_door_message_saved`)                                |
 
@@ -113,14 +114,20 @@ class DoorThread:
     def _on_reply(self, event: Event) -> None:
         d = event.data
         shown = d.get("shown", True) is not False
-        self.add("reply" if shown else "waiting", d.get("sender") or "", d.get("text") or "", spoken=None)
+        voice = str(d.get("voice") or "")
+        kind = "waiting" if not shown else "voice" if voice else "reply"
+        extra = {"voice": voice, "seconds": d.get("seconds")} if voice else {}
+        self.add(kind, d.get("sender") or "", d.get("text") or "", spoken=None, **extra)
 
     @callback
     def _on_spoken(self, event: Event) -> None:
-        """The answer was read aloud (or could not be): marked on the newest matching reply."""
+        """The answer was read aloud or the voice message played (or not): marked on the newest matching entry."""
         d = event.data
+        ref, text = str(d.get("ref") or ""), " ".join(str(d.get("text") or "").split())[:TEXT_MAX]
         for e in reversed(self.entries):
-            if e["kind"] in ("reply", "waiting") and e["text"] == " ".join(str(d.get("text") or "").split())[:TEXT_MAX]:
+            if e["kind"] not in ("reply", "voice", "waiting"):
+                continue
+            if (ref and e.get("voice") == ref) or (not ref and e["text"] == text and not e.get("voice")):
                 e["spoken"] = bool(d.get("spoken"))
                 self._changed()
                 return

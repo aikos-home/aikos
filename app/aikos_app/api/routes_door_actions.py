@@ -23,6 +23,7 @@ PICTURE_TYPES = ("image/jpeg", "image/png", "image/webp")
 AUDIO_TYPES = ("audio/webm", "audio/ogg", "audio/mp4", "audio/mpeg", "audio/wav", "audio/x-wav", "audio/aac")
 PICTURE_MAX = 900 * 1024        # the phone shrinks the photo first; the whole request stays under the app's 1 MB
 AUDIO_MAX = 900 * 1024
+VOICE_MAX_S = 50                 # the door plays at most 50 s of a sound
 
 
 async def _json(request: web.Request) -> dict:
@@ -133,6 +134,29 @@ async def say_draft(request: web.Request) -> web.Response:
         _DRAFTS.add(task)
         task.add_done_callback(_DRAFTS.discard)
     return web.Response(status=202)
+
+
+@routes.post("/api/v1/door/say/audio")
+async def say_audio(request: web.Request) -> web.Response:
+    """A voice message to the door (A49, "wie bei WhatsApp"): the recording itself, in the sender's own voice; `seconds`
+    in the query (for the chat)."""
+    user = require(request, Cap.DOOR_ACT)
+    try:
+        seconds = round(min(max(float(request.query.get("seconds") or 0), 0), VOICE_MAX_S), 1)
+    except ValueError:
+        raise api_error(400, "bad_request") from None
+    data = await _raw(request, AUDIO_TYPES, AUDIO_MAX)
+    delivered = await _do(ctx(request).door_actions.say_audio(data, user.name, seconds))
+    _audit(request, "door.say_audio", user.id, target=delivered)
+    return web.json_response({"delivered": delivered})
+
+
+@routes.get("/api/v1/door/voice/{name}")
+async def get_voice(request: web.Request) -> web.StreamResponse:
+    """A voice message of the chat, to listen to it again."""
+    require(request, Cap.DOOR_ACT)
+    link = await _do(ctx(request).door_actions.voice_link(request.match_info["name"]))
+    return await _stream(request, link, "audio/webm")
 
 
 @routes.delete("/api/v1/door/say")
