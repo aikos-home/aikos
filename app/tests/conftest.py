@@ -113,6 +113,9 @@ class FakeHa(HaClient):
         raise HaError(f"unexpected {type_}")
 
     def _service(self, domain: str, service: str, data: dict[str, Any], response: bool) -> Any:
+        if domain == "esphome":   # the talk computer's actions (talking from the app)
+            self.services.append((domain, service, data))
+            return {"context": {}}
         if service not in ("door_messages", "door_message_delete", "door_message_heard"):
             return self._door_action(service, data)
         assert self.register is not None, "no register in this Home Assistant"

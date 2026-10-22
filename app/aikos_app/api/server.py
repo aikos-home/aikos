@@ -17,7 +17,10 @@ from ..ha.door import QUIET_SWITCH, REGISTER_ENTITY, DoorMessages
 from ..ha.door_actions import ENTITIES as DOOR_ACTION_ENTITIES
 from ..ha.door_actions import QUICK_REPLIES
 from ..ha.door_actions import DoorActions
+from ..ha.door_call import ENTITIES as CALL_ENTITIES
 from ..push.door_push import DoorPush
+from ..push.ring_push import RingPush
+from ..talk import TalkBridge
 from ..push.sender import PushSender
 from ..push.webpush import new_vapid_key, vapid_public
 from ..roles import Cap, can
@@ -28,7 +31,8 @@ from ..store.flows import Flows
 from ..store.push import Pushes
 from ..store.sessions import Sessions
 from ..voice import Voices
-from . import routes_auth, routes_door, routes_door_actions, routes_meta, routes_people, routes_push, routes_voice
+from . import (routes_auth, routes_door, routes_door_actions, routes_meta, routes_people, routes_push, routes_talk,
+               routes_voice)
 from .context import CTX, AppContext, api_error
 from .middleware import Brake, brake_middleware, errors, identify, same_origin_writes, security_headers
 
@@ -49,7 +53,9 @@ def build_context(settings: Settings, ha: HaClient | None = None) -> AppContext:
     door_push = DoorPush(ha, door, accounts, pushes, PushSender(vapid, settings.public_url),
                          settings.entity_someone_at_door)
     return AppContext(settings, db, accounts, sessions, audit, auth, ha, door, pushes, door_push, vapid_public(vapid),
-                      DoorActions(ha), Voices(settings.tts_url, settings.tts_token))
+                      DoorActions(ha), Voices(settings.tts_url, settings.tts_token),
+                      RingPush(ha, accounts, pushes, door_push),
+                      TalkBridge(ha, settings.talk_host, settings.talk_port, settings.door_talk_host))
 
 
 async def prepare_quick_replies(c: AppContext) -> None:
@@ -104,7 +110,8 @@ def create_app(settings: Settings, ha: HaClient | None = None) -> web.Applicatio
                           middlewares=[security_headers, errors, brake_middleware(Brake()), same_origin_writes,
                                        identify])
     app[CTX] = c
-    for module in (routes_meta, routes_auth, routes_people, routes_door, routes_door_actions, routes_push, routes_voice):
+    for module in (routes_meta, routes_auth, routes_people, routes_door, routes_door_actions, routes_push, routes_talk,
+                   routes_voice):
         app.add_routes(module.routes)
     app.router.add_get("/{tail:.*}", _spa(settings.web_dir or DEFAULT_WEB_DIR))
 
@@ -118,13 +125,17 @@ def create_app(settings: Settings, ha: HaClient | None = None) -> web.Applicatio
         if path:
             _LOGGER.warning("nobody is set up yet: the one-time setup code is in %s", path)
         c.ha.watch([settings.entity_someone_at_door, settings.entity_quiet_hours, settings.entity_bell_muted,
-                    REGISTER_ENTITY, QUIET_SWITCH, *DOOR_ACTION_ENTITIES])
+                    REGISTER_ENTITY, QUIET_SWITCH, *DOOR_ACTION_ENTITIES, *CALL_ENTITIES])
         c.door_push.attach()
+        c.ring_push.attach()
+        await c.talk.start()
         await c.ha.start()
         background.append(asyncio.create_task(prepare_quick_replies(c)))
 
     async def on_cleanup(_app: web.Application) -> None:
         await c.door_push.stop()
+        await c.ring_push.stop()
+        c.talk.close()
         await c.door_push.sender.close()
         await c.voices.close()
         await c.ha.stop()

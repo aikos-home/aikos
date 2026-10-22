@@ -57,6 +57,14 @@ export interface DoorAnnouncements {
   me: { resident: boolean; named: boolean };
 }
 
+export interface DoorCall {
+  active: boolean;
+  call_id: string;
+  messages: { id: string; side: "door" | "room"; who: string; text: string; tr: string; tr_lang: string }[];
+  ring: string;
+  talk: boolean;
+}
+
 export interface DoorActionsState {
   note: { message: string; sender: string; since: string } | null;
   greeting: { state: "active" | "scheduled" | "off"; enabled: boolean; text: string; start: string; end: string; audio: boolean };
@@ -204,6 +212,7 @@ export const api = {
   doorStatus: () => call<DoorStatus>("GET", "/api/v1/door/status"),
   doorMessages: () => call<DoorMessage[]>("GET", "/api/v1/door/messages"),
   doorActions: () => call<DoorActionsState | null>("GET", "/api/v1/door/actions"),
+  doorCall: () => call<DoorCall>("GET", "/api/v1/door/call"),
   bell: (body: { minutes?: number; until_time?: string; forever?: boolean; off?: boolean }) =>
     call<unknown>("POST", "/api/v1/door/bell", body),
   quietHours: (body: { enabled?: boolean; start?: string; end?: string }) =>
