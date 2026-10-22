@@ -210,7 +210,7 @@ code.small { font-size: 11px; color: var(--muted); }
 .chat-wave { flex: 1; height: 16px; background: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 5px); opacity: .3; border-radius: 4px; }
 .chat-wave.on { opacity: .8; }
 .chat-len { font-size: 12px; opacity: .7; font-variant-numeric: tabular-nums; }
-.chat-live { align-self: stretch; }
-.chat-talk { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.chat-talk .hold { width: 100%; min-height: 72px; font-size: 18px; touch-action: none; user-select: none; -webkit-user-select: none; }
-.chat-talk .hold.on { background: var(--accent); color: #fff; }
+.chat-live-bar { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; padding: 6px 10px; border-radius: 10px; background: var(--accent-bg); }
+.chat-live-bar span:nth-child(2) { flex: 1; }
+.chat-live-bar .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok, #3a3); flex: none; }
+.chat-listen { align-self: flex-start; display: flex; align-items: center; gap: 6px; }

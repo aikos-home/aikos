@@ -106,6 +106,11 @@ of them (matrix 2.4a).
   while held; the node turns it into RTP for the door and passes the door's microphone back; one participant per node;
   talk computer 0.7.24 `app_join`/`key_state`). Needs `AIKOS_APP_TALK_HOST` (the node's address, rendered by the cluster
   kit when `door_talk_host` is set) and the door's RTP let in on UDP 5012.
+  Since 0.9.0 the chat's microphone is that button (the owner: "live wie RoomKey"): holding it talks live while someone
+  is at the door or a call runs (the first press joins the call), else it records a voice message for the next visitor.
+  As a room key does, the node sends a copy of what is said to the transcriber's room side (`AIKOS_APP_TRANSCRIBER`,
+  host:port) and tells aikos who is in the call (`aikos.app_talker`, aikos 0.18.0), so the transcript comes back under the
+  person's name, in the door's chat and the app's (`via: app`). Typed answers become lines of the call too (aikos 0.18.0).
 - **Announcements** (aikos 0.11.0+, sprachausgabe S10–S14): the sentences the door says after a ring (parcel expected, everybody
   away, everybody away with places, bell muted or quiet hours), with suggestions and "listen in my voice"; the slider 0–4 of what
   the door may tell. Saved sentences are said in the saver's own voice. Whether the door names one's place, each person decides
@@ -153,6 +158,8 @@ the same key and phones stay subscribed across nodes and rollouts.
 | `AIKOS_APP_DOOR_MEDIA_DIR` | `aikos_door` | local media folder of the door |
 | `AIKOS_APP_TTS_URL` | empty | the house's voice service (HTTP side); empty = no own voices |
 | `AIKOS_APP_TTS_TOKEN_FILE` | empty | file with its token |
+| `AIKOS_APP_TALK_HOST`, `AIKOS_APP_TALK_PORT`, `AIKOS_APP_DOOR_TALK_HOST` | off, 5012, off | talking to the door from the app (this node's address and port, the talk computer) |
+| `AIKOS_APP_TRANSCRIBER` | off | `host:port` of the transcriber's room side; it gets a copy of what is said from the app |
 | `AIKOS_APP_ENTITY_SOMEONE_AT_DOOR`, `…_QUIET_HOURS`, `…_BELL_MUTED` | the aikos names | status entities shown at the top |
 | `AIKOS_APP_INTERIM_LAST_MESSAGE_ENTITY`, `AIKOS_APP_INTERIM_MESSAGE_TEXT_ENTITY` | off | see above |
 

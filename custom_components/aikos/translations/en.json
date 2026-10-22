@@ -74,6 +74,9 @@
       },
       "door_thread": {
         "name": "Door thread"
+      },
+      "app_talker": {
+        "name": "App talker"
       }
     },
     "number": {
@@ -320,6 +323,20 @@
         "seconds": {
           "name": "Length",
           "description": "Its length in seconds (for the chat)."
+        }
+      }
+    },
+    "app_talker": {
+      "name": "Who talks from the app",
+      "description": "Set by the aikos app: the app node's address and the person who talks to the door from the app, so the transcriber names them. Empty = nobody.",
+      "fields": {
+        "ip": {
+          "name": "Address",
+          "description": "The app node's IPv4 address; empty = nobody talks from the app."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Who talks."
         }
       }
     }
