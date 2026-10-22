@@ -44,7 +44,7 @@ class DoorAnnouncements(_AnnounceEntity, SensorEntity):
     @property
     def native_value(self) -> str:
         now = self.announcer.now()
-        return now[0] if now else "none"
+        return "+".join(s for s, _ in now) or "none"
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -56,6 +56,7 @@ class DoorAnnouncements(_AnnounceEntity, SensorEntity):
             st = hass.states.get(person)
             residents.append({"id": person, "name": st.name if st else person})
         return {"disclosure": a.disclosure, **{s: a.texts.get(s, "") for s in SITUATIONS}, "away_places": a.away_places,
-                "places": dict(a.places), "named": list(a.named), "voice": bool(a.voice), "now_text": now[1] if now else "",
+                "places": dict(a.places), "named": list(a.named), "voice": bool(a.voice),
+                "now_text": " ".join(t for _, t in now),
                 "ready": sorted(self.announcer.ready), "last": dict(self.announcer.last), "zones": zones,
                 "residents": residents}

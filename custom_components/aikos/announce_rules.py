@@ -11,12 +11,10 @@ decides which situations may be told at all; every level includes the ones to it
 | 2, 3  | as 1 (garden, back-at: not yet)                                                  |
 | 4     | where the residents are: only residents who agreed, only places released for it  |
 
-Situations, the first that applies and has a sentence wins:
-- parcel: a delivery is expected today (S14). Also when someone just comes close, not only after a ring.
-- away: every resident is known to be away (an unknown state is not "away": telling a stranger the house is empty by mistake
-  is worse than saying nothing).
-- quiet: the bell is muted or it is quiet hours.
-An empty sentence = that situation says nothing.
+Situations, said one after the other (the owner, 22.10.: "Beide nacheinander"): first the house's own (away: every
+resident is known to be away, an unknown state is not "away"; else quiet: the bell muted or quiet hours), then the parcel
+(a delivery is expected today, S14). The parcel alone also when someone just comes close, not only after a ring. An empty
+sentence = that situation says nothing. A second ring after REPEAT_PAUSE gets the announcement again.
 """
 from __future__ import annotations
 
@@ -33,7 +31,7 @@ TEXT_MAX = 200
 PLACE_MAX = 40
 PLACES_MAX = 20
 WHERE = "{wo}"          # in the away sentence with places: replaced by "A ist beim Lidl und B ist im Fitnessstudio"
-REPEAT_PAUSE = timedelta(seconds=60)   # a second ring within this time gets no second announcement
+REPEAT_PAUSE = timedelta(seconds=15)   # the owner: again after 15 s; a storm of rings gets one
 
 
 def clean(text: str, limit: int = TEXT_MAX) -> str:
@@ -119,25 +117,17 @@ def sentence(a: Announcements, situation: str, residents: list[Resident]) -> str
     return a.texts.get(situation, "")
 
 
-def applying(*, parcel: bool, muted: bool, residents: list[Resident]) -> list[str]:
-    """The situations that apply now, the most fitting first."""
-    found = []
-    if parcel:
-        found.append(PARCEL)
-    if residents and all(r.known_away for r in residents):
-        found.append(AWAY)
-    if muted:
-        found.append(QUIET)
-    return found
-
-
-def pick(a: Announcements, *, parcel: bool, muted: bool, residents: list[Resident]) -> tuple[str, str] | None:
-    """(situation, sentence) for a ring now: the first situation that applies and has a sentence; None = nothing said."""
-    for s in applying(parcel=parcel, muted=muted, residents=residents):
-        text = sentence(a, s, residents)
-        if text:
-            return s, text
-    return None
+def pick(a: Announcements, *, parcel: bool, muted: bool, residents: list[Resident]) -> list[tuple[str, str]]:
+    """What a ring gets now, in this order: [(situation, sentence), ...]; [] = nothing is said."""
+    out = []
+    house = [AWAY] if residents and all(r.known_away for r in residents) else []
+    for s in house + ([QUIET] if muted else []):
+        if text := sentence(a, s, residents):
+            out.append((s, text))
+            break   # one sentence for the house: away says it already when the bell is muted too
+    if parcel and (text := sentence(a, PARCEL, residents)):
+        out.append((PARCEL, text))
+    return out
 
 
 def may_repeat(last: datetime | None, now: datetime) -> bool:

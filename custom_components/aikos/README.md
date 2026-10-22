@@ -1,6 +1,6 @@
 # aikos integration for Home Assistant
 
-The household logic of aikos, installed via HACS. Version **0.15.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
+The household logic of aikos, installed via HACS. Version **0.16.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
 front door (0.5.0, tag `aikos-v0.5.0`), the mic health warning (0.7.0), the door message register (0.8.0), the door actions (0.9.0), reading aloud in the residents' own voices (0.10.0), the door announcements (0.11.0) and parcels from the carriers' mails (0.12.0). More blocks follow (where the bell
 rings, presence, alarm, pairing of devices); each comes as a new version.
 
@@ -182,12 +182,14 @@ After a ring the door says one sentence in a resident's own voice when a situati
 | Option **Parcel expected (sensor)** | A binary sensor or input boolean, on while a delivery is expected today; empty = aikos' own `binary_sensor.aikos_parcel_expected` (below) |
 | Event `aikos_door_announced {situation, text}`, logbook "angesagt: …" | After each announcement |
 
-- **Situations,** the first that applies and has a sentence wins: **parcel** (the parcel sensor is on; this one also speaks when
-  someone only comes close, instead of the greeting sound, S14), **away** (every resident is known to be away; unknown is not
-  away), **quiet** (bell muted or quiet hours).
+- **Situations, said one after the other** (0.16.0, the owner: "Beide nacheinander"): first the house's own, **away**
+  (every resident is known to be away; unknown is not away) or else **quiet** (bell muted or quiet hours), then **parcel**
+  (the parcel sensor is on). The parcel alone also speaks when someone only comes close, instead of the greeting sound
+  (S14). The sensor's state is then e.g. `quiet+parcel`.
 - **Made in advance:** every sentence the level allows, as it would be said now, is made when saved and again 5 s after the
   residents move (`<local media>/aikos/speech-announce-*`). A ring before that: the sentence is made on the spot (a little later).
-- **When:** 1.5 s after the ring; not during a call or a message; a second ring within 60 s gets no second announcement. Without
+- **When:** 1.5 s after the ring; not during a call or a message; a second ring after 15 s gets it again (0.16.0; before:
+  60 s), a storm of rings within 15 s gets one. Without
   a voice or a voice service nothing is said.
 
 ### Parcels from the carriers' mails (0.12.0, sprachausgabe S15)
@@ -267,6 +269,8 @@ After a ring the door says one sentence in a resident's own voice when a situati
 
 ## History
 
+- 0.16.0: several situations are said one after the other (the house's, then the parcel) instead of only the first; a
+  second ring gets the announcement again after 15 s (was 60 s).
 - 0.15.0: `sensor.aikos_door_ring`, the time of the last press (for the aikos app's push on every ring).
 - 0.14.0: the visit rule: a new visit only after 2 minutes without radar (greeting, waiting note, parcel announcement);
   the greeting's 10-minute pause is replaced by it.
