@@ -71,3 +71,11 @@ def test_another_model_never_plays_this_ones_takes(tmp_path):
     cache.put("v1", 1.0, "Komme sofort.", 24000, b"\x01\x00", "chatterbox")
     assert cache.get("v1", 1.0, "Komme sofort.", 24000, "chatterbox") == b"\x01\x00"
     assert cache.get("v1", 1.0, "Komme sofort.", 24000, "chatterbox-mlx") is None
+
+
+def test_a_take_made_while_typing_fits_the_sentence_with_its_full_stop(tmp_path):
+    cache = SpeechCache(tmp_path / "cache")
+    cache.put("v1", 1.0, "Ich komme gleich", 24000, b"\x01\x00", "m")
+    assert cache.get("v1", 1.0, "Ich komme gleich!", 24000, "m") == b"\x01\x00"
+    assert cache.get("v1", 1.0, "Ich komme gleich.", 24000, "m") == b"\x01\x00"
+    assert cache.get("v1", 1.0, "Ich komme gleich nicht", 24000, "m") is None

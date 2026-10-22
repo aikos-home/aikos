@@ -11,6 +11,7 @@ import shutil
 from pathlib import Path
 
 KEEP = 400
+TRAILING = " .!?…,;:"
 
 
 class SpeechCache:
@@ -18,18 +19,23 @@ class SpeechCache:
         self.root = root
         root.mkdir(parents=True, exist_ok=True)
 
-    def _path(self, voice_id: str, ref_mtime: float, sentence: str, rate: int, model: str) -> Path:
-        key = hashlib.sha256(f"{ref_mtime:.3f}\n{rate}\n{model}\n{' '.join(sentence.split())}".encode()).hexdigest()[:32]
+    def _path(self, voice_id: str, ref_mtime: float, sentence: str, rate: int, model: str, loose: bool = True) -> Path:
+        text = " ".join(sentence.split())
+        if loose:   # "Ich komme gleich" made while typing still fits "Ich komme gleich!" when it is sent
+            text = text.rstrip(TRAILING) + "\x00"
+        key = hashlib.sha256(f"{ref_mtime:.3f}\n{rate}\n{model}\n{text}".encode()).hexdigest()[:32]
         return self.root / voice_id / f"{key}.pcm"
 
     def get(self, voice_id: str, ref_mtime: float, sentence: str, rate: int, model: str = "") -> bytes | None:
-        p = self._path(voice_id, ref_mtime, sentence, rate, model)
-        try:
-            data = p.read_bytes()
-        except OSError:
-            return None
-        p.touch()   # used: kept longer
-        return data
+        for loose in (True, False):   # False: a take kept by 0.6.2 or older
+            p = self._path(voice_id, ref_mtime, sentence, rate, model, loose)
+            try:
+                data = p.read_bytes()
+            except OSError:
+                continue
+            p.touch()   # used: kept longer
+            return data
+        return None
 
     def put(self, voice_id: str, ref_mtime: float, sentence: str, rate: int, pcm: bytes, model: str = "") -> None:
         p = self._path(voice_id, ref_mtime, sentence, rate, model)
