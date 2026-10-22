@@ -4,7 +4,7 @@ Speech in the residents' own voices, locally. The door reads a resident's note o
 (aikos-app A42–A45). Each person records their own voice in the aikos app (Haus → Meine Stimme), so every voice is enrolled
 by its owner. Voices, text and audio never leave the machine this runs on (R11). Owner: aikos core.
 
-Version **0.6.1**. Python 3.11. Model: [Chatterbox multilingual](https://github.com/resemble-ai/chatterbox) (MIT licence),
+Version **0.6.2**. Python 3.11. Model: [Chatterbox multilingual](https://github.com/resemble-ai/chatterbox) (MIT licence),
 zero-shot voice cloning from a 8–60 s recording, German. Every generated clip carries Chatterbox's inaudible watermark,
 so it can be recognised as synthetic. A voice is never proof of identity.
 
@@ -80,7 +80,10 @@ need no extra encryption there). `python -m aikos_tts export FILE` packs the voi
 name in the house DNS (`aikos-tts.<house domain>`) at the new machine.
 
 **Whisper for the check:** `AIKOS_TTS_WHISPER_URL` (the service appends `/v1/audio/transcriptions`); on the Mac through the
-aikos hub as its own client, so the check never queues in front of the door's live transcripts.
+aikos hub as its own client (`http://127.0.0.1/c/aikos-tts`, `AIKOS_TTS_WHISPER_BACKEND=whisper-shared`), so the check never
+queues in front of the door's live transcripts. The heartbeat then reads the hub's status of that backend. When the shared
+Whisper is busy with a long recording, the hub answers 503 after 2 min: that sentence is not said (never unchecked), and a
+sentence made ahead is tried once more 30 s later.
 
 **On MLX** (`chatterbox-mlx`, mlx-audio with `mlx-community/chatterbox-multilingual-v3`): measured 22.10. with a
 resident's voice, whole sentences including the Whisper check 1.9–2.2 s (before: 6–8 s), 8 of 8 takes faithful at the first
