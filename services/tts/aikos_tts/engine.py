@@ -106,6 +106,11 @@ class Engine:
     def _generate(self, text: str, reference: Path, temperature: float) -> np.ndarray:  # pragma: no cover - the real model
         raise NotImplementedError
 
+    def warm_up(self, reference: Path) -> None:
+        """One sentence nobody hears, right after loading: the first take after a start is slow (6 s instead of 2)."""
+        with self._lock:
+            self._generate("Hallo.", reference, TEMPERATURES[0])
+
 
 class ChatterboxEngine(Engine):
     name = "chatterbox-multilingual"

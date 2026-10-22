@@ -50,6 +50,12 @@ async def serve(args: argparse.Namespace) -> None:
     _LOGGER.info("loading the %s engine", args.engine)
     engine = await asyncio.get_running_loop().run_in_executor(None, make_engine, args.engine)
     engine.cache = cache
+    voices = store.all()
+    if voices and args.engine != "fake":
+        try:
+            await asyncio.get_running_loop().run_in_executor(None, engine.warm_up, store.reference(voices[0].id))
+        except Exception as e:  # warming up is a nicety; the service runs without it
+            _LOGGER.warning("not warmed up: %s", e)
     token_file = os.environ.get("AIKOS_TTS_TOKEN_FILE", "")
     token = Path(token_file).expanduser().read_text(encoding="utf-8").strip() if token_file else ""
     app = create_app(store, engine, token, allow_list(os.environ.get("AIKOS_TTS_HTTP_CLIENTS", "")))
