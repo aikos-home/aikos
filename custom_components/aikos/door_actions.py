@@ -159,11 +159,12 @@ class DoorActions:
             self.state.note = None
             self._changed()
             if voice:
-                self._background(self._speech.say_now(text, voice))
+                self._background(self._say_and_tell(text, voice))
             return "now"
         note = Note(message=text, sender=who, since=dt_util.now().isoformat(timespec="seconds"), voice=voice)
         self.state.note = note
         self._changed()
+        self._hass.bus.async_fire("aikos_door_reply", {"sender": who, "text": text, "shown": False})
         if voice:
             self._background(self._prepare_note(note))
         return "waiting"
@@ -179,6 +180,13 @@ class DoorActions:
     @callback
     def _background(self, coro) -> None:
         self._entry.async_create_background_task(self._hass, coro, "aikos door speech")
+
+    def _tell_spoken(self, text: str, spoken: bool) -> None:
+        """For the door thread: whether an answer was read aloud (or could not be, A46)."""
+        self._hass.bus.async_fire("aikos_door_reply_spoken", {"text": text, "spoken": spoken})
+
+    async def _say_and_tell(self, text: str, voice: str) -> None:
+        self._tell_spoken(text, await self._speech.say_now(text, voice))
 
     async def _prepare_note(self, note: Note) -> None:
         name = await self._speech.make(note.message, note.voice, "note")
@@ -228,10 +236,10 @@ class DoorActions:
                 self.state.note = None
                 self._changed()
                 if note.audio:
-                    await self._speech.play(note.audio)
+                    self._tell_spoken(note.message, await self._speech.play(note.audio))
                     await self._speech.drop("note")
                 elif note.voice:
-                    await self._speech.say_now(note.message, note.voice)
+                    await self._say_and_tell(note.message, note.voice)
             return  # the note is this visit's message; no greeting sound on top of it
         if self.approach is not None and await self.approach():
             return  # the parcel announcement was this visit's sound

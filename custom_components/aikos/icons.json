@@ -66,6 +66,9 @@
       },
       "door_ring": {
         "default": "mdi:doorbell"
+      },
+      "door_thread": {
+        "default": "mdi:forum"
       }
     },
     "number": {

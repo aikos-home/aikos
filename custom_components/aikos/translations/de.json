@@ -71,6 +71,9 @@
       },
       "door_ring": {
         "name": "Klingeln"
+      },
+      "door_thread": {
+        "name": "Tür-Verlauf"
       }
     },
     "number": {

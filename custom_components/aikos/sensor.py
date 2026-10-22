@@ -46,7 +46,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: AikosConfigEntry, async_
         DoorAnnouncements(entry, "door_announcements", "sensor.aikos_door_announcements"),
         DoorPicture(entry, "door_picture", "sensor.aikos_door_picture"),
         DoorRing(entry, "door_ring", "sensor.aikos_door_ring"),
+        DoorThreadSensor(entry, "door_thread", "sensor.aikos_door_thread"),
     ])
+
+
+class DoorThreadSensor(AikosEntity, SensorEntity):
+    """The door's conversation as one thread (door_thread.py): state = the newest entry's time; attributes `visit` (the
+    newest visit's number) and `entries` (the newest 60, each `id`, `t`, `visit`, `kind`, `who`, `text`, …). The entries
+    stay out of the recorder (they are in the thread's own storage)."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _unrecorded_attributes = frozenset({"entries"})
+
+    @property
+    def native_value(self) -> datetime | None:
+        e = self._entry.runtime_data.door_thread.entries
+        return dt_util.parse_datetime(e[-1]["t"]) if e else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        t = self._entry.runtime_data.door_thread
+        return {"visit": t.visit, "entries": [dict(e) for e in t.entries]}
+
+    async def async_added_to_hass(self) -> None:
+        self.async_on_remove(self._entry.runtime_data.door_thread.add_listener(self.async_write_ha_state))
 
 
 class DoorRing(AikosEntity, RestoreEntity, SensorEntity):

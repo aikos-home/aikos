@@ -71,6 +71,9 @@
       },
       "door_ring": {
         "name": "Door ring"
+      },
+      "door_thread": {
+        "name": "Door thread"
       }
     },
     "number": {
