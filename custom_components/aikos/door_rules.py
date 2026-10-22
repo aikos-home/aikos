@@ -5,6 +5,9 @@
 - A note to the door: shown right away if someone is at the door, else it waits for the next visitor and is gone after that.
   Read aloud in the sender's own voice if they have one (A45); a waiting note's speech is made in advance.
 - The greeting: text and/or a recorded sound, for everyone who comes, within its time window, once per visit.
+- A visit (the owner, 22.10.): a new one begins only after the radar saw nobody for 2 minutes; a shorter gap (the radar
+  losing someone who sits right in front of it) is the same visit. Greeting, waiting note and the parcel announcement all
+  follow it.
 - The picture: a grey PNG for the door's welcome page, until it is removed.
 """
 from __future__ import annotations
@@ -17,7 +20,13 @@ NOTE_MAX = 400            # the screen's reply page (contract show_reply)
 GREETING_MAX = 120        # text.aikos_intercom_screen_greeting
 SENDER_MAX = 40
 MUTE_MAX_MINUTES = 7 * 24 * 60
-GREETING_PAUSE = timedelta(minutes=10)   # "once per visit": not again within this time
+VISIT_GAP = timedelta(minutes=2)          # a new visit only after the radar saw nobody this long
+
+
+def new_visit(last_seen: datetime | None, now: datetime) -> bool:
+    """The radar sees someone again: a new visit, or still the same one? `last_seen` = when it last stopped seeing
+    someone; None = nobody since the start."""
+    return last_seen is None or now - last_seen >= VISIT_GAP
 
 
 def mute_until(now: datetime, *, minutes: int | None = None, until_time: time | None = None) -> datetime:
@@ -91,10 +100,8 @@ class Greeting:
         return self.audio or (self.tts_audio if self.text else "")
 
     def may_play(self, now: datetime, in_call: bool) -> bool:
-        """The sound at an approach: within the window, not during a call or a message, once per visit."""
-        if in_call or not self.in_window(now) or not self.sound:
-            return False
-        return not (self.last_played and now - datetime.fromisoformat(self.last_played) < GREETING_PAUSE)
+        """The sound at the start of a visit (new_visit): within the window, not during a call or a message."""
+        return not in_call and self.in_window(now) and bool(self.sound)
 
     def next_change(self, now: datetime) -> datetime | None:
         """The next window start or end after `now` (to switch the screen's text exactly then)."""

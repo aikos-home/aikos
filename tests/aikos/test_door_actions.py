@@ -3,7 +3,7 @@ a note to the door now or for the next visitor (A11/A39), the door picture (A12/
 import base64
 import io
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 from homeassistant import config_entries
@@ -219,6 +219,8 @@ async def test_greeting_text_only_within_its_window(hass: HomeAssistant, media, 
 
 async def test_greeting_sound_once_per_visit_not_in_a_call_and_not_over_a_note(hass: HomeAssistant, media, door, freezer,
                                                                               monkeypatch):
+    """A visit (the owner, 22.10.): a new one only after 2 minutes without radar. Live: the radar lost him for 3 s while
+    he sat in front of the box, and the greeting played again."""
     from custom_components.aikos import door_speaker
     played = []
 
@@ -235,22 +237,33 @@ async def test_greeting_sound_once_per_visit_not_in_a_call_and_not_over_a_note(h
     await radar(hass, "on")
     assert len(played) == 1
     await radar(hass, "off")
-    freezer.move_to(local(21, 14, 5))
+    t0 = local(21, 14)
+    freezer.move_to(t0 + timedelta(seconds=3))
     await radar(hass, "on")
-    assert len(played) == 1                                                  # same visit (10 min)
+    assert len(played) == 1                                                  # 3 s without radar: the same visit
+    await radar(hass, "unavailable")
+    freezer.move_to(t0 + timedelta(seconds=40))
+    await radar(hass, "on")
+    assert len(played) == 1                                                  # the radar was away a moment: the same visit
     await radar(hass, "off")
-    freezer.move_to(local(21, 14, 20))
+    freezer.move_to(t0 + timedelta(seconds=40 + 119))
+    await radar(hass, "on")
+    assert len(played) == 1                                                  # 1:59 without radar: still the same visit
+    await radar(hass, "off")
+    freezer.move_to(t0 + timedelta(minutes=5))
     hass.states.async_set(CALL, "on")
     await radar(hass, "on")
-    assert len(played) == 1                                                  # not during a call
+    assert len(played) == 1                                                  # a new visit, but not during a call
     hass.states.async_set(CALL, "off")
     await radar(hass, "off")
     await call(hass, "door_say", {"message": "Komme gleich"})
+    freezer.move_to(t0 + timedelta(minutes=8))
     await radar(hass, "on")
     assert len(played) == 1                                                  # the note goes first, no sound on top
     await radar(hass, "off")
+    freezer.move_to(t0 + timedelta(minutes=11))
     await radar(hass, "on")
-    assert len(played) == 2
+    assert len(played) == 2                                                  # 3 min without radar: a new visit
     with pytest.raises(ServiceValidationError):
         await call(hass, "door_greeting", {"audio": base64.b64encode(b"plain text").decode()}, response=True)
 
