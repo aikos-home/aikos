@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import re
 import threading
+import time
 from collections.abc import Callable
+from importlib import resources
 from pathlib import Path
 
 import numpy as np
@@ -23,6 +25,12 @@ PIECE_MAX = 220
 PAUSE_S = 0.15
 TEMPERATURES = (0.6, 0.45, 0.3)   # each further take of a sentence a little less free
 FADE_S = 0.02
+SELFTEST_TEXT = "Dies ist ein Selbsttest des Sprachdienstes."
+
+
+def selftest_voice() -> Path:
+    """The test voice: made once by the model's own built-in voice, so it belongs to nobody (never a resident's)."""
+    return Path(str(resources.files("aikos_tts") / "selftest_voice.wav"))
 
 
 class SpeechError(RuntimeError):
@@ -101,7 +109,9 @@ class Engine:
             if verdict.ok:
                 return samples
             last = verdict.heard
-        raise SpeechError(f"could not say {sentence!r} (heard {last!r})")
+        # the text stays out of the log: notes are private
+        raise SpeechError(f"could not say a sentence of {len(sentence)} characters faithfully "
+                          f"(heard {len(last.split())} words)")
 
     def _generate(self, text: str, reference: Path, temperature: float) -> np.ndarray:  # pragma: no cover - the real model
         raise NotImplementedError
@@ -111,6 +121,21 @@ class Engine:
         with self._lock:
             self._generate("Hallo.", reference, TEMPERATURES[0])
 
+    def selftest(self) -> dict:
+        """A fixed sentence in the test voice, through the loaded model and the Whisper check, not cached (deploy check).
+        `whisper_ok` = the check answered; `ok` = the sentence came out faithfully."""
+        t0 = time.monotonic()
+        whisper_ok = self.checker is not None
+        try:
+            with self._lock:
+                self._make(SELFTEST_TEXT, selftest_voice())
+            ok = whisper_ok
+        except SpeechError:
+            ok = False
+        except Exception:  # the check (or the model) is not there
+            ok = whisper_ok = False
+        return {"ok": ok, "seconds": round(time.monotonic() - t0, 2), "whisper_ok": whisper_ok}
+
 
 class ChatterboxEngine(Engine):
     name = "chatterbox-multilingual"
@@ -119,9 +144,12 @@ class ChatterboxEngine(Engine):
         super().__init__(checker)
         import torch
         from chatterbox.mtl_tts import ChatterboxMultilingualTTS
+
+        from . import models
         self._torch = torch
-        self.device = device or ("mps" if torch.backends.mps.is_available() else "cpu")
-        self.model = ChatterboxMultilingualTTS.from_pretrained(device=self.device)
+        self.device = device or ("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available()
+                                 else "cpu")
+        self.model = ChatterboxMultilingualTTS.from_local(models.local("chatterbox"), device=self.device)   # pinned
         self.rate = self.model.sr
         self.language = language
         self._conds: dict[Path, tuple[float, object]] = {}
@@ -143,13 +171,14 @@ class MlxChatterboxEngine(Engine):
     instead of 5–8 s, 8 of 8 takes faithful at the first try."""
 
     name = "chatterbox-mlx"
-    REPO = "mlx-community/chatterbox-multilingual-v3"
 
-    def __init__(self, language: str = "de", checker: WhisperChecker | None = None, repo: str = "") -> None:
+    def __init__(self, language: str = "de", checker: WhisperChecker | None = None) -> None:
         super().__init__(checker)
         import perth
         from mlx_audio.tts.utils import load_model
-        self.model = load_model(repo or self.REPO)
+
+        from . import models
+        self.model = load_model(models.local("chatterbox-mlx"))   # pinned, from the cache (models.py)
         self.rate = self.model.sample_rate
         self.language = language
         self._watermark = perth.PerthImplicitWatermarker()

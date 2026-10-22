@@ -17,6 +17,7 @@ from aiohttp import web
 
 from . import __version__
 from .engine import Engine
+from .heartbeat import Heartbeat
 from .prepare import Preparer
 from .voices import UPLOAD_MAX, VoiceError, VoiceStore
 
@@ -42,10 +43,18 @@ def _error(status: int, code: str) -> web.HTTPException:
     return cls(text=json.dumps({"error": code}), content_type="application/json")
 
 
-def create_app(store: VoiceStore, engine: Engine, token: str, allowed: Callable[[str], bool]) -> web.Application:
+LOOPBACK = {"127.0.0.1", "::1", "::ffff:127.0.0.1"}
+
+
+def create_app(store: VoiceStore, engine: Engine, token: str, allowed: Callable[[str], bool],
+               heartbeat: Heartbeat | None = None, model_revision: str = "") -> web.Application:
     @web.middleware
     async def guard(request: web.Request, handler):
         if request.path == "/v1/health":
+            return await handler(request)
+        if request.path == "/v1/selftest":   # the deploy on this machine only, without the app's token
+            if (request.remote or "") not in LOOPBACK:
+                raise _error(403, "address")
             return await handler(request)
         if not allowed(request.remote or ""):
             raise _error(403, "address")
@@ -61,7 +70,15 @@ def create_app(store: VoiceStore, engine: Engine, token: str, allowed: Callable[
 
     @routes.get("/v1/health")
     async def health(request: web.Request) -> web.Response:
-        return web.json_response({"ok": True, "version": __version__, "engine": engine.name, "voices": len(store.all())})
+        """At once, also while a sentence is being made (never behind the one synthesis place). Only answers at all once
+        the model is loaded."""
+        return web.json_response({"ok": True, "version": __version__, "engine": engine.name, "model_revision": model_revision,
+                                  "voices": len(store.all()), "whisper": heartbeat.whisper if heartbeat else "off"})
+
+    @routes.post("/v1/selftest")
+    async def selftest(request: web.Request) -> web.Response:
+        """A fixed sentence in the test voice through the model and the check (for the deploy; never a resident's voice)."""
+        return web.json_response(await asyncio.get_running_loop().run_in_executor(None, engine.selftest))
 
     @routes.get("/v1/voices")
     async def voices(request: web.Request) -> web.Response:
