@@ -4,7 +4,7 @@ Speech in the residents' own voices, locally. The door reads a resident's note o
 (aikos-app A42–A45). Each person records their own voice in the aikos app (Haus → Meine Stimme), so every voice is enrolled
 by its owner. Voices, text and audio never leave the machine this runs on (R11). Owner: aikos core.
 
-Version **0.4.0**. Python 3.11. Model: [Chatterbox multilingual](https://github.com/resemble-ai/chatterbox) (MIT licence),
+Version **0.5.0**. Python 3.11. Model: [Chatterbox multilingual](https://github.com/resemble-ai/chatterbox) (MIT licence),
 zero-shot voice cloning from a 8–60 s recording, German. Every generated clip carries Chatterbox's inaudible watermark,
 so it can be recognised as synthetic. A voice is never proof of identity.
 
@@ -39,11 +39,16 @@ Voice ids: `^[a-z0-9][a-z0-9_-]{0,39}$`. The app decides who may change which vo
 
 ## Running it (Mac)
 
-`deploy/install.sh SOURCE_DIR` installs into `~/aikos/services/tts` (own venv `.venv-clone`, voices `0700`, token `0600`,
-settings `tts.env`) and runs it as the LaunchAgent `home.aikos.tts` (log `~/Library/Logs/aikos-tts.log`). The model loads
+`deploy/install.sh SOURCE_DIR` installs into `~/aikos/services/tts` (own venv `.venv-clone`, or `.venv-mlx` with
+`AIKOS_TTS_ENGINE=chatterbox-mlx` in `tts.env`; voices `0700`, token `0600`, settings `tts.env`) and runs it as the LaunchAgent `home.aikos.tts` (log `~/Library/Logs/aikos-tts.log`). The model loads
 once (~10 s) and stays in memory; one synthesis at a time. A short door sentence takes about 5–8 s on an M2 Max (MPS), so
 the aikos integration makes waiting notes, the greeting and the announcements in advance, and the app makes a note while it
 is being typed.
+
+**On MLX** (`chatterbox-mlx`, mlx-audio with `mlx-community/chatterbox-multilingual-v3`): measured 22.10. with a
+resident's voice, whole sentences including the Whisper check 1.9–2.2 s (before: 6–8 s), 8 of 8 takes faithful at the first
+try; the MLX port has no watermark, so the service adds Chatterbox's own (perth) to every take. The first take after a start
+is slow (6 s), so the service warms up with one unheard sentence.
 
 Measured on 22.10. (M2 Max, MPS), one take of a short sentence: the model's speech tokens 2–6 s (about 20 tokens/s, slower
 than the speech itself), the vocoder 1.2–2 s, the Whisper check 0.85 s, the watermark 0.01 s. Without guidance or with 5
