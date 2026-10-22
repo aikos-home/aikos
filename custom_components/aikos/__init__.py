@@ -15,6 +15,7 @@ from .archive_writer import ArchiveWriter
 from .const import DOMAIN
 from .door_actions import DoorActions
 from .door_announce import DoorAnnouncer
+from .door_thread import DoorThread
 from .door_speech import DoorSpeech
 from .message_register import DoorMessageRegister
 from .parcel_mail import ParcelMail
@@ -36,6 +37,7 @@ class AikosData:
     door_actions: DoorActions
     door_announcer: DoorAnnouncer
     parcel_mail: ParcelMail
+    door_thread: DoorThread
 
 
 type AikosConfigEntry = ConfigEntry[AikosData]
@@ -55,13 +57,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: AikosConfigEntry) -> boo
     announcer = DoorAnnouncer(hass, entry, speech, quiet_hours, muted=lambda: door_actions.muted)
     await announcer.async_load()
     door_actions.approach = announcer.on_approach
+    thread = DoorThread(hass, entry)
+    await thread.async_load()
     notifier = RingNotifier(hass, entry, quiet_hours, muted=lambda: door_actions.muted)
     archive = ArchiveWriter(hass, entry)
     door_messages = DoorMessageRegister(hass, entry)
     await door_messages.async_load()
     entry.runtime_data = AikosData(version=str(integration.version), quiet_hours=quiet_hours, ring_notifier=notifier,
                                    archive=archive, door_messages=door_messages, door_actions=door_actions,
-                                   door_announcer=announcer, parcel_mail=ParcelMail(hass, entry))
+                                   door_announcer=announcer, parcel_mail=ParcelMail(hass, entry), door_thread=thread)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     notifier.start()
     entry.async_on_unload(notifier.stop)
@@ -75,6 +79,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: AikosConfigEntry) -> boo
     entry.async_on_unload(announcer.stop)
     entry.runtime_data.parcel_mail.start()
     entry.async_on_unload(entry.runtime_data.parcel_mail.stop)
+    thread.start(notifier.add_listener)
+    entry.async_on_unload(thread.stop)
     # Options change (doorbell picked, or a quiet-hours value stored): follow the doorbell without reloading the entities.
     entry.async_on_unload(entry.add_update_listener(_options_updated))
     return True
@@ -94,4 +100,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: AikosConfigEntry) -> bo
     await entry.runtime_data.door_actions.async_flush()
     entry.runtime_data.door_announcer.stop()
     await entry.runtime_data.door_announcer.async_flush()
+    entry.runtime_data.door_thread.stop()
+    await entry.runtime_data.door_thread.async_flush()
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

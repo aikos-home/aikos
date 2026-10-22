@@ -79,6 +79,22 @@ async def test_the_call_at_the_door_live(house, fake_ha):
     assert (await house.get("/api/v1/door/call", kim)).status == 403
     fake_ha.states["sensor.aikos_call_log"]["attributes"]["messages_json"] = "not json"
     assert (await (await house.get("/api/v1/door/call", sam)).json())["messages"] == []
+    assert r["thread"] is None                                                      # aikos older than 0.17.0
+
+
+async def test_the_chat_is_the_newest_visit_of_the_door_thread(house, fake_ha):
+    _, sam, _ = await people(house)
+    fake_ha.states["sensor.aikos_door_thread"] = {"state": "2026-10-22T10:05:00+00:00", "attributes": {"visit": 8, "entries": [
+        {"id": "a", "t": "2026-10-22T09:00:00+00:00", "visit": 7, "kind": "door", "who": "Besucher", "text": "Früher"},
+        {"id": "b", "t": "2026-10-22T10:04:00+00:00", "visit": 8, "kind": "ring", "who": "", "text": "Es hat geklingelt"},
+        {"id": "c", "t": "2026-10-22T10:04:05+00:00", "visit": 8, "kind": "door", "who": "Paketdienst", "text": "Paket!"},
+        {"id": "d", "t": "2026-10-22T10:04:09+00:00", "visit": 8, "kind": "reply", "who": "Sam", "text": "Vor die Tür.",
+         "spoken": True},
+        {"id": "e", "t": "2026-10-22T10:04:10+00:00", "visit": 8, "kind": "evil", "who": "", "text": "<script>"}]}}
+    r = await (await house.get("/api/v1/door/call", sam)).json()
+    assert r["thread"]["visit"] == 8
+    assert [(e["kind"], e["text"], e["spoken"]) for e in r["thread"]["entries"]] == [
+        ("ring", "Es hat geklingelt", None), ("door", "Paket!", None), ("reply", "Vor die Tür.", True)]
 
 
 def free_udp_port() -> int:
@@ -166,3 +182,15 @@ async def test_without_a_door_set_up_talking_is_off(house, fake_ha):
     _, sam, _ = await people(house)
     r = await house.client.get("/api/v1/door/talk", headers={**sam.headers, "Origin": ORIGIN})
     assert r.status == 503 and (await r.json())["error"] == "no_talk"
+
+
+async def test_voice_entries_carry_their_file_and_length_only_if_it_is_a_voice_file(house, fake_ha):
+    _, sam, _ = await people(house)
+    fake_ha.states["sensor.aikos_door_thread"] = {"state": "2026-10-22T10:05:00+00:00", "attributes": {"visit": 3, "entries": [
+        {"id": "a", "t": "2026-10-22T10:04:00+00:00", "visit": 3, "kind": "voice", "who": "Sam", "text": "Sprachnachricht",
+         "voice": "voice-0123456789ab.webm", "seconds": 4.25, "spoken": True},
+        {"id": "b", "t": "2026-10-22T10:04:30+00:00", "visit": 3, "kind": "waiting", "who": "Sam", "text": "Sprachnachricht",
+         "voice": "../../secrets.yaml", "seconds": "x"}]}}
+    entries = (await (await house.get("/api/v1/door/call", sam)).json())["thread"]["entries"]
+    assert [(e["kind"], e["voice"], e["seconds"]) for e in entries] == [
+        ("voice", "voice-0123456789ab.webm", 4.2), ("waiting", "", None)]

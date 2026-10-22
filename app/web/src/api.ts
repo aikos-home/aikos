@@ -57,12 +57,24 @@ export interface DoorAnnouncements {
   me: { resident: boolean; named: boolean };
 }
 
+export interface ThreadEntry {
+  id: string;
+  t: string;
+  kind: "ring" | "door" | "room" | "reply" | "voice" | "waiting" | "announce" | "message";
+  who: string;
+  text: string;
+  spoken: boolean | null;
+  voice?: string;            // a voice message's file (aikos 0.17.0): GET /api/v1/door/voice/{voice}
+  seconds?: number | null;
+}
+
 export interface DoorCall {
   active: boolean;
   call_id: string;
   messages: { id: string; side: "door" | "room"; who: string; text: string; tr: string; tr_lang: string }[];
   ring: string;
   talk: boolean;
+  thread: { visit: number; entries: ThreadEntry[] } | null;
 }
 
 export interface DoorActionsState {
@@ -220,6 +232,8 @@ export const api = {
   say: (message: string) => call<{ delivered: "now" | "waiting" }>("POST", "/api/v1/door/say", { message }),
   cancelSay: () => call<unknown>("DELETE", "/api/v1/door/say"),
   sayDraft: (message: string) => call<unknown>("POST", "/api/v1/door/say/draft", { message }),
+  sayAudio: (blob: Blob, seconds: number) =>
+    upload<{ delivered: "now" | "waiting" }>("POST", `/api/v1/door/say/audio?seconds=${seconds}`, blob),
   putPicture: (blob: Blob) => upload("PUT", "/api/v1/door/picture", blob),
   deletePicture: () => call<unknown>("DELETE", "/api/v1/door/picture"),
   putGreeting: (body: { enabled?: boolean; text?: string; start?: string; end?: string; always?: boolean }) =>

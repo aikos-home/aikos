@@ -125,3 +125,17 @@ door_announcements:
     voice:
       selector:
         text:
+door_say_audio:
+  fields:
+    audio:
+      required: true
+      selector:
+        text:
+    sender:
+      selector:
+        text:
+    seconds:
+      selector:
+        number:
+          min: 0
+          max: 120

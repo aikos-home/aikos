@@ -1,13 +1,13 @@
-// Tür: what a resident does at the door (A11–A14, A39–A41), as collapsible sections: a note to the door (now, or for the
-// next visitor), the bell (mute for a while, quiet hours), the picture on the door, the greeting for everyone who comes,
-// the announcements after a ring (sprachausgabe S10–S14). On top: the live call (A47, A48), where the push on a ring leads.
+// Tür: what a resident does at the door (A11–A14, A39–A41), as collapsible sections: the bell (mute for a while, quiet
+// hours), the picture on the door, the greeting for everyone who comes, the announcements after a ring (sprachausgabe
+// S10–S14). On top: the door as a chat (A47–A49), where the push on a ring leads; writing to the door happens there.
 import { useEffect, useRef, useState } from "preact/hooks";
 import { api, can, type DoorActionsState, type DoorStatus, type User } from "../api";
 import { Recorder, RECORD_MAX_S } from "../media";
 import { Announcements } from "./Announcements";
 import { Call } from "./Call";
 import { Cropper } from "./Cropper";
-import { dayHm, hm, Section, useAction } from "./DoorParts";
+import { dayHm, Section, useAction } from "./DoorParts";
 import { Icon } from "./Icon";
 
 const MUTE_FOR: { label: string; body: { minutes?: number; until_time?: string; forever?: boolean } }[] = [
@@ -47,56 +47,12 @@ export function Door({ user, status, refresh }: Props) {
   return (
     <div class="door">
       {error && <p class="error pad">{error}</p>}
-      {can(user, "door.act") && <Call state={state} done={after} />}
-      {can(user, "door.act") && <Say state={state} status={status} done={after} />}
+      {can(user, "door.act") && <Call state={state} me={user.name} done={after} />}
       {can(user, "bell.settings") && <Bell status={status} done={after} />}
       {can(user, "door.act") && <Picture state={state} done={after} />}
       {can(user, "door.act") && <Greeting state={state} done={after} />}
       {can(user, "door.act") && <Announcements state={state} done={after} />}
     </div>
-  );
-}
-
-const DRAFT_PAUSE_MS = 900;   // a pause in typing: the note's speech is made now, so it plays at once when sent
-
-function Say({ state, status, done }: { state: DoorActionsState; status: DoorStatus | null; done: () => void }) {
-  const [text, setText] = useState("");
-  const a = useAction(done);
-  const draft = useRef<number>();
-  const typed = (value: string) => {
-    setText(value);
-    window.clearTimeout(draft.current);
-    const message = value.trim();
-    if (message.length >= 3) draft.current = window.setTimeout(() => api.sayDraft(message).catch(() => {}), DRAFT_PAUSE_MS);
-  };
-  const here = !!status?.someone_at_door;
-  const send = (message: string) =>
-    a.run(async () => {
-      const r = await api.say(message);
-      setText("");
-      return r.delivered === "now" ? "An der Tür angezeigt." : "Wartet auf den nächsten Besucher.";
-    });
-  return (
-    <Section icon="text" title="An die Tür sagen">
-      <p class="meta">
-        {here ? "Jemand steht vor der Tür: wird sofort angezeigt." : "Niemand vor der Tür: wird dem nächsten Besucher angezeigt."}
-        {" "}Vorgelesen wird in deiner eigenen Stimme, wenn du sie unter Haus → Meine Stimme aufgenommen hast.
-      </p>
-      <div class="row gap">
-        {(state.quick ?? []).map((q) => <button class="chip" disabled={a.busy} onClick={() => send(q)}>{q.replace(/\.$/, "")}</button>)}
-      </div>
-      <form class="row" onSubmit={(e) => { e.preventDefault(); if (text.trim()) send(text); }}>
-        <input value={text} maxLength={400} placeholder="Eigener Text" onInput={(e) => typed(e.currentTarget.value)} />
-        <button class="primary" disabled={a.busy || !text.trim()}>Senden</button>
-      </form>
-      {state.note && (
-        <div class="note">
-          Wartet seit {hm(state.note.since)}: „{state.note.message}“
-          <button class="link danger" onClick={() => a.run(() => api.cancelSay(), "Zurückgenommen.")}>Zurücknehmen</button>
-        </div>
-      )}
-      {a.msg && <p class="meta">{a.msg}</p>}
-    </Section>
   );
 }
 

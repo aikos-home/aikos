@@ -66,6 +66,9 @@
       },
       "door_ring": {
         "default": "mdi:doorbell"
+      },
+      "door_thread": {
+        "default": "mdi:forum"
       }
     },
     "number": {
@@ -110,6 +113,9 @@
     },
     "door_announcements": {
       "service": "mdi:account-voice"
+    },
+    "door_say_audio": {
+      "service": "mdi:microphone-message"
     }
   }
 }

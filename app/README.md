@@ -99,7 +99,9 @@ of them (matrix 2.4a).
 - **Greeting** (A13/A26): text (≤ 120) and/or a sound recorded with the phone (≤ 20 s), always or from–until.
 - **The live call** (A47, A48; aikos 0.15.0+): on every ring a push to everyone who may act at the door (a storm of rings
   within 30 s is one push; one node sends). The door page shows the call live (`GET /api/v1/door/call`: the call log's
-  newest lines, door and house side, with translations) and answers it: a quick reply or text (read in one's own voice),
+  newest lines, door and house side, with translations; with aikos 0.17.0 the newest visit as one thread, a chat) and answers it: a quick reply or text (read in one's own voice),
+  or a voice message (A49, aikos 0.17.0+: hold the microphone, like on WhatsApp; the recording itself plays at the door,
+  now or for the next visitor; `POST /api/v1/door/say/audio`, played back in the chat through `GET /api/v1/door/voice/{name}`),
   or live, holding the button as at a room key (`/api/v1/door/talk`, a WebSocket: the phone's microphone as 16 kHz PCM
   while held; the node turns it into RTP for the door and passes the door's microphone back; one participant per node;
   talk computer 0.7.24 `app_join`/`key_state`). Needs `AIKOS_APP_TALK_HOST` (the node's address, rendered by the cluster

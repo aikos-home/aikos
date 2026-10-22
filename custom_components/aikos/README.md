@@ -1,6 +1,6 @@
 # aikos integration for Home Assistant
 
-The household logic of aikos, installed via HACS. Version **0.16.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
+The household logic of aikos, installed via HACS. Version **0.17.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
 front door (0.5.0, tag `aikos-v0.5.0`), the mic health warning (0.7.0), the door message register (0.8.0), the door actions (0.9.0), reading aloud in the residents' own voices (0.10.0), the door announcements (0.11.0) and parcels from the carriers' mails (0.12.0). More blocks follow (where the bell
 rings, presence, alarm, pairing of devices); each comes as a new version.
 
@@ -132,6 +132,18 @@ recorder puts it, `<local media>/aikos_door/` (Media → My media).
   (`adopted: true`, time = file time, no text, no recipient). Other files in the folder (greetings) are no messages.
 - **A file deleted outside** (media browser): the entry stays with `file_missing: true`; nothing is deleted automatically.
 - No signed Home Assistant link and no sound ever goes into the register or the entity.
+
+### Door thread (0.17.0, for the aikos app's chat)
+
+`sensor.aikos_door_thread`: everything at the door in one thread, like a chat (A49): `ring`, `door` (the visitor),
+`room` (a room key), `reply` (an answer from the app shown at the door; `spoken` true/false once it was read aloud or could
+not be), `voice` (a voice message from the app; `voice` = its file, `seconds`; `spoken` = played), `waiting` (an answer or
+voice message for the next visitor), `announce`, `message` (a message was left). Unlike the call log it
+stays after the call (the newest 60 entries, in HA's storage); 5 minutes without an entry start a new `visit`. New events:
+`aikos_door_reply` gets `shown: false` for a waiting answer and `voice`/`seconds` for a voice message,
+`aikos_door_reply_spoken {text or ref, spoken}`. `aikos.door_say_audio {audio, sender, seconds}`: a voice message recorded
+in the app (like on WhatsApp), the sender's own voice, played at the door now if someone is there, else for the next
+visitor (`<local media>/aikos/voice-*`, the newest 20 stay so the app can play them back).
 
 ### Door actions (0.9.0, for the aikos app)
 
@@ -269,6 +281,7 @@ After a ring the door says one sentence in a resident's own voice when a situati
 
 ## History
 
+- 0.17.0: `sensor.aikos_door_thread`, the door's conversation as one thread that stays after the call (for the app's chat).
 - 0.16.0: several situations are said one after the other (the house's, then the parcel) instead of only the first; a
   second ring gets the announcement again after 15 s (was 60 s).
 - 0.15.0: `sensor.aikos_door_ring`, the time of the last press (for the aikos app's push on every ring).
