@@ -1,6 +1,6 @@
 # aikos integration for Home Assistant
 
-The household logic of aikos, installed via HACS. Version **0.13.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
+The household logic of aikos, installed via HACS. Version **0.14.0**: quiet hours (0.1.0), the ring push (0.2.0), the call log (0.3.0; visitor language 0.6.0), the call archive (0.4.x), the
 front door (0.5.0, tag `aikos-v0.5.0`), the mic health warning (0.7.0), the door message register (0.8.0), the door actions (0.9.0), reading aloud in the residents' own voices (0.10.0), the door announcements (0.11.0) and parcels from the carriers' mails (0.12.0). More blocks follow (where the bell
 rings, presence, alarm, pairing of devices); each comes as a new version.
 
@@ -161,6 +161,9 @@ it uses the door's contracts and only writes the door entities named here.
   short cue (`esphome.aikos_intercom_talk_tts_cue`, talk computer 0.7.26) and then plays sentence by sentence, each while the
   next is made. If a sentence can't be said faithfully, the rest isn't said either.
 - **A waiting note goes first:** at that visit no greeting sound plays on top of it.
+- **A visit (0.14.0, the owner's rule):** a new visit begins only after the radar saw nobody for 2 minutes. A shorter gap
+  (the radar losing someone right in front of it, or the radar going away for a moment) is the same visit: no second
+  greeting, no waiting note, no parcel announcement. The door's welcome page follows the same rule (screen 0.7.26).
 - **The screen's greeting text** is left alone until a greeting is set through aikos once; from then on aikos owns it.
 
 ### Door announcements (0.11.0, sprachausgabe S10–S14)
@@ -261,6 +264,8 @@ After a ring the door says one sentence in a resident's own voice when a situati
 
 ## History
 
+- 0.14.0: the visit rule: a new visit only after 2 minutes without radar (greeting, waiting note, parcel announcement);
+  the greeting's 10-minute pause is replaced by it.
 - 0.13.0: speech said on the spot plays sentence by sentence (the first while the next is made), after the door's cue.
 - 0.12.0: parcels from the carriers' mails (options "Parcel mails", `binary_sensor.aikos_parcel_expected`); the door
   announcements use it when no other parcel sensor is set.

@@ -30,7 +30,7 @@ from .const import (
     LIVE_CALL,
 )
 from .door_picture import panel_png
-from .door_rules import DoorState, Greeting, Mute, Note, check_window, clean_note, mute_until
+from .door_rules import DoorState, Greeting, Mute, Note, check_window, clean_note, mute_until, new_visit
 from .door_speech import DoorSpeech, remove, write
 
 _LOGGER = logging.getLogger(__name__)
@@ -63,6 +63,8 @@ class DoorActions:
         self._listeners: list[Callable[[], None]] = []
         self._unsubs: list[Callable[[], None]] = []
         self._timers: list[Callable[[], None]] = []
+        self._last_seen: datetime | None = None
+        """When the radar last stopped seeing someone (the visit rule)."""
 
     # life cycle
     async def async_load(self) -> None:
@@ -207,8 +209,16 @@ class DoorActions:
     @callback
     def _on_radar(self, event: Event[EventStateChangedData]) -> None:
         old, new = event.data["old_state"], event.data["new_state"]
-        if new is None or new.state != "on" or (old is not None and old.state == "on"):
+        if new is None:
             return
+        was_on = old is not None and old.state == "on"
+        if was_on and new.state != "on":       # lost them (also the radar going away): the visit may go on
+            self._last_seen = dt_util.now()
+            return
+        if new.state != "on" or was_on:
+            return
+        if not new_visit(self._last_seen, dt_util.now()):
+            return   # the same visit: the radar only lost them for a moment
         self._hass.async_create_task(self._someone_came())
 
     async def _someone_came(self) -> None:
