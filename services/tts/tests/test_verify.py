@@ -137,3 +137,22 @@ def test_a_cut_take_that_still_has_extra_words_is_made_again(tmp_path):
     engine = FakeEngine(checker=checker)
     engine.synthesize("Komme sofort.", ref(tmp_path))
     assert engine.temperatures == list(TEMPERATURES[:2]) and len(checker.checked) == 3
+
+
+def test_names_and_made_up_words_a_letter_off_count():
+    """The owner's tests 22.10.: "Blavla bla ich liebe slebi, zanni und nori" was never said: Whisper wrote the made-up
+    names a little differently."""
+    from aikos_tts.verify import same_word
+    assert same_word("slebi", "slevi") and same_word("zanni", "sanni") and same_word("blavla", "blabla")
+    assert same_word("zinnizanni", "zinnisanni") and same_word("pomodori", "pomodoro")
+    assert not same_word("haus", "maus") and not same_word("nori", "lori")        # short words must be the same
+    assert not same_word("kommen", "gehen")
+    v = judge("Blavla bla ich liebe slebi, zanni und nori.", heard(*spaced("blabla bla ich liebe slevi sanni und nori")), 4.0)
+    assert v.ok
+
+
+def test_compounds_written_the_other_way_count():
+    """The owner's test 22.10.: "Bitte weg gehen" was never said, Whisper heard "weggehen"."""
+    assert judge("Bitte weg gehen.", heard(*spaced("bitte weggehen")), 2.0).ok
+    assert judge("Bitte die Haustür schließen.", heard(*spaced("bitte die haus tür schliessen")), 3.0).ok
+    assert not judge("Bitte weg gehen.", heard(*spaced("bitte nicht")), 2.0).ok

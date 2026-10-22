@@ -71,19 +71,62 @@ class Verdict:
     heard: str
 
 
+def edits(a: str, b: str) -> int:
+    """Levenshtein distance (letters inserted, removed or changed)."""
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        for j, cb in enumerate(b, 1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca != cb)))
+        prev = cur
+    return prev[-1]
+
+
 def same_word(want: str, got: str) -> bool:
-    """The text's word, as Whisper may write it: the same, or an inflected form of it ("schelm" / "schelmen", "tür" /
-    "türen"): one starts with the other, at least 4 letters, at most 2 more."""
+    """The text's word, as Whisper may write it:
+    - the same, or an inflected form of it ("schelm" / "schelmen"): one starts with the other, at least 4 letters, at most
+      2 more;
+    - a name or a made-up word spelled a little differently (the owner's tests, 22.10.: "slebi" / "slevi", "zanni" /
+      "sanni"): from 5 letters one letter off, from 8 letters two.
+    Short words must be the same: "Haus" is never "Maus"."""
     if want == got or {want, got} <= ONE:
         return True
     short, long_ = sorted((want, got), key=len)
-    return len(short) >= 4 and len(long_) - len(short) <= 2 and long_.startswith(short)
+    if len(short) >= 4 and len(long_) - len(short) <= 2 and long_.startswith(short):
+        return True
+    allowed = 2 if len(short) >= 8 else 1 if len(short) >= 5 else 0
+    return allowed > 0 and abs(len(want) - len(got)) <= allowed and edits(want, got) <= allowed
+
+
+def compounds(want: list[str], heard: list[Heard]) -> list[Heard]:
+    """Whisper joins or splits words the text has the other way ("weg gehen" / "weggehen", "Haus tür" / "Haustür"):
+    a heard word that is two of the text's words in a row counts as both, two heard words that make one of the text's
+    words count as that one."""
+    pairs = {want[j] + want[j + 1]: (want[j], want[j + 1]) for j in range(len(want) - 1)}
+    words = set(want)
+    out: list[Heard] = []
+    i = 0
+    while i < len(heard):
+        w = heard[i]
+        if w.word in pairs and w.word not in words:
+            a, b = pairs[w.word]
+            out += [Heard(a, w.start, w.end), Heard(b, w.start, w.end)]
+            i += 1
+            continue
+        if i + 1 < len(heard) and w.word not in words and w.word + heard[i + 1].word in words:
+            out.append(Heard(w.word + heard[i + 1].word, w.start, heard[i + 1].end))
+            i += 2
+            continue
+        out.append(w)
+        i += 1
+    return out
 
 
 def judge(expected: str, heard: list[Heard], duration_s: float) -> Verdict:
     """Pure rule: may this take be used, and where does the text end in it?"""
     want = [w.replace("ß", "ss") for w in norm_words(expected)]
     text = " ".join(w.word for w in heard)
+    heard = compounds(want, heard)
     got = [next((x for x in want if same_word(x, w.word)), w.word) for w in heard]
     if not want:
         return Verdict(False, None, 0.0, text)
