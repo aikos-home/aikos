@@ -1,10 +1,11 @@
 // Tür: what a resident does at the door (A11–A14, A39–A41), as collapsible sections: a note to the door (now, or for the
 // next visitor), the bell (mute for a while, quiet hours), the picture on the door, the greeting for everyone who comes,
-// the announcements after a ring (sprachausgabe S10–S14).
+// the announcements after a ring (sprachausgabe S10–S14). On top: the live call (A47, A48), where the push on a ring leads.
 import { useEffect, useRef, useState } from "preact/hooks";
 import { api, can, type DoorActionsState, type DoorStatus, type User } from "../api";
 import { Recorder, RECORD_MAX_S } from "../media";
 import { Announcements } from "./Announcements";
+import { Call } from "./Call";
 import { Cropper } from "./Cropper";
 import { dayHm, hm, Section, useAction } from "./DoorParts";
 import { Icon } from "./Icon";
@@ -46,6 +47,7 @@ export function Door({ user, status, refresh }: Props) {
   return (
     <div class="door">
       {error && <p class="error pad">{error}</p>}
+      {can(user, "door.act") && <Call state={state} done={after} />}
       {can(user, "door.act") && <Say state={state} status={status} done={after} />}
       {can(user, "bell.settings") && <Bell status={status} done={after} />}
       {can(user, "door.act") && <Picture state={state} done={after} />}

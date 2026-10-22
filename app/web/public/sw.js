@@ -56,6 +56,10 @@ self.addEventListener("push", (event) => {
   const base = { icon: "/icon-192.png", badge: "/icon-192.png", data: { url: "/#nachrichten" } };
   const shown = d.kind === "door_message"
     ? self.registration.showNotification(doorTitle(d), { ...base, body: doorBody(d), tag: `door-${d.id}` })
+    : d.kind === "ring"
+      ? self.registration.showNotification("Es klingelt", {
+        ...base, data: { url: "/#tuer" }, tag: "ring", renotify: true,
+        body: "Tippen: mitlesen und antworten, als Text oder live." })
     : d.kind === "test"
       ? self.registration.showNotification("aikos", { ...base, body: "Test: Benachrichtigungen kommen an.", tag: "aikos-test" })
       : self.registration.showNotification("aikos", { ...base, body: "Neues in der App.", tag: "aikos" });

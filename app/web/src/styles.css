@@ -172,3 +172,10 @@ code.small { font-size: 11px; color: var(--muted); }
 .announce { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-top: 1px solid var(--border); }
 .announce.dim { opacity: 0.55; }
 .announce .chip { white-space: normal; text-align: left; }
+.transcript { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 40vh; overflow-y: auto; }
+.transcript li { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2, rgba(127,127,127,.12)); max-width: 85%; }
+.transcript li.room { align-self: flex-end; }
+.transcript .who { font-size: 12px; opacity: .7; }
+.talk { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.talk .hold { width: 100%; min-height: 72px; font-size: 18px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.talk .hold.on { background: var(--accent, #7c5cff); color: #fff; }

@@ -13,12 +13,14 @@ from ..ha.client import HaClient
 from ..ha.door import DoorMessages
 from ..ha.door_actions import DoorActions
 from ..push.door_push import DoorPush
+from ..push.ring_push import RingPush
 from ..roles import Cap, can
 from ..store import Database
 from ..store.accounts import Accounts, User
 from ..store.audit import Audit
 from ..store.push import Pushes
 from ..store.sessions import Sessions
+from ..talk import TalkBridge
 from ..voice import Voices
 
 SESSION_COOKIE = "aikos_session"
@@ -40,6 +42,8 @@ class AppContext:
     push_public_key: str
     door_actions: DoorActions
     voices: Voices
+    ring_push: RingPush
+    talk: TalkBridge
 
 
 CTX = web.AppKey("aikos_ctx", AppContext)

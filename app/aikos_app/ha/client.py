@@ -38,6 +38,8 @@ ALLOWED_SERVICES = frozenset({
     ("aikos", "door_picture_clear"),
     ("aikos", "door_greeting"),
     ("aikos", "door_announcements"),
+    ("esphome", "aikos_intercom_talk_app_join"),      # talking to the door from the app (A5): this node joins the call
+    ("esphome", "aikos_intercom_talk_key_state"),     # ... as a key: holds, listens, leaves
 })
 """The services the app may call, each behind one endpoint that checks the person's rights first (rule G2)."""
 

@@ -27,6 +27,8 @@ key = "~/.ssh/aikos_vms_ed25519"
 
 [app]                             # optional AIKOS_APP_* settings (lower case, without the prefix)
 door_media_dir = "aikos_door"
+# door_talk_host = "192.0.2.72"     # the door's talk computer: talking from the app (each node gets its own address, UDP
+#                                   # 5012; the nodes' firewall must let that address in on UDP 5012)
 
 [[nodes]]
 name = "aikos-1"
