@@ -2,11 +2,17 @@
 in Home Assistant's local media folder (`<media>/aikos/speech-<kind>-…`) through the configured TTS service, and played
 through the door speaker. Used by the door actions (note, greeting) and the announcements.
 
+Said on the spot (`say_now`), the door first plays its own short cue, then the text sentence by sentence: the first one
+plays while the next is being made, so the visitor hears the voice after one sentence's time, not the whole text's. If a
+sentence can't be said faithfully, the rest is not said either (the text is on the door's screen anyway).
+
 The voice service or the door being away never breaks anything: then there is no file, or nothing is played.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
+import re
 import secrets
 from pathlib import Path
 
@@ -19,6 +25,11 @@ from .const import OPT_TTS
 _LOGGER = logging.getLogger(__name__)
 FOLDER = "aikos"            # in Home Assistant's local media (not public)
 PREFIX = "speech-"          # speech made in advance, next to the greeting sound
+_SENTENCE = re.compile(r"(?<=[.!?…])\s+")
+
+
+def sentences(text: str) -> list[str]:
+    return [s for s in _SENTENCE.split(" ".join((text or "").split())) if s]
 
 
 def write(path: Path, data: bytes, keep_prefix: str) -> None:
@@ -81,11 +92,35 @@ class DoorSpeech:
         if folder is not None:
             await self._hass.async_add_executor_job(remove, folder, f"{PREFIX}{kind}-")
 
+    def can_speak(self, voice: str) -> bool:
+        return bool(self._engine() and voice and self.folder() is not None)
+
     async def say_now(self, text: str, voice: str, kind: str = "now") -> bool:
-        """Make, play and remove a one-off sentence."""
-        name = await self.make(text, voice, kind)
-        if not name:
+        """A one-off text: the door's cue at once, then sentence after sentence, each played while the next is made;
+        the files are removed afterwards. True if anything was played."""
+        parts = sentences(text)
+        if not (parts and self.can_speak(voice)):
             return False
-        played = await self.play(name)
-        await self.drop(kind)
+        await door_speaker.cue(self._hass)
+        made: asyncio.Queue[str] = asyncio.Queue()
+
+        async def make_all() -> None:
+            for i, s in enumerate(parts):
+                name = await self.make(s, voice, f"{kind}-{i}")
+                await made.put(name)
+                if not name:   # not said faithfully: the rest isn't said either
+                    return
+
+        maker = self._hass.async_create_task(make_all(), eager_start=True)
+        played = False
+        try:
+            for _ in parts:
+                name = await made.get()
+                if not name or not await self.play(name):
+                    break
+                played = True
+        finally:
+            maker.cancel()
+            await asyncio.gather(maker, return_exceptions=True)
+            await self.drop(kind)
         return played
