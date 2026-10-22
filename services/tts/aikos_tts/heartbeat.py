@@ -2,11 +2,16 @@
 every sentence answers, and pushes to the house monitor (Uptime Kuma, its push URL in a file with 0600 outside the repo).
 "up" only while the model is loaded (it is, while this runs) and the check answers: without the check nothing is said. The
 message names the cause. The answer is kept for the health endpoint, which therefore never waits for Whisper.
+
+Through the aikos hub (AIKOS_TTS_WHISPER_URL = http://<hub>/c/<client>, AIKOS_TTS_WHISPER_BACKEND = the hub's name for
+the Whisper it routes this client to): the hub's own status says whether that backend is up; its paths other than the
+transcription would reach another backend.
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import urllib.error
 import urllib.parse
@@ -19,10 +24,24 @@ TIMEOUT = 5
 OK, UNREACHABLE, OFF = "ok", "unreachable", "off"
 
 
-def whisper_state(url: str) -> str:
+def hub_state(url: str, backend: str) -> str:
+    """The hub's status of the backend that does this client's transcriptions."""
+    parts = urllib.parse.urlsplit(url)
+    status = urllib.parse.urlunsplit((parts.scheme, parts.netloc, "/hub/v1/status", "", ""))
+    try:
+        with urllib.request.urlopen(status, timeout=TIMEOUT) as r:
+            backends = json.loads(r.read()).get("backends") or {}
+    except (OSError, ValueError, AttributeError):
+        return UNREACHABLE
+    return OK if (backends.get(backend) or {}).get("up") is True else UNREACHABLE
+
+
+def whisper_state(url: str, backend: str = "") -> str:
     """Does the check's Whisper answer at all? Any HTTP answer below 500 counts (busy is not dead)."""
     if not url:
         return OFF
+    if backend:
+        return hub_state(url, backend)
     try:
         with urllib.request.urlopen(url.rstrip("/") + "/health", timeout=TIMEOUT):
             return OK
@@ -50,14 +69,15 @@ def verdict(whisper: str) -> tuple[bool, str]:
 
 
 class Heartbeat:
-    def __init__(self, whisper_url: str, push_file: Path, engine: str) -> None:
+    def __init__(self, whisper_url: str, push_file: Path, engine: str, backend: str = "") -> None:
         self.whisper_url = whisper_url
+        self.backend = backend
         self.push_file = push_file
         self.engine = engine
         self.whisper = OFF if not whisper_url else UNREACHABLE
 
     def beat(self) -> None:
-        self.whisper = whisper_state(self.whisper_url)
+        self.whisper = whisper_state(self.whisper_url, self.backend)
         up, message = verdict(self.whisper)
         try:
             base = self.push_file.read_text(encoding="utf-8").strip()

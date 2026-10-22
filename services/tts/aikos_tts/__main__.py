@@ -10,7 +10,8 @@ Everything that must move to another machine is in the state folder (AIKOS_TTS_S
 token (the app's), heartbeat-url (the monitor's push address), tts.env (read by the installer). The cache is elsewhere
 (AIKOS_TTS_CACHE_DIR, made again). Environment: AIKOS_TTS_WYOMING_CLIENTS (Home Assistant addresses, comma-separated),
 AIKOS_TTS_HTTP_CLIENTS (the app's nodes; an empty list allows nobody), AIKOS_TTS_WHISPER_URL (the Whisper that checks every
-sentence; empty = unchecked, and the heartbeat says so), AIKOS_TTS_TOKEN_FILE / AIKOS_TTS_HEARTBEAT_FILE (other places for
+sentence; empty = unchecked, and the heartbeat says so), AIKOS_TTS_WHISPER_BACKEND (through the aikos hub: the hub's name
+of that Whisper, for the heartbeat), AIKOS_TTS_TOKEN_FILE / AIKOS_TTS_HEARTBEAT_FILE (other places for
 those files).
 """
 
@@ -81,7 +82,8 @@ async def serve(args: argparse.Namespace) -> None:
     token_file = paths.secret_file("token", "AIKOS_TTS_TOKEN_FILE")
     token = token_file.read_text(encoding="utf-8").strip() if token_file.is_file() else ""
     heartbeat = Heartbeat(os.environ.get("AIKOS_TTS_WHISPER_URL", ""),
-                          paths.secret_file("heartbeat-url", "AIKOS_TTS_HEARTBEAT_FILE"), engine.name)
+                          paths.secret_file("heartbeat-url", "AIKOS_TTS_HEARTBEAT_FILE"), engine.name,
+                          os.environ.get("AIKOS_TTS_WHISPER_BACKEND", ""))
     app = create_app(store, engine, token, allow_list(os.environ.get("AIKOS_TTS_HTTP_CLIENTS", "")), heartbeat,
                      models.revision(kind))
     runner = web.AppRunner(app, access_log=None)
