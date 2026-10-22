@@ -68,6 +68,9 @@
       },
       "door_announcements": {
         "name": "Tür-Ansagen"
+      },
+      "door_ring": {
+        "name": "Klingeln"
       }
     },
     "number": {
