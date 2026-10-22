@@ -121,13 +121,32 @@ async def test_bell_muted_gets_the_quiet_sentence(hass: HomeAssistant, door):
     assert played == ["Wir können gerade nicht an die Tür kommen."]
 
 
-async def test_a_second_ring_within_a_minute_is_not_answered_again(hass: HomeAssistant, door):
+async def test_a_second_ring_gets_it_again_after_15_seconds(hass: HomeAssistant, door, freezer):
+    """The owner, 22.10.: a ring 26 s after the first got nothing (the pause was a minute); now again after 15 s."""
     _, played = door
     await setup(hass)
     await save(hass, 1)
     await ring(hass, 1)
+    freezer.tick(timedelta(seconds=5))
     await ring(hass, 2)
-    assert played == ["Wir sind gerade nicht zu Hause."]
+    assert played == ["Wir sind gerade nicht zu Hause."]                       # a storm of rings: one
+    freezer.tick(timedelta(seconds=20))
+    await ring(hass, 3)
+    assert played == ["Wir sind gerade nicht zu Hause."] * 2
+
+
+async def test_bell_muted_and_a_parcel_expected_says_both_the_house_first(hass: HomeAssistant, door):
+    """The owner's test 22.10.: muted + parcel gave only the parcel sentence; he expected the muted one. Now both."""
+    _, played = door
+    await setup(hass, a="home")
+    await save(hass, 1)
+    await call(hass, "bell_mute", {"minutes": 30})
+    hass.states.async_set(PARCEL, "on")
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert hass.states.get(SENSOR).state == "quiet+parcel"
+    await ring(hass)
+    assert played == ["Wir können gerade nicht an die Tür kommen.", "Bitte legen Sie das Paket vor die Tür."]
+    assert hass.states.get(SENSOR).attributes["last"]["situation"] == "quiet+parcel"
 
 
 async def test_nothing_during_a_call(hass: HomeAssistant, door):

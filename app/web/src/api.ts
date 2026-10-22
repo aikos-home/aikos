@@ -41,7 +41,7 @@ export interface DoorStatus {
 }
 
 export interface DoorAnnouncements {
-  now: "parcel" | "away" | "quiet" | "none";
+  now: string;   // "none", or the situations one after the other, e.g. "quiet+parcel" (aikos 0.16.0)
   now_text: string;
   disclosure: number;
   parcel: string;

@@ -121,7 +121,7 @@ function Editor({ an, done }: { an: DoorAnnouncements; done: () => void }) {
         </span>
       </div>
       <p class="meta">
-        {an.now !== "none" && an.now_text ? <>Jetzt ({NOW[an.now] ?? an.now}) würde die Tür sagen: „{an.now_text}“</>
+        {an.now !== "none" && an.now_text ? <>Jetzt ({an.now.split("+").map((k) => NOW[k] ?? k).join(" + ")}) würde die Tür sagen: „{an.now_text}“</>
           : "Jetzt würde die Tür nach dem Klingeln nichts sagen."}
         {an.last.text && <> · Zuletzt {dayHm(an.last.at ?? "")}: „{an.last.text}“</>}
       </p>
