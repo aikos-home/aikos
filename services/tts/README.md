@@ -4,7 +4,7 @@ Speech in the residents' own voices, locally. The door reads a resident's note o
 (aikos-app A42–A45). Each person records their own voice in the aikos app (Haus → Meine Stimme), so every voice is enrolled
 by its owner. Voices, text and audio never leave the machine this runs on (R11). Owner: aikos core.
 
-Version **0.6.3**. Python 3.11. Model: [Chatterbox multilingual](https://github.com/resemble-ai/chatterbox) (MIT licence),
+Version **0.7.0** (speech to text for Home Assistant, off by default). Python 3.11. Model: [Chatterbox multilingual](https://github.com/resemble-ai/chatterbox) (MIT licence),
 zero-shot voice cloning from a 8–60 s recording, German. Every generated clip carries Chatterbox's inaudible watermark,
 so it can be recognised as synthetic. A voice is never proof of identity.
 
@@ -25,6 +25,24 @@ word (before the check: 3 of 5, with babbling after the sentence); 7–25 s per 
   an error, so nothing is ever spoken in anyone's voice by accident.
 - Only the machines in `AIKOS_TTS_WYOMING_CLIENTS` may ask (the Home Assistant hosts). A cloned voice must not be something
   anyone in the network can fetch.
+
+**Speech to text for Home Assistant** (0.7.0, `AIKOS_TTS_STT=1` in `tts.env`; off by default). This is the speech to text
+of an Assist pipeline, e.g. for a remote's voice key (owner's rule SB-R4). On the same Wyoming link:
+- `describe` also lists the recognizer `aikos-stt` (German) and the voice `aikos-silent`.
+- `transcribe`, then `audio-start`, `audio-chunk` …, `audio-stop` (16-bit mono, any rate) are answered with
+  `transcript {text}`.
+- **Where the sentence is written down:** by the same Whisper the sentence check uses (`AIKOS_TTS_WHISPER_URL`), i.e. on the
+  Mac the shared one through the hub, never the door's live Whisper. Measured 16.11.: a door transcript and a command at the
+  same moment take ~0.4 s longer each; nothing queues.
+- **Whisper's subtitle hallucinations count as nothing heard,** e.g. "Vielen Dank fürs Zuschauen." from an empty recording.
+  The text is then empty and Home Assistant says it understood nothing. The list is the transcriber's (R24).
+- At most 30 s per sentence; the rest is dropped (a stuck key).
+- **`aikos-silent`:** an ESPHome device always asks its pipeline for a spoken answer, also when it has no speaker. This voice
+  answers with a moment of silence at once, without the model. A spoken answer to a device that can't play it never takes the
+  one slot the residents' voices share.
+- **Home Assistant:** add the Wyoming integration with this machine, port 10200. Then make a German Assist pipeline:
+  speech to text "aikos-stt", text to speech this service with voice `aikos-silent` (or a resident's, for a device with a
+  speaker). Assign it to the device.
 
 **aikos app: HTTP** (`0.0.0.0:10201`, `Authorization: Bearer <token>`, only from `AIKOS_TTS_HTTP_CLIENTS`).
 
@@ -52,7 +70,7 @@ voices, same check, same interface; only the engine changes. `AIKOS_TTS_ENGINE` 
 | `voices/` (0700) | the recordings each person made of their own voice |
 | `token` (0600) | the app's token |
 | `heartbeat-url` (0600) | the house monitor's push address (Uptime Kuma); no file = no heartbeat |
-| `tts.env` | `AIKOS_TTS_ENGINE`, `AIKOS_TTS_WYOMING_CLIENTS`, `AIKOS_TTS_HTTP_CLIENTS`, `AIKOS_TTS_WHISPER_URL` |
+| `tts.env` | `AIKOS_TTS_ENGINE`, `AIKOS_TTS_WYOMING_CLIENTS`, `AIKOS_TTS_HTTP_CLIENTS`, `AIKOS_TTS_WHISPER_URL`, `AIKOS_TTS_WHISPER_BACKEND`, `AIKOS_TTS_STT` |
 
 The cache (`~/Library/Caches/aikos/tts`) and the models are made again. **Models are pinned** to one commit each
 (`aikos_tts/models.py`); `python -m aikos_tts fetch` downloads them once, and the service then starts without the internet
@@ -107,6 +125,9 @@ instead of 10 vocoder steps it is barely faster and says more nonsense, so neith
 | A sentence can't be said faithfully | Nothing is said; the log says how long it was, never the text |
 | The check's Whisper is away | Nothing new is said; the heartbeat says "whisper check unreachable" |
 | No internet at a start | Starts anyway: the pinned models come from the local cache |
+| Speech to text: Whisper away, or the hub busy too long | Wyoming error `stt`; nothing is written down, never a made-up text |
+| Speech to text: not 16-bit mono | Wyoming error `stt-format` |
+| Speech to text switched off | `transcribe` is refused (`stt`); `describe` lists no recognizer |
 
 ## Tests
 
