@@ -55,7 +55,8 @@ def build_context(settings: Settings, ha: HaClient | None = None) -> AppContext:
     return AppContext(settings, db, accounts, sessions, audit, auth, ha, door, pushes, door_push, vapid_public(vapid),
                       DoorActions(ha), Voices(settings.tts_url, settings.tts_token),
                       RingPush(ha, accounts, pushes, door_push),
-                      TalkBridge(ha, settings.talk_host, settings.talk_port, settings.door_talk_host))
+                      TalkBridge(ha, settings.talk_host, settings.talk_port, settings.door_talk_host,
+                                 transcriber=settings.transcriber))
 
 
 async def prepare_quick_replies(c: AppContext) -> None:

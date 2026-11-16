@@ -47,7 +47,7 @@ export function Door({ user, status, refresh }: Props) {
   return (
     <div class="door">
       {error && <p class="error pad">{error}</p>}
-      {can(user, "door.act") && <Call state={state} me={user.name} done={after} />}
+      {can(user, "door.act") && <Call state={state} me={user.name} here={!!status?.someone_at_door} done={after} />}
       {can(user, "bell.settings") && <Bell status={status} done={after} />}
       {can(user, "door.act") && <Picture state={state} done={after} />}
       {can(user, "door.act") && <Greeting state={state} done={after} />}

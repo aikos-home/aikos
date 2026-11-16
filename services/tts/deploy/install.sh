@@ -26,6 +26,7 @@ LOGDIR="$HOME/Library/Logs/aikos"
 ENVFILE="$STATE/tts.env"
 [ -f "$ENVFILE" ] || ENVFILE="$OLD/tts.env"
 AIKOS_TTS_ENGINE=; AIKOS_TTS_WYOMING_CLIENTS=; AIKOS_TTS_HTTP_CLIENTS=; AIKOS_TTS_WHISPER_URL=; AIKOS_TTS_WHISPER_BACKEND=
+AIKOS_TTS_STT=
 if [ -f "$ENVFILE" ]; then . "$ENVFILE"; fi
 ENGINE=${AIKOS_TTS_ENGINE:-auto}
 if [ "$ENGINE" = auto ]; then
@@ -93,6 +94,7 @@ cat > "$PLIST" <<EOF
     <key>AIKOS_TTS_HTTP_CLIENTS</key><string>${AIKOS_TTS_HTTP_CLIENTS:-}</string>
     <key>AIKOS_TTS_WHISPER_URL</key><string>${AIKOS_TTS_WHISPER_URL:-}</string>
     <key>AIKOS_TTS_WHISPER_BACKEND</key><string>${AIKOS_TTS_WHISPER_BACKEND:-}</string>
+    <key>AIKOS_TTS_STT</key><string>${AIKOS_TTS_STT:-}</string>
     <key>HF_HUB_OFFLINE</key><string>1</string>
     <key>PATH</key><string>/opt/homebrew/bin:/usr/bin:/bin</string>
   </dict>

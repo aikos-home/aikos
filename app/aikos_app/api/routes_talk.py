@@ -40,7 +40,7 @@ async def talk(request: web.Request) -> web.StreamResponse:
         await ws.send_json({"state": "busy"})
         await ws.close()
         return ws
-    session = TalkSession(c.talk, ws.send_bytes)
+    session = TalkSession(c.talk, ws.send_bytes, name=user.name)
     c.audit.log("door.talk", True, user.id, target="start", ip=client_ip(request))
     try:
         await session.open()

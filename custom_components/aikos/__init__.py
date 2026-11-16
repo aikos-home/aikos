@@ -11,6 +11,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
+from .app_talker import AppTalker
 from .archive_writer import ArchiveWriter
 from .const import DOMAIN
 from .door_actions import DoorActions
@@ -38,6 +39,7 @@ class AikosData:
     door_announcer: DoorAnnouncer
     parcel_mail: ParcelMail
     door_thread: DoorThread
+    app_talker: AppTalker
 
 
 type AikosConfigEntry = ConfigEntry[AikosData]
@@ -65,7 +67,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: AikosConfigEntry) -> boo
     await door_messages.async_load()
     entry.runtime_data = AikosData(version=str(integration.version), quiet_hours=quiet_hours, ring_notifier=notifier,
                                    archive=archive, door_messages=door_messages, door_actions=door_actions,
-                                   door_announcer=announcer, parcel_mail=ParcelMail(hass, entry), door_thread=thread)
+                                   door_announcer=announcer, parcel_mail=ParcelMail(hass, entry), door_thread=thread,
+                                   app_talker=AppTalker())
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     notifier.start()
     entry.async_on_unload(notifier.stop)

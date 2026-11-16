@@ -299,7 +299,11 @@ async def test_the_sound_goes_to_the_door_after_the_door_allows_it(hass: HomeAss
 
     from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+    import pytest_socket
+
     from custom_components.aikos import door_speaker
+    # the marker alone is not always enough: Home Assistant's test plugin sometimes blocks sockets again after it (CI)
+    pytest_socket.enable_socket()
     rx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     rx.bind(("127.0.0.1", 0))
     rx.setblocking(False)

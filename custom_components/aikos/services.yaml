@@ -139,3 +139,11 @@ door_say_audio:
         number:
           min: 0
           max: 120
+app_talker:
+  fields:
+    ip:
+      selector:
+        text:
+    name:
+      selector:
+        text:

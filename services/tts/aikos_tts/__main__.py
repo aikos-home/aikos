@@ -12,7 +12,8 @@ token (the app's), heartbeat-url (the monitor's push address), tts.env (read by 
 AIKOS_TTS_HTTP_CLIENTS (the app's nodes; an empty list allows nobody), AIKOS_TTS_WHISPER_URL (the Whisper that checks every
 sentence; empty = unchecked, and the heartbeat says so), AIKOS_TTS_WHISPER_BACKEND (through the aikos hub: the hub's name
 of that Whisper, for the heartbeat), AIKOS_TTS_TOKEN_FILE / AIKOS_TTS_HEARTBEAT_FILE (other places for
-those files).
+those files), AIKOS_TTS_STT=1 (speech to text for Home Assistant on the same Wyoming link, with the same Whisper; off by
+default, needs AIKOS_TTS_WHISPER_URL).
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ import platform
 from functools import partial
 from pathlib import Path
 
+from .asr import Recognizer
 from .cache import SpeechCache
 from .engine import ChatterboxEngine, Engine, FakeEngine, MlxChatterboxEngine
 from .verify import WhisperChecker
@@ -48,6 +50,13 @@ def resolve_engine(kind: str, system: str = "", machine: str = "", has_mlx: bool
     if has_mlx is None:
         has_mlx = importlib.util.find_spec("mlx_audio") is not None
     return "chatterbox-mlx" if (system, machine) == ("Darwin", "arm64") and has_mlx else "chatterbox"
+
+
+def make_recognizer(env: dict[str, str]) -> Recognizer | None:
+    """Speech to text only when switched on and there is a Whisper to write with (the sentence check's)."""
+    on = env.get("AIKOS_TTS_STT", "").strip().lower() in ("1", "true", "on", "yes")
+    url = env.get("AIKOS_TTS_WHISPER_URL", "").strip()
+    return Recognizer(url) if on and url else None
 
 
 def make_engine(kind: str) -> Engine:
@@ -92,9 +101,11 @@ async def serve(args: argparse.Namespace) -> None:
     await web.TCPSite(runner, host, int(port)).start()
     beating = asyncio.get_running_loop().create_task(heartbeat.run())
     wy = AsyncServer.from_uri(args.wyoming)
-    _LOGGER.info("ready: wyoming %s, http %s, %d voices, engine %s", args.wyoming, args.http, len(store.all()), engine.name)
+    recognizer = make_recognizer(dict(os.environ))
+    _LOGGER.info("ready: wyoming %s, http %s, %d voices, engine %s, speech to text %s", args.wyoming, args.http,
+                 len(store.all()), engine.name, "on" if recognizer else "off")
     try:
-        await wy.run(partial(Handler, store=store, engine=engine,
+        await wy.run(partial(Handler, store=store, engine=engine, recognizer=recognizer,
                              allowed=allow_list(os.environ.get("AIKOS_TTS_WYOMING_CLIENTS", ""))))
     finally:
         beating.cancel()

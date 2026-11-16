@@ -57,6 +57,7 @@ def thread(ha: HaClient) -> dict[str, Any] | None:
                     "who": str(e.get("who") or "")[:60], "text": str(e.get("text") or "")[:TEXT_MAX],
                     "spoken": e.get("spoken") if isinstance(e.get("spoken"), bool) else None,
                     "voice": voice if VOICE_FILE.match(voice) else "",
+                    "via": "app" if e.get("via") == "app" else "",
                     "seconds": round(float(seconds), 1) if isinstance(seconds, (int, float)) else None})
     return {"visit": visit, "entries": out}
 

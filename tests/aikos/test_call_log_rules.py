@@ -91,3 +91,18 @@ def test_urgent_as_text_and_room_without_device():
     log.add("room", "t2", {"text": "Ja?", "urgent": "True"})
     assert log.messages[0]["urgent"] is False and log.messages[1]["urgent"] is True
     assert log.messages[1]["who"] == "Bewohner"
+
+
+def test_in_the_order_it_was_said_not_when_its_text_was_ready():
+    """The owner's test 22.10. 18:31: a long door sentence transcribed late must stay before a short answer said after it."""
+    log = started()
+    door = dict(DOOR, duration_s=6.0, transcribe_s=2.5)                  # said 12:00:01.5, its text ready 12:00:10
+    room = {"text": "Ja?", "device": "Key A", "duration_s": 0.8, "transcribe_s": 0.7}   # said 12:00:07.5, ready 12:00:09
+    log.add("room", "2026-10-02T12:00:09+00:00", room)
+    log.add("door", "2026-10-02T12:00:10+00:00", door)
+    assert [m["side"] for m in log.messages] == ["door", "room"]
+    assert log.added["side"] == "door" and log.messages[0]["at"] == "2026-10-02T12:00:01.500+00:00"
+    assert [m["side"] for m in json.loads(log.feed_json())] == ["door", "room"]
+    assert all("at" not in m for m in json.loads(log.feed_json()))          # the screens' feed stays as it was
+    log.add("door", "2026-10-02T12:00:10+00:00", dict(door, language="en"))  # the same sentence again: replaced, not new
+    assert log.added is None and len(log.messages) == 2

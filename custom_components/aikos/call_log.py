@@ -6,12 +6,16 @@ R26: the same per room key: a resident's name sticks to the key that said it, ne
 R27: devices get only the newest 10 messages (`feed_json`); the log keeps up to 20.
 R28: the visitor's language holds for the call once a door sentence is clearly in it (`visitor_language`); a resident's
 message carries its translation for the door screen (`tr`, `tr_lang`) when the transcriber sent one.
+Order: by when it was said (`at`), not by when its text was ready. The transcriber stamps an utterance when its text is
+ready; the door's and the rooms' utterances take different times to get there, so a short later answer could overtake a
+long earlier sentence (the owner's test 22.10. 18:31). `at` = the stamp minus `transcribe_s` and `duration_s`.
 """
 from __future__ import annotations
 
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 from typing import Any
 
 KEEP = 20
@@ -22,6 +26,43 @@ VISITOR_MIN_WORDS = 3
 FEED = 10
 TEXT_MAX = 300
 INVALID = ("unknown", "unavailable", "")
+
+
+def spoken_at(stamp: str, attrs: Mapping[str, Any]) -> str:
+    """When the utterance began (ISO): the stamp minus the transcription's time and the audio's length; the stamp itself
+    when it is no time or the numbers are missing."""
+    try:
+        t = datetime.fromisoformat(stamp)
+    except (TypeError, ValueError):
+        return stamp
+    back = 0.0
+    for key in ("transcribe_s", "duration_s"):
+        try:
+            back += max(float(attrs.get(key) or 0), 0.0)
+        except (TypeError, ValueError):
+            pass
+    return (t - timedelta(seconds=back)).isoformat(timespec="milliseconds")
+
+
+def _when(m: Mapping[str, Any]) -> datetime | None:
+    try:
+        return datetime.fromisoformat(m.get("at") or m["t"])
+    except (TypeError, ValueError, KeyError):
+        return None
+
+
+def insert_in_order(items: list[dict[str, Any]], item: dict[str, Any]) -> None:
+    """Insert after the last item said no later than this one; at the end when times are missing or can't be compared."""
+    at, pos = _when(item), len(items)
+    while at is not None and pos > 0:
+        prev = _when(items[pos - 1])
+        try:
+            if prev is None or prev <= at:
+                break
+        except TypeError:   # a time without zone next to one with
+            break
+        pos -= 1
+    items.insert(pos, item)
 
 
 def _bool(value: Any) -> bool:
@@ -36,6 +77,7 @@ class CallLog:
     call_id: str = ""
     visitor_language: str = ""                       # "" = German (or not known yet)
     visitor_language_name: str = ""
+    added: dict[str, Any] | None = None              # the message the last add() brought in new (None: it replaced one)
 
     def start(self, call_id: str) -> None:
         self.messages = []
@@ -66,19 +108,21 @@ class CallLog:
             "text": (attrs.get("message") or attrs.get("text") or "")[:TEXT_MAX],
             "urgent": _bool(attrs.get("urgent", False)),
             "lang": (attrs.get("language_name") or "") if (language and language != "de") else "",
-            "spk": spk, "dev": dev, "sticky": sticky,
+            "spk": spk, "dev": dev, "sticky": sticky, "at": spoken_at(stamp, attrs),
         }
         if side == "room" and attrs.get("text_visitor"):
             entry["tr"] = str(attrs["text_visitor"])[:TEXT_MAX]
             entry["tr_lang"] = attrs.get("visitor_language") or ""
         if side == "door":
             self._visitor_language(attrs)
+        self.added = None
         for i, m in enumerate(self.messages):
             if m["id"] == msg_id:
                 self.messages[i] = entry
                 break
         else:
-            self.messages.append(entry)
+            insert_in_order(self.messages, entry)
+            self.added = entry
         self.messages = self.messages[-KEEP:]
         return True
 
@@ -106,4 +150,5 @@ class CallLog:
 
     def feed_json(self) -> str:
         """The newest 10 messages, oldest first, as compact JSON text (ESPHome reads attributes as text)."""
-        return json.dumps(self.messages[-FEED:], ensure_ascii=False, separators=(",", ":"))
+        feed = [{k: v for k, v in m.items() if k != "at"} for m in self.messages[-FEED:]]   # the order is the screens'
+        return json.dumps(feed, ensure_ascii=False, separators=(",", ":"))

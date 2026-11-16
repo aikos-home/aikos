@@ -49,6 +49,9 @@ class Settings:
     talk_port: int = 5012
     door_talk_host: str = ""
     """The door's talk computer (its RTP comes only from there); empty = no talking."""
+    transcriber: str = ""
+    """`host:port` of the transcriber's room side (as a room key's "Transcriber address"): it gets a copy of what is said
+    from the app, so the door's chat shows it; empty = no copy."""
 
     @property
     def origin(self) -> str:
@@ -106,4 +109,5 @@ def from_env(env: dict[str, str] | None = None) -> Settings:
         talk_host=e.get("AIKOS_APP_TALK_HOST", ""),
         talk_port=int(e.get("AIKOS_APP_TALK_PORT", "5012")),
         door_talk_host=e.get("AIKOS_APP_DOOR_TALK_HOST", ""),
+        transcriber=e.get("AIKOS_APP_TRANSCRIBER", ""),
     )

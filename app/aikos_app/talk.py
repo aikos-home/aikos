@@ -7,6 +7,11 @@ socket (`host` = ip:port, `ms` ≤ 60 s, renewed before it runs out; "" and 0 = 
 `esphome.aikos_intercom_talk_key_state {host, state}` at least every 3 s (2 = holds and talks, 1 = in the call and
 listens, 0 = leaves). RTP L16 big-endian, PT 96, 16 kHz mono, 20 ms, from exactly that ip:port to UDP 5004 of the door.
 Holding without a ring opens a call. One participant per node: the door knows one host:port.
+
+As a room key does, the node sends a copy of what is said (and the end of speech) to the transcriber's room side
+(`transcriber`, host:port). While someone is in the call from the app, aikos knows who (`aikos.app_talker {ip, name}`,
+aikos 0.18.0): the transcript comes back under their name, and the door screen shows "<name> spricht gerade" (it looks the
+node's address up in `sensor.aikos_people`, which lists the app while someone is in the call; Klingelbox, CHAT 22.10.).
 """
 
 from __future__ import annotations
@@ -60,10 +65,13 @@ def audio_payload(packet: bytes) -> bytes | None:
 class TalkBridge:
     """This node's socket for the door, and the one session that uses it."""
 
-    def __init__(self, ha: HaClient, host: str, port: int, door: str, door_port: int = DOOR_PORT) -> None:
+    def __init__(self, ha: HaClient, host: str, port: int, door: str, door_port: int = DOOR_PORT,
+                 transcriber: str = "") -> None:
         self.ha = ha
         self.host, self.port, self.door, self.door_port = host, port, door, door_port
         self.enabled = bool(host and port and door)
+        t_host, _, t_port = transcriber.rpartition(":")
+        self.transcriber = (t_host, int(t_port)) if t_host and t_port.isdigit() else None
         self._transport: asyncio.DatagramTransport | None = None
         self.session: TalkSession | None = None
 
@@ -93,8 +101,11 @@ class TalkBridge:
             self._transport = None
 
     def send(self, packet: bytes) -> None:
+        """To the door, and a copy to the transcriber (what is said from the app, as from a room key)."""
         if self._transport is not None:
             self._transport.sendto(packet, (self.door, self.door_port))
+            if self.transcriber is not None:
+                self._transport.sendto(packet, self.transcriber)
 
     async def action(self, name: str, data: dict) -> None:
         await self.ha.call_service("esphome", f"aikos_intercom_talk_{name}", data)
@@ -103,9 +114,11 @@ class TalkBridge:
 class TalkSession:
     """One phone in the call: listens from the start, talks while it holds."""
 
-    def __init__(self, bridge: TalkBridge, to_phone: Callable[[bytes], Awaitable[None]]) -> None:
+    def __init__(self, bridge: TalkBridge, to_phone: Callable[[bytes], Awaitable[None]], name: str = "") -> None:
         self.bridge = bridge
         self._to_phone = to_phone
+        self.name = name
+        self._named = False
         self.holding = False
         self._rtp = Rtp()
         self._first = False
@@ -115,6 +128,7 @@ class TalkSession:
 
     async def open(self) -> None:
         self.bridge.session = self
+        await self._talker(self.bridge.host, self.name)
         await self.bridge.action("app_join", {"host": self.bridge.me, "ms": JOIN_MS})
         await self._state()
         loop = asyncio.get_running_loop()
@@ -131,6 +145,8 @@ class TalkSession:
             await self.bridge.action("app_join", {"host": "", "ms": 0})
         except Exception as e:  # the door may be gone already; leaving must never raise
             _LOGGER.warning("talk: leaving the door: %s", e)
+        if self._named:
+            await self._talker("", "")
 
     async def _state(self) -> None:
         await self.bridge.action("key_state", {"host": self.bridge.me, "state": HOLD if self.holding else LISTEN})
@@ -146,6 +162,14 @@ class TalkSession:
                     await self.bridge.action("app_join", {"host": self.bridge.me, "ms": JOIN_MS})
             except Exception as e:  # one missed refresh is not the end of the call
                 _LOGGER.warning("talk: refresh: %s", e)
+
+    async def _talker(self, ip: str, name: str) -> None:
+        """Tell aikos who talks from the app, so the transcriber names it; aikos before 0.18.0 does not know it."""
+        try:
+            await self.bridge.ha.call_service("aikos", "app_talker", {"ip": ip, "name": name})
+            self._named = bool(ip)
+        except Exception as e:
+            _LOGGER.info("talk: who talks not told: %s", e)
 
     async def hold(self, on: bool) -> None:
         if on == self.holding:

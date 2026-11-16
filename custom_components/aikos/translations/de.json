@@ -74,6 +74,9 @@
       },
       "door_thread": {
         "name": "Tür-Verlauf"
+      },
+      "app_talker": {
+        "name": "Sprecher aus der App"
       }
     },
     "number": {
@@ -320,6 +323,20 @@
         "seconds": {
           "name": "Länge",
           "description": "Ihre Länge in Sekunden (für den Chat)."
+        }
+      }
+    },
+    "app_talker": {
+      "name": "Wer aus der App spricht",
+      "description": "Setzt die aikos-App: Adresse des App-Knotens und die Person, die aus der App mit der Tür spricht, damit der Transkribierer sie benennt. Leer = niemand.",
+      "fields": {
+        "ip": {
+          "name": "Adresse",
+          "description": "IPv4-Adresse des App-Knotens; leer = niemand spricht aus der App."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Wer spricht."
         }
       }
     }
